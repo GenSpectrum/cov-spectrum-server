@@ -8,10 +8,7 @@ import org.springframework.stereotype.Service;
 import org.threeten.extra.YearWeek;
 
 import java.beans.PropertyVetoException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,6 +36,25 @@ public class DatabaseService {
 
     public Connection getDatabaseConnection() throws SQLException {
         return pool.getConnection();
+    }
+
+
+    public List<String> getCountryNames() throws SQLException {
+        String sql = """
+            select distinct country
+            from gisaid_sequence
+            order by country;
+        """;
+        try (Connection conn = getDatabaseConnection();
+             Statement statement = conn.createStatement()) {
+            try (ResultSet rs = statement.executeQuery(sql)) {
+                List<String> result = new ArrayList<>();
+                while (rs.next()) {
+                    result.add(rs.getString("country"));
+                }
+                return result;
+            }
+        }
     }
 
 

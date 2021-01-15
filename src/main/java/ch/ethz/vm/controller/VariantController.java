@@ -32,7 +32,7 @@ public class VariantController {
     }
 
 
-    @GetMapping("/")
+    @GetMapping("")
     public List<VariantStatistics> findNewVariants(
             @RequestParam int year,
             @RequestParam int week,
