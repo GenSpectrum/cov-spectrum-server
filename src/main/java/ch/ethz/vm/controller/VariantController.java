@@ -256,4 +256,17 @@ public class VariantController {
         return databaseService.getAgeDistribution(variant, country, matchPercentage);
     }
 
+
+    @GetMapping("/international-time-distribution")
+    public List<DistributionByWeekAndCountry> getInternationalTimeDistribution(
+            @RequestParam String country,
+            @RequestParam String mutations,
+            @RequestParam(defaultValue = "1") float matchPercentage
+    ) throws SQLException {
+        Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
+                .map(AAMutation::new)
+                .collect(Collectors.toSet());;
+        Variant variant = new Variant(aaMutations);
+        return databaseService.getInternationalTimeDistribution(country, variant, matchPercentage);
+    }
 }

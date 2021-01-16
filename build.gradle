@@ -15,6 +15,7 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
+	implementation 'org.apache.commons:commons-math3:3.6.1'
 	implementation 'org.javatuples:javatuples:1.2'
 	implementation 'com.mchange:c3p0:0.9.5.5'
 	implementation 'org.postgresql:postgresql'

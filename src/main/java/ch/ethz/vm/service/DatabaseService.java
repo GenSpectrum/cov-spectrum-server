@@ -40,10 +40,10 @@ public class DatabaseService {
 
     public List<String> getCountryNames() throws SQLException {
         String sql = """
-            select distinct country
-            from gisaid_sequence
-            order by country;
-        """;
+                    select distinct country
+                    from gisaid_sequence
+                    order by country;
+                """;
         try (Connection conn = getDatabaseConnection();
              Statement statement = conn.createStatement()) {
             try (ResultSet rs = statement.executeQuery(sql)) {
@@ -59,13 +59,13 @@ public class DatabaseService {
 
     public int getNumberSequences(YearWeek week, String country) throws SQLException {
         String sql = """
-            select count(*) as count
-            from gisaid_sequence
-            where
-              extract(isoyear from date) = ?
-              and extract(week from date) = ?
-              and country = ?;
-        """;
+                    select count(*) as count
+                    from gisaid_sequence
+                    where
+                      extract(isoyear from date) = ?
+                      and extract(week from date) = ?
+                      and country = ?;
+                """;
         try (Connection conn = getDatabaseConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setInt(1, week.getYear());
@@ -82,19 +82,19 @@ public class DatabaseService {
     public List<Pair<AAMutation, Set<Sample>>> getMutations(YearWeek week, String country) throws SQLException {
         int MINIMAL_NUMBER_OF_SAMPLES = 5;
         String sql = """
-            select
-              m.aa_mutation as mutation,
-              string_agg(cs.gisaid_epi_isl, ',') as strains
-            from
-              gisaid_sequence cs
-              join gisaid_sequence_nextclade_mutation_aa m on cs.strain = m.strain
-            where
-              extract(isoyear from date) = ?
-              and extract(week from cs.date) = ?
-              and country = ?
-            group by m.aa_mutation
-            having count(*) >= ?;
-        """;
+                    select
+                      m.aa_mutation as mutation,
+                      string_agg(cs.gisaid_epi_isl, ',') as strains
+                    from
+                      gisaid_sequence cs
+                      join gisaid_sequence_nextclade_mutation_aa m on cs.strain = m.strain
+                    where
+                      extract(isoyear from date) = ?
+                      and extract(week from cs.date) = ?
+                      and country = ?
+                    group by m.aa_mutation
+                    having count(*) >= ?;
+                """;
         try (Connection conn = getDatabaseConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setInt(1, week.getYear());
@@ -257,6 +257,88 @@ public class DatabaseService {
                     DistributionByAgeGroup d = new DistributionByAgeGroup(
                             rs.getString("age_group"),
                             rs.getInt("count"), rs.getDouble("proportion"));
+                    result.add(d);
+                }
+                return result;
+            }
+        }
+    }
+
+
+    /**
+     * Returns data for the provided country plus those for Switzerland, UK and Denmark.
+     */
+    public List<DistributionByWeekAndCountry> getInternationalTimeDistribution(
+            String country,
+            Variant variant,
+            float matchPercentage
+    ) throws SQLException {
+        List<String> countries = new ArrayList<>(){{
+            add("Switzerland");
+            add("Denmark");
+            add("United Kingdom");
+        }};
+        if (!countries.contains(country)) {
+            countries.add(country);
+        }
+        List<String> mutations = variant.getMutations().stream()
+                .map(AAMutation::getMutationCode)
+                .collect(Collectors.toList());
+        String sql = """
+            select
+              x.country,
+              extract(isoyear from x.date) as year,
+              extract(week from x.date) as week,
+              count(*) as count,
+              y.count as total
+            from
+              (
+                select
+                  gs.country,
+                  gs.strain,
+                  gs.date
+                from
+                  gisaid_sequence gs
+                  join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
+                where m.aa_mutation = any(?::text[]) and country = any(?::text[])
+                group by
+                  gs.strain
+                having count(*) >= ?
+              ) x
+              join (
+                select
+                  gs.country,
+                  extract(isoyear from gs.date) as year,
+                  extract(week from gs.date) as week,
+                  count(*) as count
+                from gisaid_sequence gs
+                where country = any(?::text[])
+                group by
+                  gs.country,
+                  extract(isoyear from gs.date),
+                  extract(week from gs.date)
+              ) y on x.country = y.country
+                       and extract(year from x.date) = y.year
+                       and extract(week from x.date) = y.week
+            group by
+              x.country,
+              extract(isoyear from x.date),
+              extract(week from x.date),
+              y.count;
+        """;
+        try (Connection conn = getDatabaseConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
+            statement.setArray(2, conn.createArrayOf("text", countries.toArray()));
+            statement.setFloat(3, mutations.size() * matchPercentage);
+            statement.setArray(4, conn.createArrayOf("text", countries.toArray()));
+            try (ResultSet rs = statement.executeQuery()) {
+                List<DistributionByWeekAndCountry> result = new ArrayList<>();
+                while (rs.next()) {
+                    DistributionByWeekAndCountry d = new DistributionByWeekAndCountry(
+                            YearWeek.of(rs.getInt("year"), rs.getInt("week")),
+                            rs.getString("country"),
+                            rs.getInt("count"), rs.getInt("total"));
                     result.add(d);
                 }
                 return result;
