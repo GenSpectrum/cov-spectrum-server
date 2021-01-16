@@ -1,7 +1,9 @@
 package ch.ethz.vm.service;
 
 import ch.ethz.vm.entity.AAMutation;
+import ch.ethz.vm.entity.DistributionByWeek;
 import ch.ethz.vm.entity.Sample;
+import ch.ethz.vm.entity.Variant;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.javatuples.Pair;
 import org.springframework.stereotype.Service;
@@ -111,6 +113,67 @@ public class DatabaseService {
                     results.add(new Pair<>(mutation, strains));
                 }
                 return results;
+            }
+        }
+    }
+
+
+    public List<DistributionByWeek> getTimeDistribution(Variant variant, String country) throws SQLException {
+        List<String> mutations = variant.getMutations().stream()
+                .map(AAMutation::getMutationCode)
+                .collect(Collectors.toList());
+        String sql = """
+            select
+              extract(isoyear from x.date) as year,
+              extract(week from x.date) as week,
+              count(*) as count,
+              count(*) * 1.0 / y.count as proportion
+            from
+              (
+                select
+                  gs.strain,
+                  gs.date,
+                  gs.age,
+                  gs.division
+                from
+                  gisaid_sequence gs
+                  join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
+                where m.aa_mutation = any(?) and country = ?
+                group by
+                  gs.strain
+                having count(*) = ?
+              ) x
+              join (
+                select
+                  extract(isoyear from gs.date) as year,
+                  extract(week from gs.date) as week,
+                  count(*) as count
+                from gisaid_sequence gs
+                where country = ?
+                group by
+                  extract(isoyear from gs.date),
+                  extract(week from gs.date)
+              ) y on extract(year from x.date) = y.year and extract(week from x.date) = y.week
+            group by
+              extract(isoyear from x.date),
+              extract(week from x.date),
+              y.count;
+        """;
+        try (Connection conn = getDatabaseConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
+            statement.setString(2, country);
+            statement.setInt(3, mutations.size());
+            statement.setString(4, country);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<DistributionByWeek> result = new ArrayList<>();
+                while (rs.next()) {
+                    DistributionByWeek d = new DistributionByWeek(
+                            YearWeek.of(rs.getInt("year"), rs.getInt("week")),
+                            rs.getInt("count"), rs.getDouble("proportion"));
+                    result.add(d);
+                }
+                return result;
             }
         }
     }

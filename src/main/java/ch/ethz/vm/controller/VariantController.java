@@ -1,10 +1,7 @@
 package ch.ethz.vm.controller;
 
+import ch.ethz.vm.entity.*;
 import ch.ethz.vm.service.DatabaseService;
-import ch.ethz.vm.entity.AAMutation;
-import ch.ethz.vm.entity.Sample;
-import ch.ethz.vm.entity.Variant;
-import ch.ethz.vm.entity.VariantStatistics;
 import ch.ethz.vm.util.BoundedPriorityHeap;
 import ch.ethz.vm.util.Counter;
 import ch.ethz.vm.util.Utils;
@@ -229,6 +226,19 @@ public class VariantController {
             }
         }
         return new Pair<>(mutationToSample, sampleToMutation);
+    }
+
+
+    @GetMapping("/time-distribution")
+    public List<DistributionByWeek> getTimeDistribution(
+            @RequestParam String country,
+            @RequestParam String mutations
+    ) throws SQLException {
+        Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
+                .map(AAMutation::new)
+                .collect(Collectors.toSet());;
+        Variant variant = new Variant(aaMutations);
+        return databaseService.getTimeDistribution(variant, country);
     }
 
 }
