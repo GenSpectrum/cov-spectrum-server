@@ -1,9 +1,6 @@
 package ch.ethz.vm.service;
 
-import ch.ethz.vm.entity.AAMutation;
-import ch.ethz.vm.entity.DistributionByWeek;
-import ch.ethz.vm.entity.Sample;
-import ch.ethz.vm.entity.Variant;
+import ch.ethz.vm.entity.*;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.javatuples.Pair;
 import org.springframework.stereotype.Service;
@@ -118,7 +115,8 @@ public class DatabaseService {
     }
 
 
-    public List<DistributionByWeek> getTimeDistribution(Variant variant, String country) throws SQLException {
+    public List<DistributionByWeek> getTimeDistribution(Variant variant, String country, float matchPercentage)
+            throws SQLException {
         List<String> mutations = variant.getMutations().stream()
                 .map(AAMutation::getMutationCode)
                 .collect(Collectors.toList());
@@ -141,7 +139,7 @@ public class DatabaseService {
                 where m.aa_mutation = any(?) and country = ?
                 group by
                   gs.strain
-                having count(*) = ?
+                having count(*) >= ?
               ) x
               join (
                 select
@@ -163,13 +161,101 @@ public class DatabaseService {
              PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
             statement.setString(2, country);
-            statement.setInt(3, mutations.size());
+            statement.setFloat(3, mutations.size() * matchPercentage);
             statement.setString(4, country);
             try (ResultSet rs = statement.executeQuery()) {
                 List<DistributionByWeek> result = new ArrayList<>();
                 while (rs.next()) {
                     DistributionByWeek d = new DistributionByWeek(
                             YearWeek.of(rs.getInt("year"), rs.getInt("week")),
+                            rs.getInt("count"), rs.getDouble("proportion"));
+                    result.add(d);
+                }
+                return result;
+            }
+        }
+    }
+
+
+    public List<DistributionByAgeGroup> getAgeDistribution(Variant variant, String country, float matchPercentage)
+            throws SQLException {
+        List<String> mutations = variant.getMutations().stream()
+                .map(AAMutation::getMutationCode)
+                .collect(Collectors.toList());
+        String sql = """
+            select
+              x.age_group,
+              count(*) as count,
+              count(*) * 1.0 / y.count as proportion
+            from
+              (
+                select
+                  gs.strain,
+                  gs.date,
+                  (case
+                    when gs.age < 10 then '0-9'
+                    when gs.age between 10 and 19 then '10-19'
+                    when gs.age between 20 and 29 then '20-29'
+                    when gs.age between 30 and 39 then '30-39'
+                    when gs.age between 40 and 49 then '40-49'
+                    when gs.age between 50 and 59 then '50-59'
+                    when gs.age between 60 and 69 then '60-69'
+                    when gs.age between 70 and 79 then '70-79'
+                    when gs.age >= 80 then '80+'
+                  end) as age_group,
+                  gs.division
+                from
+                  gisaid_sequence gs
+                  join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
+                where m.aa_mutation = any(?) and country = ?
+                group by
+                  gs.strain
+                having count(*) >= ?
+              ) x
+              join (
+                select
+                  (case
+                    when gs.age < 10 then '0-9'
+                    when gs.age between 10 and 19 then '10-19'
+                    when gs.age between 20 and 29 then '20-29'
+                    when gs.age between 30 and 39 then '30-39'
+                    when gs.age between 40 and 49 then '40-49'
+                    when gs.age between 50 and 59 then '50-59'
+                    when gs.age between 60 and 69 then '60-69'
+                    when gs.age between 70 and 79 then '70-79'
+                    when gs.age >= 80 then '80+'
+                  end) as age_group,
+                  count(*) as count
+                from gisaid_sequence gs
+                where country = ?
+                group by
+                  (case
+                    when gs.age < 10 then '0-9'
+                    when gs.age between 10 and 19 then '10-19'
+                    when gs.age between 20 and 29 then '20-29'
+                    when gs.age between 30 and 39 then '30-39'
+                    when gs.age between 40 and 49 then '40-49'
+                    when gs.age between 50 and 59 then '50-59'
+                    when gs.age between 60 and 69 then '60-69'
+                    when gs.age between 70 and 79 then '70-79'
+                    when gs.age >= 80 then '80+'
+                  end)
+              ) y on x.age_group = y.age_group
+            group by
+              x.age_group,
+              y.count;
+        """;
+        try (Connection conn = getDatabaseConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
+            statement.setString(2, country);
+            statement.setFloat(3, mutations.size() * matchPercentage);
+            statement.setString(4, country);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<DistributionByAgeGroup> result = new ArrayList<>();
+                while (rs.next()) {
+                    DistributionByAgeGroup d = new DistributionByAgeGroup(
+                            rs.getString("age_group"),
                             rs.getInt("count"), rs.getDouble("proportion"));
                     result.add(d);
                 }

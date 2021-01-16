@@ -232,13 +232,28 @@ public class VariantController {
     @GetMapping("/time-distribution")
     public List<DistributionByWeek> getTimeDistribution(
             @RequestParam String country,
-            @RequestParam String mutations
+            @RequestParam String mutations,
+            @RequestParam(defaultValue = "1") float matchPercentage
     ) throws SQLException {
         Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());;
         Variant variant = new Variant(aaMutations);
-        return databaseService.getTimeDistribution(variant, country);
+        return databaseService.getTimeDistribution(variant, country, matchPercentage);
+    }
+
+
+    @GetMapping("/age-distribution")
+    public List<DistributionByAgeGroup> getAgeDistribution(
+            @RequestParam String country,
+            @RequestParam String mutations,
+            @RequestParam(defaultValue = "1") float matchPercentage
+    ) throws SQLException {
+        Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
+                .map(AAMutation::new)
+                .collect(Collectors.toSet());;
+        Variant variant = new Variant(aaMutations);
+        return databaseService.getAgeDistribution(variant, country, matchPercentage);
     }
 
 }
