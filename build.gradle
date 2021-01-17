@@ -27,3 +27,7 @@ dependencies {
 test {
 	useJUnitPlatform()
 }
+
+bootJar {
+	archiveFileName = 'variant-monitor.jar'
+}
