@@ -15,7 +15,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        if (System.getenv("VM_DEVELOPMENT").equals("true")) {
+        if ("true".equals(System.getenv("VM_DEVELOPMENT"))) {
             logger.info("Server is running in development mode. CORS requests are enabled.");
             registry.addMapping("/**");
         }
