@@ -1,10 +1,21 @@
 package ch.ethz.vm.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Utils {
+
+
+    public static <T> Set<T> setIntersection(Set<T> set1, Set<T> set2) {
+        ArrayList<Set<T>> sets = new ArrayList<>() {{
+            add(set1);
+            add(set2);
+        }};
+        return Utils.setIntersection(sets);
+    }
+
 
     public static <T> Set<T> setIntersection(Iterable<Set<T>> sets) {
         Set<T> result = null;

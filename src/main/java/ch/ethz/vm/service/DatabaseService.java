@@ -265,22 +265,7 @@ public class DatabaseService {
     }
 
 
-    /**
-     * Returns data for the provided country plus those for Switzerland, UK and Denmark.
-     */
-    public List<DistributionByWeekAndCountry> getInternationalTimeDistribution(
-            String country,
-            Variant variant,
-            float matchPercentage
-    ) throws SQLException {
-        List<String> countries = new ArrayList<>(){{
-            add("Switzerland");
-            add("Denmark");
-            add("United Kingdom");
-        }};
-        if (!countries.contains(country)) {
-            countries.add(country);
-        }
+    public List<DistributionByWeekAndCountry> getInternationalTimeDistribution(Variant variant, float matchPercentage) throws SQLException {
         List<String> mutations = variant.getMutations().stream()
                 .map(AAMutation::getMutationCode)
                 .collect(Collectors.toList());
@@ -300,7 +285,7 @@ public class DatabaseService {
                 from
                   gisaid_sequence gs
                   join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
-                where m.aa_mutation = any(?::text[]) and country = any(?::text[])
+                where m.aa_mutation = any(?::text[])
                 group by
                   gs.strain
                 having count(*) >= ?
@@ -312,7 +297,6 @@ public class DatabaseService {
                   extract(week from gs.date) as week,
                   count(*) as count
                 from gisaid_sequence gs
-                where country = any(?::text[])
                 group by
                   gs.country,
                   extract(isoyear from gs.date),
@@ -329,9 +313,7 @@ public class DatabaseService {
         try (Connection conn = getDatabaseConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
-            statement.setArray(2, conn.createArrayOf("text", countries.toArray()));
-            statement.setFloat(3, mutations.size() * matchPercentage);
-            statement.setArray(4, conn.createArrayOf("text", countries.toArray()));
+            statement.setFloat(2, mutations.size() * matchPercentage);
             try (ResultSet rs = statement.executeQuery()) {
                 List<DistributionByWeekAndCountry> result = new ArrayList<>();
                 while (rs.next()) {
@@ -345,5 +327,4 @@ public class DatabaseService {
             }
         }
     }
-
 }

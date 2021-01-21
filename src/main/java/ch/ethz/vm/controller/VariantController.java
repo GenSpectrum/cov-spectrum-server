@@ -6,6 +6,7 @@ import ch.ethz.vm.util.BoundedPriorityHeap;
 import ch.ethz.vm.util.Counter;
 import ch.ethz.vm.util.Utils;
 import org.javatuples.Pair;
+import org.javatuples.Triplet;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,8 @@ import java.util.stream.Collectors;
 public class VariantController {
 
     private final DatabaseService databaseService;
+    private final Map<Triplet<Integer, Integer, String>, List<VariantStatistics>> findNewVariantsCache
+            = new HashMap<>();
 
 
     public VariantController(DatabaseService databaseService) {
@@ -35,6 +38,11 @@ public class VariantController {
             @RequestParam int week,
             @RequestParam String country
     ) throws SQLException {
+        Triplet<Integer, Integer, String> cacheKey = new Triplet<>(year, week, country);
+        if (findNewVariantsCache.containsKey(cacheKey)) {
+            return findNewVariantsCache.get(cacheKey);
+        }
+
         YearWeek t1 = YearWeek.of(year, week);
         YearWeek t0 = t1.minusWeeks(1);
         int NUMBER_RESULTS = 200; // The number of variants we want to return
@@ -81,7 +89,7 @@ public class VariantController {
                 // Find the k most common shared mutation between the samples that are not in variant0.
                 Counter<AAMutation> mutationCounter = new Counter<>();
                 for (Sample sample : samples0) {
-                    Set<AAMutation> mutations = t1SampleToMutation.get(sample);
+                    Set<AAMutation> mutations = new HashSet<>(t1SampleToMutation.get(sample));
                     mutations.removeAll(variant0.getMutations());
                     mutationCounter.addAll(mutations);
                 }
@@ -152,6 +160,9 @@ public class VariantController {
             // Compute statistics
             VariantStatistics variantStatistics = new VariantStatistics(variant, variantCountT0, variantCountT1,
                     variantProportionT0, variantProportionT1);
+            if (variantStatistics.getAbsoluteDifferenceProportion() < 0) {
+                continue;
+            }
             allVariantStatistics.add(variantStatistics);
         }
 
@@ -166,6 +177,12 @@ public class VariantController {
             }
             return 0;
         });
+
+        Counter<Integer> variantLengths = new Counter<>();
+        for (VariantStatistics statistics : allVariantStatistics) {
+            variantLengths.add(statistics.getVariant().getMutations().size());
+        }
+
 
         // Step 4: Reduce overlap
         // Simple implementation: Keep the supersets of the top X variants
@@ -186,9 +203,9 @@ public class VariantController {
                     } else {
                         toIgnore = true;
                     }
-                // Keep the better one if they are similar enough (<= 20% difference)
-                } else if (Utils.setSymmetricDifference(muts1, muts2).size() * 1.0 /
-                        Math.max(muts1.size(), muts2.size()) <= 0.2) {
+                // Keep the better one if they are similar enough
+                } else if (Utils.setIntersection(muts1, muts2).size() * 1.0 /
+                        Math.max(muts1.size(), muts2.size()) > 0.65) {
                     toIgnore = true;
                 }
             }
@@ -203,6 +220,7 @@ public class VariantController {
             }
         }
 
+        this.findNewVariantsCache.put(cacheKey, finalVariantStatistics);
         return finalVariantStatistics;
     }
 
@@ -259,7 +277,6 @@ public class VariantController {
 
     @GetMapping("/international-time-distribution")
     public List<DistributionByWeekAndCountry> getInternationalTimeDistribution(
-            @RequestParam String country,
             @RequestParam String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage
     ) throws SQLException {
@@ -267,6 +284,6 @@ public class VariantController {
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());;
         Variant variant = new Variant(aaMutations);
-        return databaseService.getInternationalTimeDistribution(country, variant, matchPercentage);
+        return databaseService.getInternationalTimeDistribution(variant, matchPercentage);
     }
 }
