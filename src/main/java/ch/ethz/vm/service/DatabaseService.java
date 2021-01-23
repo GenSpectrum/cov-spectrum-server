@@ -8,6 +8,7 @@ import org.threeten.extra.YearWeek;
 
 import java.beans.PropertyVetoException;
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -327,4 +328,55 @@ public class DatabaseService {
             }
         }
     }
+
+
+    public List<SampleWithDetails> getSamples(Variant variant, float matchPercentage) throws SQLException {
+        List<String> mutations = variant.getMutations().stream()
+                .map(AAMutation::getMutationCode)
+                .collect(Collectors.toList());
+        String sql = """
+            select
+              gs.strain,
+              gs.gisaid_epi_isl,
+              gs.country,
+              gs.date,
+              string_agg(m.aa_mutation, ',') as mutations
+            from
+              (
+                select
+                  gs.strain,
+                  gs.gisaid_epi_isl,
+                  gs.country,
+                  gs.date
+                from
+                  gisaid_sequence gs
+                  join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
+                where m.aa_mutation = any(?::text[])
+                group by
+                  gs.strain
+                having count(*) >= ?
+              ) gs
+              join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
+            group by gs.strain, gs.gisaid_epi_isl, gs.country, gs.date;
+        """;
+        try (Connection conn = getDatabaseConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
+            statement.setFloat(2, mutations.size() * matchPercentage);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<SampleWithDetails> result = new ArrayList<>();
+                while (rs.next()) {
+                    List<AAMutation> ms = Arrays.stream(rs.getString("mutations").split(","))
+                            .map(AAMutation::new).collect(Collectors.toList());
+                    SampleWithDetails s = new SampleWithDetails(
+                            rs.getString("gisaid_epi_isl"), rs.getString("country"),
+                            rs.getObject("date", LocalDate.class), ms
+                    );
+                    result.add(s);
+                }
+                return result;
+            }
+        }
+    }
+
 }

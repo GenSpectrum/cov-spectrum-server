@@ -1,6 +1,7 @@
 package ch.ethz.vm.controller;
 
 import ch.ethz.vm.entity.*;
+import ch.ethz.vm.entity.api.GetSamplesOfVariantResponse;
 import ch.ethz.vm.service.DatabaseService;
 import ch.ethz.vm.util.BoundedPriorityHeap;
 import ch.ethz.vm.util.Counter;
@@ -244,6 +245,30 @@ public class VariantController {
             }
         }
         return new Pair<>(mutationToSample, sampleToMutation);
+    }
+
+
+    @GetMapping("/samples")
+    public GetSamplesOfVariantResponse getSamples(
+            @RequestParam(required = false) String country,
+            @RequestParam String mutations,
+            @RequestParam(defaultValue = "1") float matchPercentage
+    ) throws SQLException {
+        int TOTAL_RETURN_NUMBER = 1000;  // I don't want to return too much right now...
+
+        Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
+                .map(AAMutation::new)
+                .collect(Collectors.toSet());;
+        Variant variant = new Variant(aaMutations);
+        List<SampleWithDetails> samples = databaseService.getSamples(variant, matchPercentage);
+        if (country != null) {
+            samples = samples.stream().filter(s -> country.equals(s.getCountry())).collect(Collectors.toList());
+        }
+        int totalNumber = samples.size();
+        if (totalNumber > TOTAL_RETURN_NUMBER) {
+            samples = samples.subList(0, TOTAL_RETURN_NUMBER);
+        }
+        return new GetSamplesOfVariantResponse(totalNumber, samples);
     }
 
 
