@@ -340,24 +340,24 @@ public class DatabaseService {
               gs.gisaid_epi_isl,
               gs.country,
               gs.date,
-              string_agg(m.aa_mutation, ',') as mutations
+              x.mutations
             from
               (
                 select
                   gs.strain,
-                  gs.gisaid_epi_isl,
-                  gs.country,
-                  gs.date
+                  string_agg(m.aa_mutation, ',') as mutations
                 from
-                  gisaid_sequence gs
+                  (
+                    select m.strain
+                    from gisaid_sequence_nextclade_mutation_aa m
+                    where m.aa_mutation = any(?::text[])
+                    group by m.strain
+                    having count(*) >= ?
+                  ) gs
                   join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
-                where m.aa_mutation = any(?::text[])
-                group by
-                  gs.strain
-                having count(*) >= ?
-              ) gs
-              join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
-            group by gs.strain, gs.gisaid_epi_isl, gs.country, gs.date;
+                group by gs.strain
+              ) x
+              join gisaid_sequence gs on x.strain = gs.strain;
         """;
         try (Connection conn = getDatabaseConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
