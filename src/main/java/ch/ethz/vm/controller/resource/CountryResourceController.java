@@ -1,4 +1,4 @@
-package ch.ethz.vm.controller;
+package ch.ethz.vm.controller.resource;
 
 import ch.ethz.vm.service.DatabaseService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,13 +10,13 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/country")
-public class CountryController {
+@RequestMapping("/resource/country")
+public class CountryResourceController {
 
     private final DatabaseService databaseService;
 
 
-    public CountryController(DatabaseService databaseService) {
+    public CountryResourceController(DatabaseService databaseService) {
         this.databaseService = databaseService;
     }
 
