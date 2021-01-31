@@ -1,5 +1,6 @@
-package ch.ethz.vm.controller;
+package ch.ethz.vm.controller.resource;
 
+import ch.ethz.vm.entity.core.Variant;
 import ch.ethz.vm.service.DatabaseService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,20 +11,20 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/country")
-public class CountryController {
+@RequestMapping("/resource/variant")
+public class VariantResourceController {
 
     private final DatabaseService databaseService;
 
 
-    public CountryController(DatabaseService databaseService) {
+    public VariantResourceController(DatabaseService databaseService) {
         this.databaseService = databaseService;
     }
 
 
     @GetMapping("")
-    public List<String> getAllCountries() throws SQLException {
-        return databaseService.getCountryNames();
+    public List<Variant> getAllKnownVariants() throws SQLException {
+        return databaseService.getKnownVariants();
     }
 
 }
