@@ -1,6 +1,12 @@
 package ch.ethz.vm.service;
 
-import ch.ethz.vm.entity.*;
+import ch.ethz.vm.entity.api.CountAndProportionWithCI;
+import ch.ethz.vm.entity.api.Distribution;
+import ch.ethz.vm.entity.api.WeekAndCountry;
+import ch.ethz.vm.entity.core.AAMutation;
+import ch.ethz.vm.entity.core.SampleFull;
+import ch.ethz.vm.entity.core.SampleName;
+import ch.ethz.vm.entity.core.Variant;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.javatuples.Pair;
 import org.springframework.stereotype.Service;
@@ -80,7 +86,7 @@ public class DatabaseService {
     }
 
 
-    public List<Pair<AAMutation, Set<Sample>>> getMutations(YearWeek week, String country) throws SQLException {
+    public List<Pair<AAMutation, Set<SampleName>>> getMutations(YearWeek week, String country) throws SQLException {
         int MINIMAL_NUMBER_OF_SAMPLES = 5;
         String sql = """
                     select
@@ -103,11 +109,11 @@ public class DatabaseService {
             statement.setString(3, country);
             statement.setInt(4, MINIMAL_NUMBER_OF_SAMPLES);
             try (ResultSet rs = statement.executeQuery()) {
-                List<Pair<AAMutation, Set<Sample>>> results = new ArrayList<>();
+                List<Pair<AAMutation, Set<SampleName>>> results = new ArrayList<>();
                 while (rs.next()) {
                     AAMutation mutation = new AAMutation(rs.getString("mutation"));
-                    Set<Sample> strains = Arrays.stream(rs.getString("strains").split(","))
-                            .map(Sample::new).collect(Collectors.toSet());
+                    Set<SampleName> strains = Arrays.stream(rs.getString("strains").split(","))
+                            .map(SampleName::new).collect(Collectors.toSet());
                     results.add(new Pair<>(mutation, strains));
                 }
                 return results;
@@ -116,8 +122,11 @@ public class DatabaseService {
     }
 
 
-    public List<DistributionByWeek> getTimeDistribution(Variant variant, String country, float matchPercentage)
-            throws SQLException {
+    public List<Distribution<YearWeek, CountAndProportionWithCI>> getTimeDistribution(
+            Variant variant,
+            String country,
+            float matchPercentage
+    ) throws SQLException {
         List<String> mutations = variant.getMutations().stream()
                 .map(AAMutation::getMutationCode)
                 .collect(Collectors.toList());
@@ -126,7 +135,7 @@ public class DatabaseService {
               extract(isoyear from x.date) as year,
               extract(week from x.date) as week,
               count(*) as count,
-              count(*) * 1.0 / y.count as proportion
+              y.count as total
             from
               (
                 select
@@ -165,11 +174,13 @@ public class DatabaseService {
             statement.setFloat(3, mutations.size() * matchPercentage);
             statement.setString(4, country);
             try (ResultSet rs = statement.executeQuery()) {
-                List<DistributionByWeek> result = new ArrayList<>();
+                List<Distribution<YearWeek, CountAndProportionWithCI>> result = new ArrayList<>();
                 while (rs.next()) {
-                    DistributionByWeek d = new DistributionByWeek(
+                    Distribution<YearWeek, CountAndProportionWithCI> d = new Distribution<>(
                             YearWeek.of(rs.getInt("year"), rs.getInt("week")),
-                            rs.getInt("count"), rs.getDouble("proportion"));
+                            CountAndProportionWithCI.fromWilsonCI(
+                                    rs.getInt("count"), rs.getInt("total"))
+                    );
                     result.add(d);
                 }
                 return result;
@@ -178,8 +189,11 @@ public class DatabaseService {
     }
 
 
-    public List<DistributionByAgeGroup> getAgeDistribution(Variant variant, String country, float matchPercentage)
-            throws SQLException {
+    public List<Distribution<String, CountAndProportionWithCI>> getAgeDistribution(
+            Variant variant,
+            String country,
+            float matchPercentage
+    ) throws SQLException {
         List<String> mutations = variant.getMutations().stream()
                 .map(AAMutation::getMutationCode)
                 .collect(Collectors.toList());
@@ -187,7 +201,7 @@ public class DatabaseService {
             select
               x.age_group,
               count(*) as count,
-              count(*) * 1.0 / y.count as proportion
+              y.count as total
             from
               (
                 select
@@ -253,11 +267,13 @@ public class DatabaseService {
             statement.setFloat(3, mutations.size() * matchPercentage);
             statement.setString(4, country);
             try (ResultSet rs = statement.executeQuery()) {
-                List<DistributionByAgeGroup> result = new ArrayList<>();
+                List<Distribution<String, CountAndProportionWithCI>> result = new ArrayList<>();
                 while (rs.next()) {
-                    DistributionByAgeGroup d = new DistributionByAgeGroup(
+                    Distribution<String, CountAndProportionWithCI> d = new Distribution<>(
                             rs.getString("age_group"),
-                            rs.getInt("count"), rs.getDouble("proportion"));
+                            CountAndProportionWithCI.fromWilsonCI(
+                                    rs.getInt("count"), rs.getInt("total"))
+                    );
                     result.add(d);
                 }
                 return result;
@@ -266,7 +282,10 @@ public class DatabaseService {
     }
 
 
-    public List<DistributionByWeekAndCountry> getInternationalTimeDistribution(Variant variant, float matchPercentage) throws SQLException {
+    public List<Distribution<WeekAndCountry, CountAndProportionWithCI>> getInternationalTimeDistribution(
+            Variant variant,
+            float matchPercentage
+    ) throws SQLException {
         List<String> mutations = variant.getMutations().stream()
                 .map(AAMutation::getMutationCode)
                 .collect(Collectors.toList());
@@ -316,12 +335,15 @@ public class DatabaseService {
             statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
             statement.setFloat(2, mutations.size() * matchPercentage);
             try (ResultSet rs = statement.executeQuery()) {
-                List<DistributionByWeekAndCountry> result = new ArrayList<>();
+                List<Distribution<WeekAndCountry, CountAndProportionWithCI>> result = new ArrayList<>();
                 while (rs.next()) {
-                    DistributionByWeekAndCountry d = new DistributionByWeekAndCountry(
-                            YearWeek.of(rs.getInt("year"), rs.getInt("week")),
-                            rs.getString("country"),
-                            rs.getInt("count"), rs.getInt("total"));
+                    Distribution<WeekAndCountry, CountAndProportionWithCI> d = new Distribution<>(
+                            new WeekAndCountry(
+                                    YearWeek.of(rs.getInt("year"), rs.getInt("week")),
+                                    rs.getString("country")
+                            ),
+                            CountAndProportionWithCI.fromWilsonCI(rs.getInt("count"), rs.getInt("total"))
+                    );
                     result.add(d);
                 }
                 return result;
@@ -330,7 +352,7 @@ public class DatabaseService {
     }
 
 
-    public List<SampleWithDetails> getSamples(Variant variant, float matchPercentage) throws SQLException {
+    public List<SampleFull> getSamples(Variant variant, float matchPercentage) throws SQLException {
         List<String> mutations = variant.getMutations().stream()
                 .map(AAMutation::getMutationCode)
                 .collect(Collectors.toList());
@@ -364,11 +386,11 @@ public class DatabaseService {
             statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
             statement.setFloat(2, mutations.size() * matchPercentage);
             try (ResultSet rs = statement.executeQuery()) {
-                List<SampleWithDetails> result = new ArrayList<>();
+                List<SampleFull> result = new ArrayList<>();
                 while (rs.next()) {
                     List<AAMutation> ms = Arrays.stream(rs.getString("mutations").split(","))
                             .map(AAMutation::new).collect(Collectors.toList());
-                    SampleWithDetails s = new SampleWithDetails(
+                    SampleFull s = new SampleFull(
                             rs.getString("gisaid_epi_isl"), rs.getString("country"),
                             rs.getObject("date", LocalDate.class), ms
                     );

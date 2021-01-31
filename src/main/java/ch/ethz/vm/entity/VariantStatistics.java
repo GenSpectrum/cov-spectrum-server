@@ -1,5 +1,7 @@
 package ch.ethz.vm.entity;
 
+import ch.ethz.vm.entity.core.Variant;
+
 import java.util.Objects;
 
 public class VariantStatistics {

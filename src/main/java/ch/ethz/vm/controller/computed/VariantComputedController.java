@@ -1,8 +1,8 @@
 package ch.ethz.vm.controller.computed;
 
-import ch.ethz.vm.entity.AAMutation;
-import ch.ethz.vm.entity.Sample;
-import ch.ethz.vm.entity.Variant;
+import ch.ethz.vm.entity.core.AAMutation;
+import ch.ethz.vm.entity.core.SampleName;
+import ch.ethz.vm.entity.core.Variant;
 import ch.ethz.vm.entity.VariantStatistics;
 import ch.ethz.vm.service.DatabaseService;
 import ch.ethz.vm.util.BoundedPriorityHeap;
@@ -61,17 +61,17 @@ public class VariantComputedController {
         int l = 30;
         int k = 1000;
         // <Variant, number samples in t1>
-        Map<Integer, List<Pair<Variant, Set<Sample>>>> frequentVariants = new HashMap<>();
+        Map<Integer, List<Pair<Variant, Set<SampleName>>>> frequentVariants = new HashMap<>();
 
         // Fetch mutations
-        List<Pair<AAMutation, Set<Sample>>> t1Mutations = databaseService.getMutations(t1, country);
+        List<Pair<AAMutation, Set<SampleName>>> t1Mutations = databaseService.getMutations(t1, country);
         var tmp = this.findGrowingVariantsPrepareMutations(t1Mutations);
-        Map<AAMutation, Set<Sample>> t1MutationToSample = tmp.getValue0();
-        Map<Sample, Set<AAMutation>> t1SampleToMutation = tmp.getValue1();
+        Map<AAMutation, Set<SampleName>> t1MutationToSample = tmp.getValue0();
+        Map<SampleName, Set<AAMutation>> t1SampleToMutation = tmp.getValue1();
 
         // Get top k variants of length 1
         t1Mutations.sort((p1, p2) -> p2.getValue1().size() - p1.getValue1().size());
-        List<Pair<Variant, Set<Sample>>> ls = t1Mutations.subList(0, Math.min(t1Mutations.size(), k)).stream()
+        List<Pair<Variant, Set<SampleName>>> ls = t1Mutations.subList(0, Math.min(t1Mutations.size(), k)).stream()
                 .map(p -> new Pair<>(
                         new Variant(new HashSet<>(Collections.singletonList(p.getValue0()))),
                         p.getValue1()
@@ -80,14 +80,14 @@ public class VariantComputedController {
 
         // Get top k variants of length >= 2
         for (int i = 2; i <= l; i++) {
-            BoundedPriorityHeap<Pair<Variant, Set<Sample>>> ranked = new BoundedPriorityHeap<>(k,
+            BoundedPriorityHeap<Pair<Variant, Set<SampleName>>> ranked = new BoundedPriorityHeap<>(k,
                     Comparator.comparingInt(p -> p.getValue1().size()));
             Set<Variant> known = new HashSet<>();
 
             // Variants of length i-1 will be extended
-            for (Pair<Variant, Set<Sample>> p : frequentVariants.get(i - 1)) {
+            for (Pair<Variant, Set<SampleName>> p : frequentVariants.get(i - 1)) {
                 Variant variant0 = p.getValue0();
-                Set<Sample> samples0 = p.getValue1();
+                Set<SampleName> samples0 = p.getValue1();
 
                 // If the frequency of the old variant is lower than the lowest in the current top k, stop.
                 if (ranked.isFull() && samples0.size() < ranked.peek().getValue1().size()) {
@@ -96,7 +96,7 @@ public class VariantComputedController {
 
                 // Find the k most common shared mutation between the samples that are not in variant0.
                 Counter<AAMutation> mutationCounter = new Counter<>();
-                for (Sample sample : samples0) {
+                for (SampleName sample : samples0) {
                     Set<AAMutation> mutations = new HashSet<>(t1SampleToMutation.get(sample));
                     mutations.removeAll(variant0.getMutations());
                     mutationCounter.addAll(mutations);
@@ -116,7 +116,7 @@ public class VariantComputedController {
                     known.add(variant1);
 
                     // If the frequency of the new variant is lower than the lowest in the current top k, stop.
-                    Set<Sample> samples1 = new HashSet<>(samples0);
+                    Set<SampleName> samples1 = new HashSet<>(samples0);
                     samples1.retainAll(t1MutationToSample.get(mutationToAdd));
                     if (ranked.isFull() && samples1.size() < ranked.peek().getValue1().size()) {
                         break;
@@ -131,8 +131,8 @@ public class VariantComputedController {
 
         // Merge the frequent variants
         List<Pair<Variant, Integer>> allFrequentVariants = new ArrayList<>();
-        for (List<Pair<Variant, Set<Sample>>> list : frequentVariants.values()) {
-            for (Pair<Variant, Set<Sample>> p : list) {
+        for (List<Pair<Variant, Set<SampleName>>> list : frequentVariants.values()) {
+            for (Pair<Variant, Set<SampleName>> p : list) {
                 allFrequentVariants.add(new Pair<>(p.getValue0(), p.getValue1().size()));
             }
         }
@@ -146,9 +146,9 @@ public class VariantComputedController {
 
         // Step 3: Look up the number of sequences for the found variants in the week before and compare the two weeks.
         // Fetch mutations
-        List<Pair<AAMutation, Set<Sample>>> t0Mutations = databaseService.getMutations(t0, country);
+        List<Pair<AAMutation, Set<SampleName>>> t0Mutations = databaseService.getMutations(t0, country);
         tmp = this.findGrowingVariantsPrepareMutations(t0Mutations);
-        Map<AAMutation, Set<Sample>> t0MutationToSample = tmp.getValue0();
+        Map<AAMutation, Set<SampleName>> t0MutationToSample = tmp.getValue0();
 
         List<VariantStatistics> allVariantStatistics = new ArrayList<>();
         for (Pair<Variant, Integer> p : allFrequentVariants) {
@@ -157,11 +157,11 @@ public class VariantComputedController {
             double variantProportionT1 = variantCountT1 * 1.0 / t1TotalCount;
 
             // Find samples in t0 that have all the mutations of the variant.
-            List<Set<Sample>> sampleSets = variant.getMutations().stream()
+            List<Set<SampleName>> sampleSets = variant.getMutations().stream()
                     .map(t0MutationToSample::get)
                     .collect(Collectors.toList());
 
-            Set<Sample> samplesT0 = Utils.setIntersection(sampleSets);
+            Set<SampleName> samplesT0 = Utils.setIntersection(sampleSets);
             int variantCountT0 = samplesT0.size();
             double variantProportionT0 = variantCountT0 * 1.0 / t0TotalCount;
 
@@ -233,14 +233,14 @@ public class VariantComputedController {
     }
 
 
-    private Pair<Map<AAMutation, Set<Sample>>, Map<Sample, Set<AAMutation>>>
-    findGrowingVariantsPrepareMutations(List<Pair<AAMutation, Set<Sample>>> mutations) {
-        Map<AAMutation, Set<Sample>> mutationToSample = new HashMap<>();
-        Map<Sample, Set<AAMutation>> sampleToMutation = new HashMap<>();
-        for (Pair<AAMutation, Set<Sample>> t1Mutation : mutations) {
+    private Pair<Map<AAMutation, Set<SampleName>>, Map<SampleName, Set<AAMutation>>>
+    findGrowingVariantsPrepareMutations(List<Pair<AAMutation, Set<SampleName>>> mutations) {
+        Map<AAMutation, Set<SampleName>> mutationToSample = new HashMap<>();
+        Map<SampleName, Set<AAMutation>> sampleToMutation = new HashMap<>();
+        for (Pair<AAMutation, Set<SampleName>> t1Mutation : mutations) {
             AAMutation mutation = t1Mutation.getValue0();
-            Set<Sample> samples = t1Mutation.getValue1();
-            for (Sample sample : samples) {
+            Set<SampleName> samples = t1Mutation.getValue1();
+            for (SampleName sample : samples) {
                 if (!mutationToSample.containsKey(mutation)) {
                     mutationToSample.put(mutation, new HashSet<>());
                 }

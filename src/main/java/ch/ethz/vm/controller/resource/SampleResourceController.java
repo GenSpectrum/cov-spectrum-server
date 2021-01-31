@@ -1,9 +1,9 @@
 package ch.ethz.vm.controller.resource;
 
-import ch.ethz.vm.entity.AAMutation;
-import ch.ethz.vm.entity.SampleWithDetails;
-import ch.ethz.vm.entity.Variant;
-import ch.ethz.vm.entity.api.GetSamplesOfVariantResponse;
+import ch.ethz.vm.entity.core.AAMutation;
+import ch.ethz.vm.entity.core.SampleFull;
+import ch.ethz.vm.entity.core.Variant;
+import ch.ethz.vm.entity.api.ResultList;
 import ch.ethz.vm.service.DatabaseService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,7 +30,7 @@ public class SampleResourceController {
 
 
     @GetMapping("")
-    public GetSamplesOfVariantResponse getSamples(
+    public ResultList<SampleFull> getSamples(
             @RequestParam(required = false) String country,
             @RequestParam String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage
@@ -41,7 +41,7 @@ public class SampleResourceController {
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());;
         Variant variant = new Variant(aaMutations);
-        List<SampleWithDetails> samples = databaseService.getSamples(variant, matchPercentage);
+        List<SampleFull> samples = databaseService.getSamples(variant, matchPercentage);
         if (country != null) {
             samples = samples.stream().filter(s -> country.equals(s.getCountry())).collect(Collectors.toList());
         }
@@ -49,7 +49,7 @@ public class SampleResourceController {
         if (totalNumber > TOTAL_RETURN_NUMBER) {
             samples = samples.subList(0, TOTAL_RETURN_NUMBER);
         }
-        return new GetSamplesOfVariantResponse(totalNumber, samples);
+        return new ResultList<>(totalNumber, samples);
     }
 
 }

@@ -1,10 +1,10 @@
-package ch.ethz.vm.entity;
+package ch.ethz.vm.entity.core;
 
 import java.time.LocalDate;
 import java.util.List;
 
 
-public class SampleWithDetails {
+public class SampleFull {
 
     private final String name;
 
@@ -15,7 +15,7 @@ public class SampleWithDetails {
     private final List<AAMutation> mutations;
 
 
-    public SampleWithDetails(String name, String country, LocalDate date, List<AAMutation> mutations) {
+    public SampleFull(String name, String country, LocalDate date, List<AAMutation> mutations) {
         this.name = name;
         this.country = country;
         this.date = date;
