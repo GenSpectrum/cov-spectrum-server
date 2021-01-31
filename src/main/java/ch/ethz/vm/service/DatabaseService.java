@@ -64,6 +64,28 @@ public class DatabaseService {
     }
 
 
+    public List<Variant> getKnownVariants() throws SQLException {
+        String sql = """
+                    select variant_name, string_agg(aa_mutation, ',') as mutations
+                    from variant_mutation_aa
+                    group by variant_name;
+                """;
+        try (Connection conn = getDatabaseConnection();
+             Statement statement = conn.createStatement()) {
+            try (ResultSet rs = statement.executeQuery(sql)) {
+                List<Variant> result = new ArrayList<>();
+                while (rs.next()) {
+                    Set<AAMutation> mutations = Arrays.stream(rs.getString("mutations").split(","))
+                            .map(AAMutation::new)
+                            .collect(Collectors.toSet());
+                    result.add(new Variant(rs.getString("variant_name"), mutations));
+                }
+                return result;
+            }
+        }
+    }
+
+
     public int getNumberSequences(YearWeek week, String country) throws SQLException {
         String sql = """
                     select count(*) as count
