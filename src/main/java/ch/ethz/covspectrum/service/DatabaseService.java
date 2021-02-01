@@ -48,7 +48,7 @@ public class DatabaseService {
     public List<String> getCountryNames() throws SQLException {
         String sql = """
                     select distinct country
-                    from gisaid_sequence
+                    from spectrum_sequence_public_meta
                     order by country;
                 """;
         try (Connection conn = getDatabaseConnection();
@@ -89,7 +89,7 @@ public class DatabaseService {
     public int getNumberSequences(YearWeek week, String country) throws SQLException {
         String sql = """
                     select count(*) as count
-                    from gisaid_sequence
+                    from spectrum_sequence_public_meta
                     where
                       extract(isoyear from date) = ?
                       and extract(week from date) = ?
@@ -113,13 +113,13 @@ public class DatabaseService {
         String sql = """
                     select
                       m.aa_mutation as mutation,
-                      string_agg(cs.gisaid_epi_isl, ',') as strains
+                      string_agg(s.sequence_name, ',') as strains
                     from
-                      gisaid_sequence cs
-                      join gisaid_sequence_nextclade_mutation_aa m on cs.strain = m.strain
+                      spectrum_sequence_public_meta s
+                      join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
                     where
                       extract(isoyear from date) = ?
-                      and extract(week from cs.date) = ?
+                      and extract(week from s.date) = ?
                       and country = ?
                     group by m.aa_mutation
                     having count(*) >= ?;
@@ -161,16 +161,16 @@ public class DatabaseService {
             from
               (
                 select
-                  gs.strain,
-                  gs.date,
-                  gs.age,
-                  gs.division
+                  s.sequence_name,
+                  s.date,
+                  s.age,
+                  s.division
                 from
-                  gisaid_sequence gs
-                  join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
+                  spectrum_sequence_public_meta s
+                  join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
                 where m.aa_mutation = any(?) and country = ?
                 group by
-                  gs.strain
+                  s.sequence_name, s.date, s.age, s.division
                 having count(*) >= ?
               ) x
               join (
@@ -178,7 +178,7 @@ public class DatabaseService {
                   extract(isoyear from gs.date) as year,
                   extract(week from gs.date) as week,
                   count(*) as count
-                from gisaid_sequence gs
+                from spectrum_sequence_public_meta gs
                 where country = ?
                 group by
                   extract(isoyear from gs.date),
@@ -227,55 +227,55 @@ public class DatabaseService {
             from
               (
                 select
-                  gs.strain,
-                  gs.date,
+                  s.sequence_name,
+                  s.date,
                   (case
-                    when gs.age < 10 then '0-9'
-                    when gs.age between 10 and 19 then '10-19'
-                    when gs.age between 20 and 29 then '20-29'
-                    when gs.age between 30 and 39 then '30-39'
-                    when gs.age between 40 and 49 then '40-49'
-                    when gs.age between 50 and 59 then '50-59'
-                    when gs.age between 60 and 69 then '60-69'
-                    when gs.age between 70 and 79 then '70-79'
-                    when gs.age >= 80 then '80+'
+                    when s.age < 10 then '0-9'
+                    when s.age between 10 and 19 then '10-19'
+                    when s.age between 20 and 29 then '20-29'
+                    when s.age between 30 and 39 then '30-39'
+                    when s.age between 40 and 49 then '40-49'
+                    when s.age between 50 and 59 then '50-59'
+                    when s.age between 60 and 69 then '60-69'
+                    when s.age between 70 and 79 then '70-79'
+                    when s.age >= 80 then '80+'
                   end) as age_group,
-                  gs.division
+                  s.division
                 from
-                  gisaid_sequence gs
-                  join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
+                  spectrum_sequence_public_meta s
+                  join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
                 where m.aa_mutation = any(?) and country = ?
                 group by
-                  gs.strain
+                  s.sequence_name, s.date, s.age, s.division
                 having count(*) >= ?
               ) x
               join (
                 select
                   (case
-                    when gs.age < 10 then '0-9'
-                    when gs.age between 10 and 19 then '10-19'
-                    when gs.age between 20 and 29 then '20-29'
-                    when gs.age between 30 and 39 then '30-39'
-                    when gs.age between 40 and 49 then '40-49'
-                    when gs.age between 50 and 59 then '50-59'
-                    when gs.age between 60 and 69 then '60-69'
-                    when gs.age between 70 and 79 then '70-79'
-                    when gs.age >= 80 then '80+'
+                    when s.age < 10 then '0-9'
+                    when s.age between 10 and 19 then '10-19'
+                    when s.age between 20 and 29 then '20-29'
+                    when s.age between 30 and 39 then '30-39'
+                    when s.age between 40 and 49 then '40-49'
+                    when s.age between 50 and 59 then '50-59'
+                    when s.age between 60 and 69 then '60-69'
+                    when s.age between 70 and 79 then '70-79'
+                    when s.age >= 80 then '80+'
                   end) as age_group,
                   count(*) as count
-                from gisaid_sequence gs
+                from spectrum_sequence_public_meta s
                 where country = ?
                 group by
                   (case
-                    when gs.age < 10 then '0-9'
-                    when gs.age between 10 and 19 then '10-19'
-                    when gs.age between 20 and 29 then '20-29'
-                    when gs.age between 30 and 39 then '30-39'
-                    when gs.age between 40 and 49 then '40-49'
-                    when gs.age between 50 and 59 then '50-59'
-                    when gs.age between 60 and 69 then '60-69'
-                    when gs.age between 70 and 79 then '70-79'
-                    when gs.age >= 80 then '80+'
+                    when s.age < 10 then '0-9'
+                    when s.age between 10 and 19 then '10-19'
+                    when s.age between 20 and 29 then '20-29'
+                    when s.age between 30 and 39 then '30-39'
+                    when s.age between 40 and 49 then '40-49'
+                    when s.age between 50 and 59 then '50-59'
+                    when s.age between 60 and 69 then '60-69'
+                    when s.age between 70 and 79 then '70-79'
+                    when s.age >= 80 then '80+'
                   end)
               ) y on x.age_group = y.age_group
             group by
@@ -321,28 +321,28 @@ public class DatabaseService {
             from
               (
                 select
-                  gs.country,
-                  gs.strain,
-                  gs.date
+                  s.country,
+                  s.sequence_name,
+                  s.date
                 from
-                  gisaid_sequence gs
-                  join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
+                  spectrum_sequence_public_meta s
+                  join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
                 where m.aa_mutation = any(?::text[])
                 group by
-                  gs.strain
+                  s.sequence_name, s.country, s.date
                 having count(*) >= ?
               ) x
               join (
                 select
-                  gs.country,
-                  extract(isoyear from gs.date) as year,
-                  extract(week from gs.date) as week,
+                  s.country,
+                  extract(isoyear from s.date) as year,
+                  extract(week from s.date) as week,
                   count(*) as count
-                from gisaid_sequence gs
+                from spectrum_sequence_public_meta s
                 group by
-                  gs.country,
-                  extract(isoyear from gs.date),
-                  extract(week from gs.date)
+                  s.country,
+                  extract(isoyear from s.date),
+                  extract(week from s.date)
               ) y on x.country = y.country
                        and extract(year from x.date) = y.year
                        and extract(week from x.date) = y.week
@@ -380,28 +380,27 @@ public class DatabaseService {
                 .collect(Collectors.toList());
         String sql = """
             select
-              gs.strain,
-              gs.gisaid_epi_isl,
-              gs.country,
-              gs.date,
+              s.sequence_name,
+              s.country,
+              s.date,
               x.mutations
             from
               (
                 select
-                  gs.strain,
+                  s.sequence_name,
                   string_agg(m.aa_mutation, ',') as mutations
                 from
                   (
-                    select m.strain
-                    from gisaid_sequence_nextclade_mutation_aa m
+                    select m.sequence_name
+                    from spectrum_sequence_public_mutation_aa m
                     where m.aa_mutation = any(?::text[])
-                    group by m.strain
+                    group by m.sequence_name
                     having count(*) >= ?
-                  ) gs
-                  join gisaid_sequence_nextclade_mutation_aa m on gs.strain = m.strain
-                group by gs.strain
+                  ) s
+                  join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
+                group by s.sequence_name
               ) x
-              join gisaid_sequence gs on x.strain = gs.strain;
+              join spectrum_sequence_public_meta s on x.sequence_name = s.sequence_name;
         """;
         try (Connection conn = getDatabaseConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -413,7 +412,7 @@ public class DatabaseService {
                     List<AAMutation> ms = Arrays.stream(rs.getString("mutations").split(","))
                             .map(AAMutation::new).collect(Collectors.toList());
                     SampleFull s = new SampleFull(
-                            rs.getString("gisaid_epi_isl"), rs.getString("country"),
+                            rs.getString("sequence_name"), rs.getString("country"),
                             rs.getObject("date", LocalDate.class), ms
                     );
                     result.add(s);
