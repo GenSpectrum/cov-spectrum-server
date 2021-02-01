@@ -29,5 +29,5 @@ test {
 }
 
 bootJar {
-	archiveFileName = 'variant-monitor.jar'
+	archiveFileName = 'cov-spectrum.jar'
 }

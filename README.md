@@ -1,12 +1,12 @@
-# Variant Monitor - Server
+# CoV-Spectrum - Server
 
 
 ### Configuration
 
 Set the following environment variables:
 
-- VM_DB_HOST
-- VM_DB_PORT
-- VM_DB_NAME
-- VM_DB_USERNAME
-- VM_DB_PASSWORD
+- COV_SPECTRUM_HOST
+- COV_SPECTRUM_PORT
+- COV_SPECTRUM_NAME
+- COV_SPECTRUM_USERNAME
+- COV_SPECTRUM_PASSWORD
