@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.threeten.extra.YearWeek;
 
+import java.security.Principal;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -49,13 +50,14 @@ public class VariantPlotController {
     public List<Distribution<String, CountAndProportionWithCI>> getAgeDistribution(
             @RequestParam String country,
             @RequestParam String mutations,
-            @RequestParam(defaultValue = "1") float matchPercentage
+            @RequestParam(defaultValue = "1") float matchPercentage,
+            Principal principal
     ) throws SQLException {
         Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());
         Variant variant = new Variant(aaMutations);
-        return databaseService.getAgeDistribution(variant, country, matchPercentage);
+        return databaseService.getAgeDistribution(variant, country, matchPercentage, principal != null);
     }
 
 

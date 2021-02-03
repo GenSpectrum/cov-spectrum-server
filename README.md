@@ -5,6 +5,8 @@
 
 Set the following environment variables:
 
+- COV_SPECTRUM_JWT_SECRET: The secret used to sign the JWT tokens.
+- COV_SPECTRUM_JWT_TOKEN_LIFETIME_SECONDS
 - COV_SPECTRUM_HOST
 - COV_SPECTRUM_PORT
 - COV_SPECTRUM_NAME

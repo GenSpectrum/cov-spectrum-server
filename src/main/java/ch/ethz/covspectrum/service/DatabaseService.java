@@ -214,7 +214,8 @@ public class DatabaseService {
     public List<Distribution<String, CountAndProportionWithCI>> getAgeDistribution(
             Variant variant,
             String country,
-            float matchPercentage
+            float matchPercentage,
+            boolean usePrivateVersion
     ) throws SQLException {
         List<String> mutations = variant.getMutations().stream()
                 .map(AAMutation::getMutationCode)
@@ -282,6 +283,10 @@ public class DatabaseService {
               x.age_group,
               y.count;
         """;
+        if (usePrivateVersion) {
+            // TODO
+            sql = sql.replace("public", "private");
+        }
         try (Connection conn = getDatabaseConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
