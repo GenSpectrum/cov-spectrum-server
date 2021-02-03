@@ -6,6 +6,8 @@ services:
     container_name: cov-spectrum-server
     restart: unless-stopped
     environment:
+      - COV_SPECTRUM_JWT_SECRET=
+      - COV_SPECTRUM_JWT_TOKEN_LIFETIME_SECONDS=172800
       - COV_SPECTRUM_HOST=
       - COV_SPECTRUM_PORT=
       - COV_SPECTRUM_NAME=
