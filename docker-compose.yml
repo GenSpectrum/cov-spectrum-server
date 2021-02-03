@@ -2,7 +2,7 @@ version: '3'
 services:
 
   server:
-    image: registry.ethz.ch/sars_cov_2/cov-spectrum-server:latest
+    image: registry.ethz.ch/sars_cov_2/cov-spectrum-server:public
     container_name: cov-spectrum-server
     restart: unless-stopped
     environment:
@@ -15,12 +15,12 @@ services:
       - COV_SPECTRUM_PASSWORD=
 
   website:
-    image: registry.ethz.ch/sars_cov_2/cov-spectrum-website:latest
+    image: registry.ethz.ch/sars_cov_2/cov-spectrum-website:public
     container_name: cov-spectrum-website
     restart: unless-stopped
 
   nginx:
-    image: nginx:stable
+    image: registry.ethz.ch/sars_cov_2/third-party-containers:nginx
     container_name: cov-spectrum-nginx
     depends_on:
       - server
