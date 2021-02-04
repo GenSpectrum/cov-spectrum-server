@@ -1,8 +1,6 @@
 package ch.ethz.covspectrum.controller.plot;
 
-import ch.ethz.covspectrum.entity.api.CountAndProportionWithCI;
-import ch.ethz.covspectrum.entity.api.Distribution;
-import ch.ethz.covspectrum.entity.api.WeekAndCountry;
+import ch.ethz.covspectrum.entity.api.*;
 import ch.ethz.covspectrum.entity.core.AAMutation;
 import ch.ethz.covspectrum.entity.core.Variant;
 import ch.ethz.covspectrum.service.DatabaseService;
@@ -14,6 +12,7 @@ import org.threeten.extra.YearWeek;
 
 import java.security.Principal;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -71,6 +70,31 @@ public class VariantPlotController {
                 .collect(Collectors.toSet());
         Variant variant = new Variant(aaMutations);
         return databaseService.getInternationalTimeDistribution(variant, matchPercentage);
+    }
+
+
+    @GetMapping("/time-zip-code-distribution")
+    public List<Distribution<WeekAndZipCode, Count>> getTimeZipCodeDistribution(
+            @RequestParam String country,
+            @RequestParam String mutations,
+            @RequestParam(defaultValue = "1") float matchPercentage,
+            Principal principal
+    ) throws SQLException {
+        // Zip code is only known for Switzerland
+        if (!"Switzerland".equals(country)) {
+            return new ArrayList<>();
+        }
+
+        // All available zip code information is confidential
+        if (principal == null) {
+            return new ArrayList<>();
+        }
+
+        Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
+                .map(AAMutation::new)
+                .collect(Collectors.toSet());
+        Variant variant = new Variant(aaMutations);
+        return databaseService.getPrivateTimeZipCodeDistributionOfCH(variant, matchPercentage);
     }
 
 }

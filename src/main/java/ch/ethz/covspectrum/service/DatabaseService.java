@@ -1,8 +1,6 @@
 package ch.ethz.covspectrum.service;
 
-import ch.ethz.covspectrum.entity.api.CountAndProportionWithCI;
-import ch.ethz.covspectrum.entity.api.Distribution;
-import ch.ethz.covspectrum.entity.api.WeekAndCountry;
+import ch.ethz.covspectrum.entity.api.*;
 import ch.ethz.covspectrum.entity.core.AAMutation;
 import ch.ethz.covspectrum.entity.core.SampleFull;
 import ch.ethz.covspectrum.entity.core.SampleName;
@@ -427,4 +425,60 @@ public class DatabaseService {
         }
     }
 
+
+    public List<Distribution<WeekAndZipCode, Count>> getPrivateTimeZipCodeDistributionOfCH(
+            Variant variant,
+            float matchPercentage
+    ) throws SQLException {
+        List<String> mutations = variant.getMutations().stream()
+                .map(AAMutation::getMutationCode)
+                .collect(Collectors.toList());
+        String sql = """
+            select
+              extract(isoyear from x.date) as year,
+              extract(week from x.date) as week,
+              x.zip_code,
+              count(*) as count
+            from
+              (
+                select
+                  s.sequence_name,
+                  s.zip_code,
+                  s.date
+                from
+                  spectrum_sequence_private_meta s
+                  join spectrum_sequence_private_mutation_aa m on s.sequence_name = m.sequence_name
+                where
+                    m.aa_mutation = any(?::text[])
+                    and s.country = 'Switzerland'
+                    and s.zip_code is not null
+                group by
+                  s.sequence_name, s.zip_code, s.date
+                having count(*) >= ?
+              ) x
+            group by
+              x.zip_code,
+              extract(isoyear from x.date),
+              extract(week from x.date);
+        """;
+        try (Connection conn = getDatabaseConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
+            statement.setFloat(2, mutations.size() * matchPercentage);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Distribution<WeekAndZipCode, Count>> result = new ArrayList<>();
+                while (rs.next()) {
+                    Distribution<WeekAndZipCode, Count> d = new Distribution<>(
+                            new WeekAndZipCode(
+                                    YearWeek.of(rs.getInt("year"), rs.getInt("week")),
+                                    rs.getString("zip_code")
+                            ),
+                            new Count(rs.getInt("count"))
+                    );
+                    result.add(d);
+                }
+                return result;
+            }
+        }
+    }
 }
