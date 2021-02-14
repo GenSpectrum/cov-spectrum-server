@@ -181,7 +181,7 @@ public class DatabaseService {
                 group by
                   extract(isoyear from gs.date),
                   extract(week from gs.date)
-              ) y on extract(year from x.date) = y.year and extract(week from x.date) = y.week
+              ) y on extract(isoyear from x.date) = y.year and extract(week from x.date) = y.week
             group by
               extract(isoyear from x.date),
               extract(week from x.date),
@@ -347,7 +347,7 @@ public class DatabaseService {
                   extract(isoyear from s.date),
                   extract(week from s.date)
               ) y on x.country = y.country
-                       and extract(year from x.date) = y.year
+                       and extract(isoyear from x.date) = y.year
                        and extract(week from x.date) = y.week
             group by
               x.country,
