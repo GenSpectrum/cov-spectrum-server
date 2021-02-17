@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +34,8 @@ public class SampleResourceController {
     public ResultList<SampleFull> getSamples(
             @RequestParam(required = false) String country,
             @RequestParam String mutations,
-            @RequestParam(defaultValue = "1") float matchPercentage
+            @RequestParam(defaultValue = "1") float matchPercentage,
+            Principal principal
     ) throws SQLException {
         int TOTAL_RETURN_NUMBER = 1000;  // I don't want to return too much right now...
 
@@ -41,7 +43,8 @@ public class SampleResourceController {
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());;
         Variant variant = new Variant(aaMutations);
-        List<SampleFull> samples = databaseService.getSamples(variant, matchPercentage);
+        List<SampleFull> samples = databaseService.getSamples(variant, matchPercentage,
+                principal != null);
         if (country != null) {
             samples = samples.stream().filter(s -> country.equals(s.getCountry())).collect(Collectors.toList());
         }

@@ -1,10 +1,7 @@
 package ch.ethz.covspectrum.service;
 
 import ch.ethz.covspectrum.entity.api.*;
-import ch.ethz.covspectrum.entity.core.AAMutation;
-import ch.ethz.covspectrum.entity.core.SampleFull;
-import ch.ethz.covspectrum.entity.core.SampleName;
-import ch.ethz.covspectrum.entity.core.Variant;
+import ch.ethz.covspectrum.entity.core.*;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.javatuples.Pair;
 import org.springframework.stereotype.Service;
@@ -377,7 +374,11 @@ public class DatabaseService {
     }
 
 
-    public List<SampleFull> getSamples(Variant variant, float matchPercentage) throws SQLException {
+    public List<SampleFull> getSamples(
+            Variant variant,
+            float matchPercentage,
+            boolean usePrivateVersion
+    ) throws SQLException {
         List<String> mutations = variant.getMutations().stream()
                 .map(AAMutation::getMutationCode)
                 .collect(Collectors.toList());
@@ -386,6 +387,12 @@ public class DatabaseService {
               s.sequence_name,
               s.country,
               s.date,
+              s.division,
+              s.location,
+              s.zip_code,
+              s.host,
+              s.age,
+              s.sex,
               x.mutations
             from
               (
@@ -405,6 +412,10 @@ public class DatabaseService {
               ) x
               join spectrum_sequence_public_meta s on x.sequence_name = s.sequence_name;
         """;
+        if (usePrivateVersion) {
+            // TODO
+            sql = sql.replace("public", "private");
+        }
         try (Connection conn = getDatabaseConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
@@ -414,9 +425,21 @@ public class DatabaseService {
                 while (rs.next()) {
                     List<AAMutation> ms = Arrays.stream(rs.getString("mutations").split(","))
                             .map(AAMutation::new).collect(Collectors.toList());
+                    SamplePrivateMetadata privateMetadata = null;
+                    if (usePrivateVersion) {
+                        privateMetadata = new SamplePrivateMetadata(
+                                rs.getString("country"),
+                                rs.getString("division"),
+                                rs.getString("location"),
+                                rs.getString("zip_code"),
+                                rs.getString("host"),
+                                rs.getInt("age"),
+                                rs.getString("sex")
+                        );
+                    }
                     SampleFull s = new SampleFull(
                             rs.getString("sequence_name"), rs.getString("country"),
-                            rs.getObject("date", LocalDate.class), ms
+                            rs.getObject("date", LocalDate.class), ms, privateMetadata
                     );
                     result.add(s);
                 }
