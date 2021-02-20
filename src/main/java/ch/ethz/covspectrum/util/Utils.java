@@ -1,5 +1,7 @@
 package ch.ethz.covspectrum.util;
 
+import ch.ethz.covspectrum.entity.core.SampleSequence;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -42,5 +44,18 @@ public class Utils {
         union.addAll(set2);
         union.removeAll(intersection);
         return union;
+    }
+
+
+    public static String toFasta(Iterable<SampleSequence> sampleSequences) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (SampleSequence sampleSequence : sampleSequences) {
+            stringBuilder.append("> ");
+            stringBuilder.append(sampleSequence.getSampleName());
+            stringBuilder.append("\n");
+            stringBuilder.append(sampleSequence.getSampleSequence());
+            stringBuilder.append("\n\n");
+        }
+        return stringBuilder.toString();
     }
 }

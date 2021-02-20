@@ -449,6 +449,54 @@ public class DatabaseService {
     }
 
 
+    public List<SampleSequence> getSampleSequences(
+            List<SampleName> sampleNames
+    ) throws SQLException {
+        // If the sample name begins with "UNRELEASED_ETHZ_", the sequence has to be looked up in consensus_sequence,
+        // otherwise, it is in gisaid_sequence.
+        List<Integer> ethids = new ArrayList<>();
+        List<String> gisaid_epi_isls = new ArrayList<>();
+        for (SampleName sampleName : sampleNames) {
+            String s = sampleName.getName();
+            if (s.startsWith("UNRELEASED_ETHZ_")) {
+                ethids.add(Integer.parseInt(s.substring(16)));
+            } else {
+                gisaid_epi_isls.add(s);
+            }
+        }
+
+        String sql = """
+            select
+              'UNRELEASED_ETHZ_' || cs.ethid as sample_name,
+              cs.seq as sequence
+            from consensus_sequence cs
+            where ethid = any(?::int[])
+            union all
+            select
+              gs.gisaid_epi_isl as sample_name,
+              gs.original_seq as sequence
+            from gisaid_sequence gs
+            where gisaid_epi_isl = any(?::text[]);
+        """;
+        try (Connection conn = getDatabaseConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setArray(1, conn.createArrayOf("int", ethids.toArray()));
+            statement.setArray(2, conn.createArrayOf("text", gisaid_epi_isls.toArray()));
+            try (ResultSet rs = statement.executeQuery()) {
+                List<SampleSequence> result = new ArrayList<>();
+                while (rs.next()) {
+                    SampleSequence s = new SampleSequence(
+                            rs.getString("sample_name"),
+                            rs.getString("sequence")
+                    );
+                    result.add(s);
+                }
+                return result;
+            }
+        }
+    }
+
+
     public List<Distribution<WeekAndZipCode, Count>> getPrivateTimeZipCodeDistributionOfCH(
             Variant variant,
             float matchPercentage

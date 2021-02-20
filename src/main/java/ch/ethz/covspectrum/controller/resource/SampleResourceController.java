@@ -1,10 +1,9 @@
 package ch.ethz.covspectrum.controller.resource;
 
-import ch.ethz.covspectrum.entity.core.AAMutation;
-import ch.ethz.covspectrum.entity.core.SampleFull;
-import ch.ethz.covspectrum.entity.core.Variant;
+import ch.ethz.covspectrum.entity.core.*;
 import ch.ethz.covspectrum.entity.api.ResultList;
 import ch.ethz.covspectrum.service.DatabaseService;
+import ch.ethz.covspectrum.util.Utils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,7 +18,7 @@ import java.util.stream.Collectors;
 
 
 @RestController
-@RequestMapping("/resource/sample")
+@RequestMapping("/resource")
 public class SampleResourceController {
 
     private final DatabaseService databaseService;
@@ -30,7 +29,7 @@ public class SampleResourceController {
     }
 
 
-    @GetMapping("")
+    @GetMapping("/sample")
     public ResultList<SampleFull> getSamples(
             @RequestParam(required = false) String country,
             @RequestParam String mutations,
@@ -53,6 +52,25 @@ public class SampleResourceController {
             samples = samples.subList(0, TOTAL_RETURN_NUMBER);
         }
         return new ResultList<>(totalNumber, samples);
+    }
+
+
+    @GetMapping("/sample-fasta")
+    public String getFasta(
+            @RequestParam(required = false) String country,
+            @RequestParam String mutations,
+            @RequestParam(defaultValue = "1") float matchPercentage,
+            Principal principal
+    ) throws SQLException {
+        if (principal == null) {
+            return "";
+        }
+        List<SampleFull> samples = this.getSamples(country, mutations, matchPercentage, principal).getData();
+        List<SampleName> names = samples.stream()
+                .map(s -> new SampleName(s.getName()))
+                .collect(Collectors.toList());
+        List<SampleSequence> sequences = databaseService.getSampleSequences(names);
+        return Utils.toFasta(sequences);
     }
 
 }
