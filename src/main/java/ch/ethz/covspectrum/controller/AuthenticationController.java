@@ -7,6 +7,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 
 
 @RestController
@@ -37,6 +38,23 @@ public class AuthenticationController {
         authenticate(authenticationRequest.getUsername(), authenticationRequest.getPassword());
         UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequest.getUsername());
         String token = jwtTokenService.generateToken(userDetails);
+        return new JwtResponse(token);
+    }
+
+
+    /**
+     * Creates a JWT token for the current user that lasts 3 minutes. If the endpoint is called by a not-logged-in
+     * user, null will be returned.
+     */
+    @RequestMapping(value = "/create-temporary-jwt", method = RequestMethod.POST)
+    public JwtResponse createTemporaryJwt(
+            Principal principal
+    ) {
+        if (principal == null) {
+            return null;
+        }
+        UserDetails userDetails = userDetailsService.loadUserByUsername(principal.getName());
+        String token = jwtTokenService.generateToken(userDetails, 3 * 60);
         return new JwtResponse(token);
     }
 
