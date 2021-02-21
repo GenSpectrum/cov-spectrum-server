@@ -4,6 +4,7 @@ FROM openjdk:15 AS builder
 WORKDIR /build/
 
 COPY . .
+RUN chmod +x ./gradlew
 RUN ./gradlew clean build -x test
 
 
@@ -16,3 +17,4 @@ COPY --from=builder /build/build/libs /app
 
 EXPOSE 30000
 ENTRYPOINT ["java", "-jar", "/app/cov-spectrum.jar"]
+
