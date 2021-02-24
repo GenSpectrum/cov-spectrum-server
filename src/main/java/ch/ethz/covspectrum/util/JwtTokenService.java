@@ -36,7 +36,11 @@ public class JwtTokenService {
 
 
     public String generateToken(UserDetails userDetails, long tokenLifetimeSeconds) {
-        Map<String, Object> claims = new HashMap<>();
+        return generateToken(userDetails, tokenLifetimeSeconds, new HashMap<>());
+    }
+
+
+    public String generateToken(UserDetails userDetails, long tokenLifetimeSeconds, Map<String, Object> claims) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
@@ -50,6 +54,15 @@ public class JwtTokenService {
     public boolean validateToken(String token, UserDetails userDetails) {
         final String username = getUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+
+    public String getRestrictionEndpoint(String token) {
+        Object restrictionEndpoint = getAllClaimsFromToken(token).get("restriction_endpoint");
+        if (restrictionEndpoint == null) {
+            return null;
+        }
+        return (String) restrictionEndpoint;
     }
 
 

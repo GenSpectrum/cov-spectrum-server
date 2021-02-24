@@ -54,8 +54,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         if (jwtToken != null) {
             try {
-                String username = jwtTokenService.getUsername(jwtToken);
+                String restrictionEndpoint = jwtTokenService.getRestrictionEndpoint(jwtToken);
+                if (restrictionEndpoint != null && !restrictionEndpoint.equals(request.getRequestURI())) {
+                    response.setStatus(401);
+                    return;
+                }
 
+                String username = jwtTokenService.getUsername(jwtToken);
                 UserDetails userDetails = this.jwtUserDetailsService.loadUserByUsername(username);
                 if (jwtTokenService.validateToken(jwtToken, userDetails)) {
                     var usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(

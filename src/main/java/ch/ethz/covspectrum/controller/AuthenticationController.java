@@ -8,6 +8,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @RestController
@@ -43,18 +45,23 @@ public class AuthenticationController {
 
 
     /**
-     * Creates a JWT token for the current user that lasts 3 minutes. If the endpoint is called by a not-logged-in
-     * user, null will be returned.
+     * Creates a JWT token for the current user that lasts 3 minutes and only allows access to a defined endpoint (not
+     * exact path, i.e., that query params are ignored).
+     * If the endpoint is called by a not-logged-in user, null will be returned.
      */
     @RequestMapping(value = "/create-temporary-jwt", method = RequestMethod.POST)
     public JwtResponse createTemporaryJwt(
+            @RequestParam String restrictionEndpoint,
             Principal principal
     ) {
         if (principal == null) {
             return null;
         }
         UserDetails userDetails = userDetailsService.loadUserByUsername(principal.getName());
-        String token = jwtTokenService.generateToken(userDetails, 3 * 60);
+        Map<String, Object> claims = new HashMap<>() {{
+            put("restriction_endpoint", restrictionEndpoint);
+        }};
+        String token = jwtTokenService.generateToken(userDetails, 3 * 60, claims);
         return new JwtResponse(token);
     }
 
