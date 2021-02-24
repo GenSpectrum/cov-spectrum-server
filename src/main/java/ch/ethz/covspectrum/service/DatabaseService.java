@@ -393,6 +393,8 @@ public class DatabaseService {
               s.host,
               s.age,
               s.sex,
+              s.submitting_lab,
+              s.originating_lab,
               x.mutations
             from
               (
@@ -434,7 +436,9 @@ public class DatabaseService {
                                 rs.getString("zip_code"),
                                 rs.getString("host"),
                                 rs.getInt("age"),
-                                rs.getString("sex")
+                                rs.getString("sex"),
+                                rs.getString("submitting_lab"),
+                                rs.getString("originating_lab")
                         );
                     }
                     SampleFull s = new SampleFull(

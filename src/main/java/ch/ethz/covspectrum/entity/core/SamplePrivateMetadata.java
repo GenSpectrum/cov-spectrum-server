@@ -17,6 +17,10 @@ public class SamplePrivateMetadata {
 
     private final String sex;
 
+    private final String submittingLab;
+
+    private final String originatingLab;
+
 
     public SamplePrivateMetadata(
             String country,
@@ -25,7 +29,9 @@ public class SamplePrivateMetadata {
             String zipCode,
             String host,
             int age,
-            String sex
+            String sex,
+            String submittingLab,
+            String originatingLab
     ) {
         this.country = country;
         this.division = division;
@@ -34,6 +40,8 @@ public class SamplePrivateMetadata {
         this.host = host;
         this.age = age;
         this.sex = sex;
+        this.submittingLab = submittingLab;
+        this.originatingLab = originatingLab;
     }
 
 
@@ -69,5 +77,15 @@ public class SamplePrivateMetadata {
 
     public String getSex() {
         return sex;
+    }
+
+
+    public String getSubmittingLab() {
+        return submittingLab;
+    }
+
+
+    public String getOriginatingLab() {
+        return originatingLab;
     }
 }
