@@ -62,14 +62,11 @@ public class SampleResourceController {
             @RequestParam(defaultValue = "1") float matchPercentage,
             Principal principal
     ) throws SQLException {
-        if (principal == null) {
-            return "";
-        }
         List<SampleFull> samples = this.getSamples(country, mutations, matchPercentage, principal).getData();
         List<SampleName> names = samples.stream()
                 .map(s -> new SampleName(s.getName()))
                 .collect(Collectors.toList());
-        List<SampleSequence> sequences = databaseService.getSampleSequences(names);
+        List<SampleSequence> sequences = databaseService.getSampleSequences(names, principal != null);
         return Utils.toFasta(sequences);
     }
 

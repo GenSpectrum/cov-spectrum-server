@@ -454,7 +454,8 @@ public class DatabaseService {
 
 
     public List<SampleSequence> getSampleSequences(
-            List<SampleName> sampleNames
+            List<SampleName> sampleNames,
+            boolean usePrivateVersion
     ) throws SQLException {
         // If the sample name begins with "UNRELEASED_ETHZ_", the sequence has to be looked up in consensus_sequence,
         // otherwise, it is in gisaid_sequence.
@@ -469,7 +470,9 @@ public class DatabaseService {
             }
         }
 
-        String sql = """
+        String sql;
+        if (usePrivateVersion) {
+            sql = """
             select
               'UNRELEASED_ETHZ_' || cs.ethid as sample_name,
               cs.seq as sequence
@@ -482,6 +485,23 @@ public class DatabaseService {
             from gisaid_sequence gs
             where gisaid_epi_isl = any(?::text[]);
         """;
+        } else {
+            sql = """
+            select
+              'UNRELEASED_ETHZ_' || cs.ethid as sample_name,
+              cs.seq as sequence
+            from consensus_sequence cs
+            where ethid = any(?::int[])
+            union all
+            select
+              gs.gisaid_epi_isl as sample_name,
+              gs.original_seq as sequence
+            from gisaid_sequence gs
+            where
+                gisaid_epi_isl = any(?::text[])
+                and submitting_lab = 'Department of Biosystems Science and Engineering, ETH Zürich';
+        """;
+        }
         try (Connection conn = getDatabaseConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setArray(1, conn.createArrayOf("int", ethids.toArray()));
