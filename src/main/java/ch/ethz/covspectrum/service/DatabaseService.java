@@ -139,7 +139,69 @@ public class DatabaseService {
     }
 
 
-    public List<Distribution<YearWeek, CountAndProportionWithCI>> getTimeDistribution(
+    public List<Distribution<LocalDate, CountAndProportionWithCI>> getDailyTimeDistribution(
+            Variant variant,
+            String country,
+            float matchPercentage
+    ) throws SQLException {
+        List<String> mutations = variant.getMutations().stream()
+                .map(AAMutation::getMutationCode)
+                .collect(Collectors.toList());
+        String sql = """
+            select
+              x.date as date,
+              count(*) as count,
+              y.count as total
+            from
+              (
+                select
+                  s.sequence_name,
+                  s.date,
+                  s.age,
+                  s.division
+                from
+                  spectrum_sequence_public_meta s
+                  join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
+                where m.aa_mutation = any(?) and country = ?
+                group by
+                  s.sequence_name, s.date, s.age, s.division
+                having count(*) >= ?
+              ) x
+              join (
+                select
+                  gs.date as date,
+                  count(*) as count
+                from spectrum_sequence_public_meta gs
+                where country = ?
+                group by gs.date
+              ) y on x.date = y.date
+            group by
+              x.date,
+              y.count;
+        """;
+        try (Connection conn = getDatabaseConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
+            statement.setString(2, country);
+            statement.setFloat(3, mutations.size() * matchPercentage);
+            statement.setString(4, country);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Distribution<LocalDate, CountAndProportionWithCI>> result = new ArrayList<>();
+                while (rs.next()) {
+                    Distribution<LocalDate, CountAndProportionWithCI> d = new Distribution<>(
+                            rs.getDate("date").toLocalDate(),
+                            CountAndProportionWithCI.fromWilsonCI(
+                                    rs.getInt("count"), rs.getInt("total"))
+                    );
+                    result.add(d);
+                }
+                return result;
+            }
+        }
+    }
+
+
+    public List<Distribution<YearWeek, CountAndProportionWithCI>> getWeeklyTimeDistribution(
             Variant variant,
             String country,
             float matchPercentage

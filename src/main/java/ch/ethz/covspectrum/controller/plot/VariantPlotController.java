@@ -41,7 +41,7 @@ public class VariantPlotController {
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());
         Variant variant = new Variant(aaMutations);
-        return databaseService.getTimeDistribution(variant, country, matchPercentage);
+        return databaseService.getWeeklyTimeDistribution(variant, country, matchPercentage);
     }
 
 
