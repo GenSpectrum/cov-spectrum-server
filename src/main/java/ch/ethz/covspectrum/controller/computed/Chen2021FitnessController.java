@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 public class Chen2021FitnessController {
 
     public final String ENDPOINT = "http://cov-spectrum-model-chen2021Fitness:7070";
-//    public final String ENDPOINT = "http://localhost:7070";
 
     private final DatabaseService databaseService;
 
@@ -46,10 +45,10 @@ public class Chen2021FitnessController {
             @RequestParam(defaultValue = "1") float matchPercentage,
             @RequestParam(defaultValue = "0.95") float alpha,
             @RequestParam(defaultValue = "4.8") float generationTime,
-            @RequestParam(defaultValue = "1") float reproductionNumberWildType,
+            @RequestParam(defaultValue = "1") float reproductionNumberWildtype,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate plotStartDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate plotEndDate,
-            @RequestParam(defaultValue = "1000") int initialWildTypeCases,
+            @RequestParam(defaultValue = "1000") int initialWildtypeCases,
             @RequestParam(defaultValue = "100") int initialVariantCases
     ) throws IOException, SQLException {
         // Get input data for the model
@@ -95,10 +94,10 @@ public class Chen2021FitnessController {
                 new Request.InnerData(t, n, k),
                 alpha,
                 generationTime,
-                reproductionNumberWildType,
+                reproductionNumberWildtype,
                 plotStartT,
                 (int) ChronoUnit.DAYS.between(t0Date, plotEndDate),
-                initialWildTypeCases,
+                initialWildtypeCases,
                 initialVariantCases
         );
         String json = new ObjectMapper().writeValueAsString(request);
