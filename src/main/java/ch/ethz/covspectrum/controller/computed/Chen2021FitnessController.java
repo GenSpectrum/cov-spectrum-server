@@ -39,7 +39,7 @@ public class Chen2021FitnessController {
 
 
     @GetMapping
-    public ApiResponse compute(
+    public Optional<ApiResponse> compute(
             @RequestParam String country,
             @RequestParam String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage,
@@ -57,8 +57,8 @@ public class Chen2021FitnessController {
                 .collect(Collectors.toSet());
         Variant variant = new Variant(aaMutations);
         var dailyTimeDistribution = databaseService.getDailyTimeDistribution(variant, country, matchPercentage);
-        if (dailyTimeDistribution.isEmpty()) {
-            return null;
+        if (dailyTimeDistribution.size() < 3) {
+            return Optional.empty();
         }
 
         // We need a mapping from calendar days to t. I.e., we need a day that is t=0. This shall be the minimum of
@@ -107,7 +107,7 @@ public class Chen2021FitnessController {
         Response response = new ObjectMapper().readValue(responseString, Response.class);
 
         // Return result
-        return new ApiResponse(
+        ApiResponse apiResponse = new ApiResponse(
                 new ApiResponse.Daily(
                         t2LocalDate(response.getDaily().getT(), t0Date),
                         response.getDaily().getProportion(),
@@ -148,6 +148,7 @@ public class Chen2021FitnessController {
                         response.getPlot_proportion().getCi_upper()
                 )
         );
+        return Optional.of(apiResponse);
     }
 
 
