@@ -149,8 +149,8 @@ public class DatabaseService {
                 .collect(Collectors.toList());
         String sql = """
             select
-              x.date as date,
-              count(*) as count,
+              y.date as date,
+              sum(case when sequence_name is not null then 1 else 0 end) as count,
               y.count as total
             from
               (
@@ -167,16 +167,16 @@ public class DatabaseService {
                   s.sequence_name, s.date, s.age, s.division
                 having count(*) >= ?
               ) x
-              join (
+              right join (
                 select
                   gs.date as date,
                   count(*) as count
                 from spectrum_sequence_public_meta gs
-                where country = ?
+                where country = ? and gs.date is not null
                 group by gs.date
               ) y on x.date = y.date
             group by
-              x.date,
+              y.date,
               y.count;
         """;
         try (Connection conn = getDatabaseConnection();
