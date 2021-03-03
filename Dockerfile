@@ -16,5 +16,5 @@ WORKDIR /app
 COPY --from=builder /build/build/libs /app
 
 EXPOSE 30000
-ENTRYPOINT ["java", "-jar", "/app/cov-spectrum.jar"]
+ENTRYPOINT ["java", "-Xmx3g", "-jar", "/app/cov-spectrum.jar"]
 
