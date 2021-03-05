@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 @Service
 public class DatabaseService {
 
+    public static final String BSSE = "Department of Biosystems Science and Engineering, ETH Zürich";
     private static final ComboPooledDataSource pool = new ComboPooledDataSource();
 
     static {
@@ -502,6 +503,9 @@ public class DatabaseService {
                                 rs.getString("submitting_lab"),
                                 rs.getString("originating_lab")
                         );
+                    }
+                    if (!usePrivateVersion && !BSSE.equals(rs.getString("submitting_lab"))) {
+                        ms = null;
                     }
                     SampleFull s = new SampleFull(
                             rs.getString("sequence_name"), rs.getString("country"),
