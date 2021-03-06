@@ -642,4 +642,37 @@ public class DatabaseService {
             }
         }
     }
+
+
+    public List<Distribution<YearWeek, CasesAndSequences>> getTimeIntensityDistribution(String country)
+            throws SQLException {
+        String sql = """
+            select
+              extract(isoyear from date) as year,
+              extract(week from date) as week,
+              sum(coalesce(cases, 0)) as cases,
+              sum(coalesce(sequenced, 0)) as sequenced
+            from spectrum_sequence_intensity
+            where
+              extract(isoyear from date) >= 2020
+              and country = ?
+            group by year, week
+            order by year, week;
+        """;
+        try (Connection conn = getDatabaseConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setString(1, country);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Distribution<YearWeek, CasesAndSequences>> result = new ArrayList<>();
+                while (rs.next()) {
+                    Distribution<YearWeek, CasesAndSequences> d = new Distribution<>(
+                            YearWeek.of(rs.getInt("year"), rs.getInt("week")),
+                            new CasesAndSequences(rs.getInt("cases"), rs.getInt("sequenced"))
+                    );
+                    result.add(d);
+                }
+                return result;
+            }
+        }
+    }
 }
