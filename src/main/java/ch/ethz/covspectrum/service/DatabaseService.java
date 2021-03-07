@@ -64,7 +64,8 @@ public class DatabaseService {
         String sql = """
                     select variant_name, string_agg(aa_mutation, ',') as mutations
                     from variant_mutation_aa
-                    group by variant_name;
+                    group by variant_name
+                    order by variant_name;
                 """;
         try (Connection conn = getDatabaseConnection();
              Statement statement = conn.createStatement()) {
