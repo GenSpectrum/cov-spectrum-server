@@ -4,11 +4,15 @@ import ch.ethz.covspectrum.entity.api.*;
 import ch.ethz.covspectrum.entity.core.*;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.javatuples.Pair;
+import org.jooq.*;
+import org.jooq.covspectrum.Tables;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Service;
 import org.threeten.extra.YearWeek;
 
 import java.beans.PropertyVetoException;
 import java.sql.*;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,21 +45,20 @@ public class DatabaseService {
     }
 
 
+    public DSLContext getDSL(Connection connection) {
+        return DSL.using(connection, SQLDialect.POSTGRES);
+    }
+
+
     public List<String> getCountryNames() throws SQLException {
-        String sql = """
-                    select distinct country
-                    from spectrum_sequence_public_meta
-                    order by country;
-                """;
-        try (Connection conn = getDatabaseConnection();
-             Statement statement = conn.createStatement()) {
-            try (ResultSet rs = statement.executeQuery(sql)) {
-                List<String> result = new ArrayList<>();
-                while (rs.next()) {
-                    result.add(rs.getString("country"));
-                }
-                return result;
-            }
+        try (Connection conn = getDatabaseConnection()) {
+            DSLContext dsl = getDSL(conn);
+            var statement = dsl
+                    .selectDistinct(Tables.SPECTRUM_SEQUENCE_PUBLIC_META.COUNTRY)
+                    .from(Tables.SPECTRUM_SEQUENCE_PUBLIC_META)
+                    .orderBy(Tables.SPECTRUM_SEQUENCE_PUBLIC_META.COUNTRY);
+            return statement.fetch()
+                    .map(r -> r.getValue(r.field1()));
         }
     }
 

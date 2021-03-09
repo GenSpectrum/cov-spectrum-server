@@ -21,6 +21,7 @@ dependencies {
 	implementation 'javax.xml.bind:jaxb-api:2.4.0-b180830.0359'
 	implementation 'org.apache.commons:commons-math3:3.6.1'
 	implementation 'org.javatuples:javatuples:1.2'
+	implementation 'org.jooq:jooq:3.14.8'
 	implementation 'org.postgresql:postgresql'
 	implementation 'org.threeten:threeten-extra:1.5.0'
 
