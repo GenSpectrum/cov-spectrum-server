@@ -234,7 +234,10 @@ public class DatabaseService {
             var countPerAgeGroup = ctx
                     .select(MyDSL.fAgeGroup(metaTbl), DSL.count().as("count"))
                     .from(metaTbl)
-                    .where(MyDSL.countryConstantEq(metaTbl, country))
+                    .where(
+                            MyDSL.countryConstantEq(metaTbl, country),
+                            MyDSL.fAgeGroup(metaTbl).isNotNull()
+                    )
                     .groupBy(MyDSL.fAgeGroup(metaTbl))
                     .asTable("countPerAgeGroup");
             var statement = ctx
