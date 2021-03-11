@@ -524,7 +524,6 @@ public class DatabaseService {
             String country,
             DataType dataType
     ) throws SQLException {
-        // TODO use dataType
         String sql = """
             select
               extract(isoyear from date) as year,
@@ -538,6 +537,9 @@ public class DatabaseService {
             group by year, week
             order by year, week;
         """;
+        if (dataType == DataType.SURVEILLANCE) {
+            sql = sql.replace("spectrum_sequence_intensity", "spectrum_sequence_intensity_surveillance");
+        }
         try (Connection conn = getDatabaseConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setString(1, country);
