@@ -2,6 +2,7 @@ package ch.ethz.covspectrum.controller.plot;
 
 import ch.ethz.covspectrum.entity.api.CasesAndSequences;
 import ch.ethz.covspectrum.entity.api.Distribution;
+import ch.ethz.covspectrum.entity.core.DataType;
 import ch.ethz.covspectrum.service.DatabaseService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,9 +28,10 @@ public class SequencingPlotController {
 
     @GetMapping("/time-intensity-distribution")
     public List<Distribution<YearWeek, CasesAndSequences>> getTimeIntensityDistribution(
-            @RequestParam String country
+            @RequestParam String country,
+            @RequestParam(required = false) DataType dataType
     ) throws SQLException {
-        return databaseService.getTimeIntensityDistribution(country);
+        return databaseService.getTimeIntensityDistribution(country, dataType);
     }
 
 }

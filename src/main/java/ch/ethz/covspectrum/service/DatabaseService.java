@@ -2,6 +2,7 @@ package ch.ethz.covspectrum.service;
 
 import ch.ethz.covspectrum.entity.api.*;
 import ch.ethz.covspectrum.entity.core.*;
+import ch.ethz.covspectrum.entity.core.DataType;
 import ch.ethz.covspectrum.jooq.MyDSL;
 import ch.ethz.covspectrum.jooq.SpectrumMetadataTable;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 public class DatabaseService {
 
     public static final String BSSE = "Department of Biosystems Science and Engineering, ETH Zürich";
+    public static final String HUG = "HUG, Laboratory of Virology and the Health2030 Genome Center";
     private static final ComboPooledDataSource pool = new ComboPooledDataSource();
 
     static {
@@ -57,7 +59,7 @@ public class DatabaseService {
     public List<String> getCountryNames() throws SQLException {
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
-            Table<?> metaTbl = getMetaTable(ctx, false);
+            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection(false));
             var statement = ctx
                     .selectDistinct(MyDSL.fCountry(metaTbl))
                     .from(metaTbl)
@@ -93,7 +95,7 @@ public class DatabaseService {
     public int getNumberSequences(YearWeek week, String country) throws SQLException {
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
-            var metaTbl = getMetaTable(ctx, false);
+            var metaTbl = getMetaTable(ctx, new SampleSelection(false));
             var statement = ctx
                     .select(DSL.count().as("count"))
                     .from(metaTbl)
@@ -110,7 +112,7 @@ public class DatabaseService {
         int MINIMAL_NUMBER_OF_SAMPLES = 5;
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
-            var metaTbl = getMetaTable(ctx, false);
+            var metaTbl = getMetaTable(ctx, new SampleSelection(false));
             var mutTbl = getMutTable(ctx, false);
             var statement = ctx
                     .select(
@@ -137,13 +139,14 @@ public class DatabaseService {
     public List<Distribution<LocalDate, CountAndProportionWithCI>> getDailyTimeDistribution(
             Variant variant,
             String country,
-            float matchPercentage
+            float matchPercentage,
+            DataType dataType
     ) throws SQLException {
-        SampleSelection selection = new SampleSelection(false, variant, country, matchPercentage);
+        SampleSelection selection = new SampleSelection(false, variant, country, matchPercentage, dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             Table<?> matchedSequences = getMetaTable(ctx, selection);
-            Table<?> metaTbl = getMetaTable(ctx, false);
+            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection(false, dataType));
             Table<?> countPerDate = ctx
                     .select(
                             MyDSL.fDate(metaTbl),
@@ -184,13 +187,14 @@ public class DatabaseService {
     public List<Distribution<YearWeek, CountAndProportionWithCI>> getWeeklyTimeDistribution(
             Variant variant,
             String country,
-            float matchPercentage
+            float matchPercentage,
+            DataType dataType
     ) throws SQLException {
-        SampleSelection selection = new SampleSelection(false, variant, country, matchPercentage);
+        SampleSelection selection = new SampleSelection(false, variant, country, matchPercentage, dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             var sequences = getMetaTable(ctx, selection);
-            Table<?> metaTbl = getMetaTable(ctx, false);
+            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection(false, dataType));
             Table<?> countPerYearWeek = ctx
                     .select(
                             MyDSL.extractIsoYear(MyDSL.fDate(metaTbl)).as("year"),
@@ -236,12 +240,13 @@ public class DatabaseService {
             Variant variant,
             String country,
             float matchPercentage,
-            boolean usePrivateVersion
+            boolean usePrivateVersion,
+            DataType dataType
     ) throws SQLException {
-        SampleSelection selection = new SampleSelection(usePrivateVersion, variant, country, matchPercentage);
+        SampleSelection selection = new SampleSelection(usePrivateVersion, variant, country, matchPercentage, dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
-            Table<?> metaTbl = getMetaTable(ctx, usePrivateVersion);
+            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection(usePrivateVersion, dataType));
             var sequences = getMetaTable(ctx, selection).as("meta");
             var groupedByAgeGroup = ctx
                     .select(MyDSL.fAgeGroup(sequences), DSL.count().as("count"))
@@ -344,9 +349,10 @@ public class DatabaseService {
     public List<SampleFull> getSamples(
             Variant variant,
             float matchPercentage,
-            boolean usePrivateVersion
+            boolean usePrivateVersion,
+            DataType dataType
     ) throws SQLException {
-        return getSamples(variant, null, matchPercentage, usePrivateVersion);
+        return getSamples(variant, null, matchPercentage, usePrivateVersion, dataType);
     }
 
 
@@ -354,9 +360,10 @@ public class DatabaseService {
             Variant variant,
             String country,
             float matchPercentage,
-            boolean usePrivateVersion
+            boolean usePrivateVersion,
+            DataType dataType
     ) throws SQLException {
-        SampleSelection selection = new SampleSelection(usePrivateVersion, variant, country, matchPercentage);
+        SampleSelection selection = new SampleSelection(usePrivateVersion, variant, country, matchPercentage, dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             Table<?> mutTbl = getMutTable(ctx, usePrivateVersion);
@@ -499,9 +506,10 @@ public class DatabaseService {
 
     public List<Distribution<WeekAndZipCode, Count>> getPrivateTimeZipCodeDistributionOfCH(
             Variant variant,
-            float matchPercentage
+            float matchPercentage,
+            DataType dataType
     ) throws SQLException {
-        SampleSelection selection = new SampleSelection(true, variant, "Switzerland", matchPercentage);
+        SampleSelection selection = new SampleSelection(true, variant, "Switzerland", matchPercentage, dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             var sequences = getMetaTable(ctx, selection).as("meta");
@@ -531,8 +539,11 @@ public class DatabaseService {
     }
 
 
-    public List<Distribution<YearWeek, CasesAndSequences>> getTimeIntensityDistribution(String country)
-            throws SQLException {
+    public List<Distribution<YearWeek, CasesAndSequences>> getTimeIntensityDistribution(
+            String country,
+            DataType dataType
+    ) throws SQLException {
+        // TODO use dataType
         String sql = """
             select
               extract(isoyear from date) as year,
@@ -564,9 +575,10 @@ public class DatabaseService {
     }
 
 
-    private Table<?> getMetaTable(DSLContext ctx, boolean usePrivate) {
+    private Table<?> getMetaTable(DSLContext ctx, SampleSelection selection) {
+        boolean usePrivate = selection.isUsePrivate();
         SpectrumMetadataTable table = !usePrivate ? SpectrumMetadataTable.PUBLIC : SpectrumMetadataTable.PRIVATE;
-        return ctx
+        Table<?> metaTbl = ctx
                 .select(
                         table.asterisk(),
                         DSL
@@ -582,55 +594,57 @@ public class DatabaseService {
                 )
                 .from(table)
                 .asTable("spectrum_metadata");
-    }
 
-
-    private Table<?> getMetaTable(DSLContext ctx, SampleSelection selection) {
-        List<String> mutations = selection.getVariant().getMutations().stream()
-                .map(AAMutation::getMutationCode)
-                .collect(Collectors.toUnmodifiableList());
-        Table<?> metaTbl = getMetaTable(ctx, selection.isUsePrivate());
-        Table<?> mutTbl = getMutTable(ctx, selection.isUsePrivate());
         List<Condition> conditions = new ArrayList<>();
-        conditions.add(MyDSL.aaMutationsAny(mutTbl, mutations));
+
+        Table<?> mutTbl = null;
+        List<String> mutations = null;
+        if (selection.getVariant() != null) {
+            mutTbl = getMutTable(ctx, selection.isUsePrivate());
+            mutations = selection.getVariant().getMutations().stream()
+                    .map(AAMutation::getMutationCode)
+                    .collect(Collectors.toUnmodifiableList());
+            conditions.add(MyDSL.aaMutationsAny(mutTbl, mutations));
+        }
         if (selection.getCountry() != null) {
             conditions.add(MyDSL.countryConstantEq(metaTbl, selection.getCountry()));
         }
-        return ctx.
-                select(
-                        MyDSL.fSequenceName(metaTbl),
-                        MyDSL.fDate(metaTbl),
-                        MyDSL.fRegion(metaTbl),
-                        MyDSL.fCountry(metaTbl),
-                        MyDSL.fDivision(metaTbl),
-                        MyDSL.fLocation(metaTbl),
-                        MyDSL.fZipCode(metaTbl),
-                        MyDSL.fHost(metaTbl),
-                        MyDSL.fAge(metaTbl),
-                        MyDSL.fSex(metaTbl),
-                        MyDSL.fSubmittingLab(metaTbl),
-                        MyDSL.fOriginatingLab(metaTbl),
-                        MyDSL.fAgeGroup(metaTbl)
-                )
-                .from(MyDSL.metaJoinMut(metaTbl, mutTbl))
-                .where(conditions)
-                .groupBy(
-                        MyDSL.fSequenceName(metaTbl),
-                        MyDSL.fDate(metaTbl),
-                        MyDSL.fRegion(metaTbl),
-                        MyDSL.fCountry(metaTbl),
-                        MyDSL.fDivision(metaTbl),
-                        MyDSL.fLocation(metaTbl),
-                        MyDSL.fZipCode(metaTbl),
-                        MyDSL.fHost(metaTbl),
-                        MyDSL.fAge(metaTbl),
-                        MyDSL.fSex(metaTbl),
-                        MyDSL.fSubmittingLab(metaTbl),
-                        MyDSL.fOriginatingLab(metaTbl),
-                        MyDSL.fAgeGroup(metaTbl)
-                )
-                .having(DSL.count().ge((int) Math.ceil(selection.getMatchPercentage() * mutations.size())))
-                .asTable();
+        if (selection.getDataType() != null) {
+            if (selection.getDataType() == DataType.SURVEILLANCE) {
+                conditions.add(MyDSL.fSubmittingLab(metaTbl).eq(BSSE)
+                        .or(MyDSL.fSubmittingLab(metaTbl).eq(HUG)));
+            }
+        }
+        List<Field<?>> fields = Arrays.asList(
+                MyDSL.fSequenceName(metaTbl),
+                MyDSL.fDate(metaTbl),
+                MyDSL.fRegion(metaTbl),
+                MyDSL.fCountry(metaTbl),
+                MyDSL.fDivision(metaTbl),
+                MyDSL.fLocation(metaTbl),
+                MyDSL.fZipCode(metaTbl),
+                MyDSL.fHost(metaTbl),
+                MyDSL.fAge(metaTbl),
+                MyDSL.fSex(metaTbl),
+                MyDSL.fSubmittingLab(metaTbl),
+                MyDSL.fOriginatingLab(metaTbl),
+                MyDSL.fAgeGroup(metaTbl)
+        );
+        if (selection.getVariant() == null) {
+            return ctx.
+                    select(fields)
+                    .from(metaTbl)
+                    .where(conditions)
+                    .asTable();
+        } else {
+            return ctx.
+                    select(fields)
+                    .from(MyDSL.metaJoinMut(metaTbl, mutTbl))
+                    .where(conditions)
+                    .groupBy(fields)
+                    .having(DSL.count().ge((int) Math.ceil(selection.getMatchPercentage() * mutations.size())))
+                    .asTable();
+        }
     }
 
 

@@ -3,6 +3,7 @@ package ch.ethz.covspectrum.controller.computed;
 import ch.ethz.covspectrum.entity.api.CountAndProportionWithCI;
 import ch.ethz.covspectrum.entity.api.Distribution;
 import ch.ethz.covspectrum.entity.core.AAMutation;
+import ch.ethz.covspectrum.entity.core.DataType;
 import ch.ethz.covspectrum.entity.core.Variant;
 import ch.ethz.covspectrum.entity.model.chen2021fitness.ApiResponse;
 import ch.ethz.covspectrum.entity.model.chen2021fitness.Request;
@@ -43,6 +44,7 @@ public class Chen2021FitnessController {
             @RequestParam String country,
             @RequestParam String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage,
+            @RequestParam(required = false) DataType dataType,
             @RequestParam(defaultValue = "0.95") float alpha,
             @RequestParam(defaultValue = "4.8") float generationTime,
             @RequestParam(defaultValue = "1") float reproductionNumberWildtype,
@@ -56,7 +58,7 @@ public class Chen2021FitnessController {
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());
         Variant variant = new Variant(aaMutations);
-        var dailyTimeDistribution = databaseService.getDailyTimeDistribution(variant, country, matchPercentage);
+        var dailyTimeDistribution = databaseService.getDailyTimeDistribution(variant, country, matchPercentage, dataType);
         if (dailyTimeDistribution.size() < 3) {
             return Optional.empty();
         }

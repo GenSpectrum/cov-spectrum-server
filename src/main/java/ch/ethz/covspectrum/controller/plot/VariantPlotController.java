@@ -2,6 +2,7 @@ package ch.ethz.covspectrum.controller.plot;
 
 import ch.ethz.covspectrum.entity.api.*;
 import ch.ethz.covspectrum.entity.core.AAMutation;
+import ch.ethz.covspectrum.entity.core.DataType;
 import ch.ethz.covspectrum.entity.core.Variant;
 import ch.ethz.covspectrum.service.DatabaseService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,13 +36,14 @@ public class VariantPlotController {
     public List<Distribution<YearWeek, CountAndProportionWithCI>> getTimeDistribution(
             @RequestParam String country,
             @RequestParam String mutations,
-            @RequestParam(defaultValue = "1") float matchPercentage
+            @RequestParam(defaultValue = "1") float matchPercentage,
+            @RequestParam(required = false) DataType dataType
     ) throws SQLException {
         Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());
         Variant variant = new Variant(aaMutations);
-        return databaseService.getWeeklyTimeDistribution(variant, country, matchPercentage);
+        return databaseService.getWeeklyTimeDistribution(variant, country, matchPercentage, dataType);
     }
 
 
@@ -50,13 +52,14 @@ public class VariantPlotController {
             @RequestParam String country,
             @RequestParam String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage,
+            @RequestParam(required = false) DataType dataType,
             Principal principal
     ) throws SQLException {
         Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());
         Variant variant = new Variant(aaMutations);
-        return databaseService.getAgeDistribution(variant, country, matchPercentage, principal != null);
+        return databaseService.getAgeDistribution(variant, country, matchPercentage, principal != null, dataType);
     }
 
 
@@ -78,6 +81,7 @@ public class VariantPlotController {
             @RequestParam String country,
             @RequestParam String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage,
+            @RequestParam(required = false) DataType dataType,
             Principal principal
     ) throws SQLException {
         // Zip code is only known for Switzerland
@@ -94,7 +98,7 @@ public class VariantPlotController {
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());
         Variant variant = new Variant(aaMutations);
-        return databaseService.getPrivateTimeZipCodeDistributionOfCH(variant, matchPercentage);
+        return databaseService.getPrivateTimeZipCodeDistributionOfCH(variant, matchPercentage, dataType);
     }
 
 }

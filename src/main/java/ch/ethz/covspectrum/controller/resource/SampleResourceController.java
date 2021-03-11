@@ -34,6 +34,7 @@ public class SampleResourceController {
             @RequestParam(required = false) String country,
             @RequestParam String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage,
+            @RequestParam(required = false) DataType dataType,
             Principal principal
     ) throws SQLException {
         int TOTAL_RETURN_NUMBER = 1000;  // I don't want to return too much right now...
@@ -43,7 +44,7 @@ public class SampleResourceController {
                 .collect(Collectors.toSet());;
         Variant variant = new Variant(aaMutations);
         List<SampleFull> samples = databaseService.getSamples(variant, country, matchPercentage,
-                principal != null);
+                principal != null, dataType);
         int totalNumber = samples.size();
         if (totalNumber > TOTAL_RETURN_NUMBER) {
             samples = samples.subList(0, TOTAL_RETURN_NUMBER);
@@ -57,9 +58,10 @@ public class SampleResourceController {
             @RequestParam(required = false) String country,
             @RequestParam String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage,
+            @RequestParam(required = false) DataType dataType,
             Principal principal
     ) throws SQLException {
-        List<SampleFull> samples = this.getSamples(country, mutations, matchPercentage, principal).getData();
+        List<SampleFull> samples = this.getSamples(country, mutations, matchPercentage, dataType, principal).getData();
         List<SampleName> names = samples.stream()
                 .map(s -> new SampleName(s.getName()))
                 .collect(Collectors.toList());
