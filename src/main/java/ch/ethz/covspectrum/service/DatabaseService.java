@@ -278,12 +278,14 @@ public class DatabaseService {
                   s.sequence_name,
                   s.date
                 from
-                  spectrum_sequence_public_meta s
-                  join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
-                where m.aa_mutation = any(?::text[])
-                group by
-                  s.sequence_name, s.country, s.date
-                having count(*) >= ?
+                  (
+                    select m.sequence_name
+                    from spectrum_sequence_public_mutation_aa m
+                    where m.aa_mutation = any(?::text[])
+                    group by m.sequence_name
+                    having count(*) >= ?
+                  ) m
+                  join spectrum_sequence_public_meta s on s.sequence_name = m.sequence_name
               ) x
               join (
                 select
