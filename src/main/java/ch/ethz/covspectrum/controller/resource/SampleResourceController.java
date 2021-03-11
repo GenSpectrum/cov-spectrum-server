@@ -42,11 +42,8 @@ public class SampleResourceController {
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());;
         Variant variant = new Variant(aaMutations);
-        List<SampleFull> samples = databaseService.getSamples(variant, matchPercentage,
+        List<SampleFull> samples = databaseService.getSamples(variant, country, matchPercentage,
                 principal != null);
-        if (country != null) {
-            samples = samples.stream().filter(s -> country.equals(s.getCountry())).collect(Collectors.toList());
-        }
         int totalNumber = samples.size();
         if (totalNumber > TOTAL_RETURN_NUMBER) {
             samples = samples.subList(0, TOTAL_RETURN_NUMBER);

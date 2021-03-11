@@ -17,6 +17,8 @@ import org.jooq.covspectrum.tables.SpectrumSequencePrivateMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePrivateMutationAa;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMutationAa;
+import org.jooq.covspectrum.tables.VariantMutationAa;
+import org.jooq.covspectrum.tables.VariantMutationNucleotide;
 import org.jooq.impl.SchemaImpl;
 
 
@@ -74,6 +76,16 @@ public class Public extends SchemaImpl {
     public final SpectrumSequencePublicMutationAa SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA = SpectrumSequencePublicMutationAa.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA;
 
     /**
+     * The table <code>public.variant_mutation_aa</code>.
+     */
+    public final VariantMutationAa VARIANT_MUTATION_AA = VariantMutationAa.VARIANT_MUTATION_AA;
+
+    /**
+     * The table <code>public.variant_mutation_nucleotide</code>.
+     */
+    public final VariantMutationNucleotide VARIANT_MUTATION_NUCLEOTIDE = VariantMutationNucleotide.VARIANT_MUTATION_NUCLEOTIDE;
+
+    /**
      * No further instances allowed
      */
     private Public() {
@@ -96,6 +108,8 @@ public class Public extends SchemaImpl {
             SpectrumSequencePrivateMeta.SPECTRUM_SEQUENCE_PRIVATE_META,
             SpectrumSequencePrivateMutationAa.SPECTRUM_SEQUENCE_PRIVATE_MUTATION_AA,
             SpectrumSequencePublicMeta.SPECTRUM_SEQUENCE_PUBLIC_META,
-            SpectrumSequencePublicMutationAa.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA);
+            SpectrumSequencePublicMutationAa.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA,
+            VariantMutationAa.VARIANT_MUTATION_AA,
+            VariantMutationNucleotide.VARIANT_MUTATION_NUCLEOTIDE);
     }
 }

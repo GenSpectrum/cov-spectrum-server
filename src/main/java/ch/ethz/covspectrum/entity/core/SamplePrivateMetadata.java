@@ -13,7 +13,7 @@ public class SamplePrivateMetadata {
 
     private final String host;
 
-    private final int age;
+    private final Integer age;
 
     private final String sex;
 
@@ -28,7 +28,7 @@ public class SamplePrivateMetadata {
             String location,
             String zipCode,
             String host,
-            int age,
+            Integer age,
             String sex,
             String submittingLab,
             String originatingLab
@@ -70,7 +70,7 @@ public class SamplePrivateMetadata {
     }
 
 
-    public int getAge() {
+    public Integer getAge() {
         return age;
     }
 

@@ -9,9 +9,13 @@ import org.jooq.UniqueKey;
 import org.jooq.covspectrum.tables.ConsensusSequence;
 import org.jooq.covspectrum.tables.GisaidSequence;
 import org.jooq.covspectrum.tables.SpectrumAccount;
+import org.jooq.covspectrum.tables.VariantMutationAa;
+import org.jooq.covspectrum.tables.VariantMutationNucleotide;
 import org.jooq.covspectrum.tables.records.ConsensusSequenceRecord;
 import org.jooq.covspectrum.tables.records.GisaidSequenceRecord;
 import org.jooq.covspectrum.tables.records.SpectrumAccountRecord;
+import org.jooq.covspectrum.tables.records.VariantMutationAaRecord;
+import org.jooq.covspectrum.tables.records.VariantMutationNucleotideRecord;
 import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
 
@@ -30,4 +34,6 @@ public class Keys {
     public static final UniqueKey<ConsensusSequenceRecord> CONSENSUS_SEQUENCE_PKEY = Internal.createUniqueKey(ConsensusSequence.CONSENSUS_SEQUENCE, DSL.name("consensus_sequence_pkey"), new TableField[] { ConsensusSequence.CONSENSUS_SEQUENCE.SAMPLE_NAME }, true);
     public static final UniqueKey<GisaidSequenceRecord> GISAID_SEQUENCE_STAGING_PKEY = Internal.createUniqueKey(GisaidSequence.GISAID_SEQUENCE, DSL.name("gisaid_sequence_staging_pkey"), new TableField[] { GisaidSequence.GISAID_SEQUENCE.STRAIN }, true);
     public static final UniqueKey<SpectrumAccountRecord> SPECTRUM_ACCOUNT_PKEY = Internal.createUniqueKey(SpectrumAccount.SPECTRUM_ACCOUNT, DSL.name("spectrum_account_pkey"), new TableField[] { SpectrumAccount.SPECTRUM_ACCOUNT.USERNAME }, true);
+    public static final UniqueKey<VariantMutationAaRecord> VARIANT_MUTATION_AA_PKEY = Internal.createUniqueKey(VariantMutationAa.VARIANT_MUTATION_AA, DSL.name("variant_mutation_aa_pkey"), new TableField[] { VariantMutationAa.VARIANT_MUTATION_AA.VARIANT_NAME, VariantMutationAa.VARIANT_MUTATION_AA.AA_MUTATION }, true);
+    public static final UniqueKey<VariantMutationNucleotideRecord> VARIANT_MUTATION_NUCLEOTIDE_PKEY = Internal.createUniqueKey(VariantMutationNucleotide.VARIANT_MUTATION_NUCLEOTIDE, DSL.name("variant_mutation_nucleotide_pkey"), new TableField[] { VariantMutationNucleotide.VARIANT_MUTATION_NUCLEOTIDE.VARIANT_NAME, VariantMutationNucleotide.VARIANT_MUTATION_NUCLEOTIDE.NUCLEOTIDE_MUTATION }, true);
 }

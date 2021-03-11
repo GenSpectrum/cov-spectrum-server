@@ -2,6 +2,8 @@ package ch.ethz.covspectrum.service;
 
 import ch.ethz.covspectrum.entity.api.*;
 import ch.ethz.covspectrum.entity.core.*;
+import ch.ethz.covspectrum.jooq.MyDSL;
+import ch.ethz.covspectrum.jooq.SpectrumMetadataTable;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.javatuples.Pair;
 import org.jooq.*;
@@ -11,8 +13,10 @@ import org.springframework.stereotype.Service;
 import org.threeten.extra.YearWeek;
 
 import java.beans.PropertyVetoException;
-import java.sql.*;
-import java.sql.Statement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,101 +49,87 @@ public class DatabaseService {
     }
 
 
-    public DSLContext getDSL(Connection connection) {
+    public DSLContext getDSLCtx(Connection connection) {
         return DSL.using(connection, SQLDialect.POSTGRES);
     }
 
 
     public List<String> getCountryNames() throws SQLException {
         try (Connection conn = getDatabaseConnection()) {
-            DSLContext dsl = getDSL(conn);
-            var statement = dsl
-                    .selectDistinct(Tables.SPECTRUM_SEQUENCE_PUBLIC_META.COUNTRY)
-                    .from(Tables.SPECTRUM_SEQUENCE_PUBLIC_META)
-                    .orderBy(Tables.SPECTRUM_SEQUENCE_PUBLIC_META.COUNTRY);
+            DSLContext ctx = getDSLCtx(conn);
+            Table<?> metaTbl = getMetaTable(ctx, false);
+            var statement = ctx
+                    .selectDistinct(MyDSL.fCountry(metaTbl))
+                    .from(metaTbl)
+                    .orderBy(MyDSL.fCountry(metaTbl));
             return statement.fetch()
-                    .map(r -> r.getValue(r.field1()));
+                    .map(Record1::value1);
         }
     }
 
 
     public List<Variant> getKnownVariants() throws SQLException {
-        String sql = """
-                    select variant_name, string_agg(aa_mutation, ',') as mutations
-                    from variant_mutation_aa
-                    group by variant_name
-                    order by variant_name;
-                """;
-        try (Connection conn = getDatabaseConnection();
-             Statement statement = conn.createStatement()) {
-            try (ResultSet rs = statement.executeQuery(sql)) {
-                List<Variant> result = new ArrayList<>();
-                while (rs.next()) {
-                    Set<AAMutation> mutations = Arrays.stream(rs.getString("mutations").split(","))
-                            .map(AAMutation::new)
-                            .collect(Collectors.toSet());
-                    result.add(new Variant(rs.getString("variant_name"), mutations));
-                }
-                return result;
-            }
+        try (Connection conn = getDatabaseConnection()) {
+            DSLContext ctx = getDSLCtx(conn);
+            var statement = ctx
+                    .select(
+                            Tables.VARIANT_MUTATION_AA.VARIANT_NAME,
+                            DSL.groupConcat(Tables.VARIANT_MUTATION_AA.AA_MUTATION).separator(",").as("mutations")
+                    )
+                    .from(Tables.VARIANT_MUTATION_AA)
+                    .groupBy(Tables.VARIANT_MUTATION_AA.VARIANT_NAME)
+                    .orderBy(Tables.VARIANT_MUTATION_AA.VARIANT_NAME);
+            return statement.fetch()
+                    .map(r -> new Variant(
+                            r.get(Tables.VARIANT_MUTATION_AA.VARIANT_NAME),
+                            Arrays.stream(r.get("mutations", String.class).split(","))
+                                    .map(AAMutation::new)
+                                    .collect(Collectors.toSet())
+                    ));
         }
     }
 
 
     public int getNumberSequences(YearWeek week, String country) throws SQLException {
-        String sql = """
-                    select count(*) as count
-                    from spectrum_sequence_public_meta
-                    where
-                      extract(isoyear from date) = ?
-                      and extract(week from date) = ?
-                      and country = ?;
-                """;
-        try (Connection conn = getDatabaseConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
-            statement.setInt(1, week.getYear());
-            statement.setInt(2, week.getWeek());
-            statement.setString(3, country);
-            try (ResultSet rs = statement.executeQuery()) {
-                rs.next();
-                return rs.getInt("count");
-            }
+        try (Connection conn = getDatabaseConnection()) {
+            DSLContext ctx = getDSLCtx(conn);
+            var metaTbl = getMetaTable(ctx, false);
+            var statement = ctx
+                    .select(DSL.count().as("count"))
+                    .from(metaTbl)
+                    .where(
+                            MyDSL.yearWeekConstantEq(metaTbl, week),
+                            MyDSL.countryConstantEq(metaTbl, country)
+                    );
+            return statement.fetch().get(0).value1();
         }
     }
 
 
-    public List<Pair<AAMutation, Set<SampleName>>> getMutations(YearWeek week, String country) throws SQLException {
+    public List<Pair<AAMutation, Set<SampleName>>> getMutations(YearWeek yearWeek, String country) throws SQLException {
         int MINIMAL_NUMBER_OF_SAMPLES = 5;
-        String sql = """
-                    select
-                      m.aa_mutation as mutation,
-                      string_agg(s.sequence_name, ',') as strains
-                    from
-                      spectrum_sequence_public_meta s
-                      join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
-                    where
-                      extract(isoyear from date) = ?
-                      and extract(week from s.date) = ?
-                      and country = ?
-                    group by m.aa_mutation
-                    having count(*) >= ?;
-                """;
-        try (Connection conn = getDatabaseConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
-            statement.setInt(1, week.getYear());
-            statement.setInt(2, week.getWeek());
-            statement.setString(3, country);
-            statement.setInt(4, MINIMAL_NUMBER_OF_SAMPLES);
-            try (ResultSet rs = statement.executeQuery()) {
-                List<Pair<AAMutation, Set<SampleName>>> results = new ArrayList<>();
-                while (rs.next()) {
-                    AAMutation mutation = new AAMutation(rs.getString("mutation"));
-                    Set<SampleName> strains = Arrays.stream(rs.getString("strains").split(","))
-                            .map(SampleName::new).collect(Collectors.toSet());
-                    results.add(new Pair<>(mutation, strains));
-                }
-                return results;
-            }
+        try (Connection conn = getDatabaseConnection()) {
+            DSLContext ctx = getDSLCtx(conn);
+            var metaTbl = getMetaTable(ctx, false);
+            var mutTbl = getMutTable(ctx, false);
+            var statement = ctx
+                    .select(
+                            MyDSL.fAaMutation(mutTbl).as("mutation"),
+                            DSL.groupConcat(MyDSL.fSequenceName(metaTbl)).separator(",").as("strains")
+                    )
+                    .from(MyDSL.metaJoinMut(metaTbl, mutTbl))
+                    .where(
+                            MyDSL.yearWeekConstantEq(metaTbl, yearWeek),
+                            MyDSL.countryConstantEq(metaTbl, country)
+                    )
+                    .groupBy(MyDSL.fAaMutation(mutTbl))
+                    .having(DSL.count().ge(MINIMAL_NUMBER_OF_SAMPLES));
+            return statement.fetch()
+                    .map(r -> new Pair<>(
+                            new AAMutation(r.value1()),
+                            Arrays.stream(r.value2().split(","))
+                                    .map(SampleName::new).collect(Collectors.toSet())
+                    ));
         }
     }
 
@@ -149,59 +139,44 @@ public class DatabaseService {
             String country,
             float matchPercentage
     ) throws SQLException {
-        List<String> mutations = variant.getMutations().stream()
-                .map(AAMutation::getMutationCode)
-                .collect(Collectors.toList());
-        String sql = """
-            select
-              y.date as date,
-              sum(case when sequence_name is not null then 1 else 0 end) as count,
-              y.count as total
-            from
-              (
-                select
-                  s.sequence_name,
-                  s.date,
-                  s.age,
-                  s.division
-                from
-                  spectrum_sequence_public_meta s
-                  join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
-                where m.aa_mutation = any(?) and country = ?
-                group by
-                  s.sequence_name, s.date, s.age, s.division
-                having count(*) >= ?
-              ) x
-              right join (
-                select
-                  gs.date as date,
-                  count(*) as count
-                from spectrum_sequence_public_meta gs
-                where country = ? and gs.date is not null
-                group by gs.date
-              ) y on x.date = y.date
-            group by
-              y.date,
-              y.count;
-        """;
-        try (Connection conn = getDatabaseConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
-            statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
-            statement.setString(2, country);
-            statement.setFloat(3, mutations.size() * matchPercentage);
-            statement.setString(4, country);
-            try (ResultSet rs = statement.executeQuery()) {
-                List<Distribution<LocalDate, CountAndProportionWithCI>> result = new ArrayList<>();
-                while (rs.next()) {
-                    Distribution<LocalDate, CountAndProportionWithCI> d = new Distribution<>(
-                            rs.getDate("date").toLocalDate(),
-                            CountAndProportionWithCI.fromWilsonCI(
-                                    rs.getInt("count"), rs.getInt("total"))
-                    );
-                    result.add(d);
-                }
-                return result;
-            }
+        SampleSelection selection = new SampleSelection(false, variant, country, matchPercentage);
+        try (Connection conn = getDatabaseConnection()) {
+            DSLContext ctx = getDSLCtx(conn);
+            Table<?> matchedSequences = getMetaTable(ctx, selection);
+            Table<?> metaTbl = getMetaTable(ctx, false);
+            Table<?> countPerDate = ctx
+                    .select(
+                            MyDSL.fDate(metaTbl),
+                            DSL.count().as("count")
+                    )
+                    .from(metaTbl)
+                    .where(
+                            MyDSL.fCountry(metaTbl).eq(country),
+                            MyDSL.fDate(metaTbl).isNotNull()
+                    )
+                    .groupBy(MyDSL.fDate(metaTbl))
+                    .asTable();
+            var statement = ctx
+                    .select(
+                            MyDSL.fDate(countPerDate),
+                            DSL.sum(
+                                    DSL.when(MyDSL.fSequenceName(matchedSequences).isNotNull(), 1)
+                                    .otherwise(0)
+                            ).cast(Integer.class).as("count"),
+                            MyDSL.fCount(countPerDate).as("total")
+                    )
+                    .from(countPerDate.leftJoin(matchedSequences).on(
+                            MyDSL.fDate(countPerDate).eq(MyDSL.fDate(matchedSequences))))
+                    .groupBy(
+                            MyDSL.fDate(countPerDate),
+                            MyDSL.fCount(countPerDate)
+                    )
+                    .orderBy(MyDSL.fDate(countPerDate));
+            return statement.fetch()
+                    .map(r -> new Distribution<>(
+                            r.value1(),
+                            CountAndProportionWithCI.fromWilsonCI(r.value2(), r.value3())
+                    ));
         }
     }
 
@@ -211,64 +186,48 @@ public class DatabaseService {
             String country,
             float matchPercentage
     ) throws SQLException {
-        List<String> mutations = variant.getMutations().stream()
-                .map(AAMutation::getMutationCode)
-                .collect(Collectors.toList());
-        String sql = """
-            select
-              extract(isoyear from x.date) as year,
-              extract(week from x.date) as week,
-              count(*) as count,
-              y.count as total
-            from
-              (
-                select
-                  s.sequence_name,
-                  s.date,
-                  s.age,
-                  s.division
-                from
-                  spectrum_sequence_public_meta s
-                  join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
-                where m.aa_mutation = any(?) and country = ?
-                group by
-                  s.sequence_name, s.date, s.age, s.division
-                having count(*) >= ?
-              ) x
-              join (
-                select
-                  extract(isoyear from gs.date) as year,
-                  extract(week from gs.date) as week,
-                  count(*) as count
-                from spectrum_sequence_public_meta gs
-                where country = ?
-                group by
-                  extract(isoyear from gs.date),
-                  extract(week from gs.date)
-              ) y on extract(isoyear from x.date) = y.year and extract(week from x.date) = y.week
-            group by
-              extract(isoyear from x.date),
-              extract(week from x.date),
-              y.count;
-        """;
-        try (Connection conn = getDatabaseConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
-            statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
-            statement.setString(2, country);
-            statement.setFloat(3, mutations.size() * matchPercentage);
-            statement.setString(4, country);
-            try (ResultSet rs = statement.executeQuery()) {
-                List<Distribution<YearWeek, CountAndProportionWithCI>> result = new ArrayList<>();
-                while (rs.next()) {
-                    Distribution<YearWeek, CountAndProportionWithCI> d = new Distribution<>(
-                            YearWeek.of(rs.getInt("year"), rs.getInt("week")),
-                            CountAndProportionWithCI.fromWilsonCI(
-                                    rs.getInt("count"), rs.getInt("total"))
+        SampleSelection selection = new SampleSelection(false, variant, country, matchPercentage);
+        try (Connection conn = getDatabaseConnection()) {
+            DSLContext ctx = getDSLCtx(conn);
+            var sequences = getMetaTable(ctx, selection);
+            Table<?> metaTbl = getMetaTable(ctx, false);
+            Table<?> countPerYearWeek = ctx
+                    .select(
+                            MyDSL.extractIsoYear(MyDSL.fDate(metaTbl)).as("year"),
+                            DSL.extract(MyDSL.fDate(metaTbl), DatePart.WEEK).as("week"),
+                            DSL.count().as("count")
+                    )
+                    .from(metaTbl)
+                    .where(
+                            MyDSL.fCountry(metaTbl).eq(country),
+                            MyDSL.fDate(metaTbl).isNotNull()
+                    )
+                    .groupBy(MyDSL.extractIsoYear(MyDSL.fDate(metaTbl)), DSL.extract(MyDSL.fDate(metaTbl), DatePart.WEEK))
+                    .asTable();
+            var joined = sequences.join(countPerYearWeek).on(
+                    MyDSL.extractIsoYear(MyDSL.fDate(sequences))
+                            .eq(countPerYearWeek.field("year", Integer.class)),
+                    DSL.extract(MyDSL.fDate(sequences), DatePart.WEEK)
+                            .eq(countPerYearWeek.field("week", Integer.class))
+            );
+            var statement = ctx
+                    .select(
+                            MyDSL.extractIsoYear(MyDSL.fDate(sequences)).as("year"),
+                            DSL.extract(MyDSL.fDate(sequences), DatePart.WEEK).as("week"),
+                            DSL.count().as("count"),
+                            MyDSL.fCount(countPerYearWeek).as("total")
+                    )
+                    .from(joined)
+                    .groupBy(
+                            MyDSL.extractIsoYear(MyDSL.fDate(sequences)),
+                            DSL.extract(MyDSL.fDate(sequences), DatePart.WEEK),
+                            MyDSL.fCount(countPerYearWeek)
                     );
-                    result.add(d);
-                }
-                return result;
-            }
+            return statement.fetch()
+                    .map(r -> new Distribution<>(
+                            YearWeek.of(r.value1(), r.value2()),
+                            CountAndProportionWithCI.fromWilsonCI(r.value3(), r.value4())
+                    ));
         }
     }
 
@@ -279,94 +238,35 @@ public class DatabaseService {
             float matchPercentage,
             boolean usePrivateVersion
     ) throws SQLException {
-        List<String> mutations = variant.getMutations().stream()
-                .map(AAMutation::getMutationCode)
-                .collect(Collectors.toList());
-        String sql = """
-            select
-              x.age_group,
-              count(*) as count,
-              y.count as total
-            from
-              (
-                select
-                  s.sequence_name,
-                  s.date,
-                  (case
-                    when s.age < 10 then '0-9'
-                    when s.age between 10 and 19 then '10-19'
-                    when s.age between 20 and 29 then '20-29'
-                    when s.age between 30 and 39 then '30-39'
-                    when s.age between 40 and 49 then '40-49'
-                    when s.age between 50 and 59 then '50-59'
-                    when s.age between 60 and 69 then '60-69'
-                    when s.age between 70 and 79 then '70-79'
-                    when s.age >= 80 then '80+'
-                  end) as age_group,
-                  s.division
-                from
-                  spectrum_sequence_public_meta s
-                  join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
-                where m.aa_mutation = any(?) and country = ?
-                group by
-                  s.sequence_name, s.date, s.age, s.division
-                having count(*) >= ?
-              ) x
-              join (
-                select
-                  (case
-                    when s.age < 10 then '0-9'
-                    when s.age between 10 and 19 then '10-19'
-                    when s.age between 20 and 29 then '20-29'
-                    when s.age between 30 and 39 then '30-39'
-                    when s.age between 40 and 49 then '40-49'
-                    when s.age between 50 and 59 then '50-59'
-                    when s.age between 60 and 69 then '60-69'
-                    when s.age between 70 and 79 then '70-79'
-                    when s.age >= 80 then '80+'
-                  end) as age_group,
-                  count(*) as count
-                from spectrum_sequence_public_meta s
-                where country = ?
-                group by
-                  (case
-                    when s.age < 10 then '0-9'
-                    when s.age between 10 and 19 then '10-19'
-                    when s.age between 20 and 29 then '20-29'
-                    when s.age between 30 and 39 then '30-39'
-                    when s.age between 40 and 49 then '40-49'
-                    when s.age between 50 and 59 then '50-59'
-                    when s.age between 60 and 69 then '60-69'
-                    when s.age between 70 and 79 then '70-79'
-                    when s.age >= 80 then '80+'
-                  end)
-              ) y on x.age_group = y.age_group
-            group by
-              x.age_group,
-              y.count;
-        """;
-        if (usePrivateVersion) {
-            // TODO
-            sql = sql.replace("public", "private");
-        }
-        try (Connection conn = getDatabaseConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
-            statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
-            statement.setString(2, country);
-            statement.setFloat(3, mutations.size() * matchPercentage);
-            statement.setString(4, country);
-            try (ResultSet rs = statement.executeQuery()) {
-                List<Distribution<String, CountAndProportionWithCI>> result = new ArrayList<>();
-                while (rs.next()) {
-                    Distribution<String, CountAndProportionWithCI> d = new Distribution<>(
-                            rs.getString("age_group"),
-                            CountAndProportionWithCI.fromWilsonCI(
-                                    rs.getInt("count"), rs.getInt("total"))
-                    );
-                    result.add(d);
-                }
-                return result;
-            }
+        SampleSelection selection = new SampleSelection(usePrivateVersion, variant, country, matchPercentage);
+        try (Connection conn = getDatabaseConnection()) {
+            DSLContext ctx = getDSLCtx(conn);
+            Table<?> metaTbl = getMetaTable(ctx, usePrivateVersion);
+            var sequences = getMetaTable(ctx, selection).as("meta");
+            var groupedByAgeGroup = ctx
+                    .select(MyDSL.fAgeGroup(sequences), DSL.count().as("count"))
+                    .from(sequences)
+                    .groupBy(MyDSL.fAgeGroup(sequences))
+                    .asTable("groupedByAgeGroup");
+            var countPerAgeGroup = ctx
+                    .select(MyDSL.fAgeGroup(metaTbl), DSL.count().as("count"))
+                    .from(metaTbl)
+                    .where(MyDSL.countryConstantEq(metaTbl, country))
+                    .groupBy(MyDSL.fAgeGroup(metaTbl))
+                    .asTable("countPerAgeGroup");
+            var statement = ctx
+                    .select(
+                            MyDSL.fAgeGroup(countPerAgeGroup),
+                            DSL.coalesce(MyDSL.fCount(groupedByAgeGroup), 0).as("count"),
+                            MyDSL.fCount(countPerAgeGroup).as("total")
+                    )
+                    .from(countPerAgeGroup.leftJoin(groupedByAgeGroup)
+                            .on(MyDSL.fAgeGroup(countPerAgeGroup).eq(MyDSL.fAgeGroup(groupedByAgeGroup))));
+            return statement.fetch()
+                    .map(r -> new Distribution<>(
+                            r.value1(),
+                            CountAndProportionWithCI.fromWilsonCI(r.value2(), r.value3())
+                    ));
         }
     }
 
@@ -446,79 +346,85 @@ public class DatabaseService {
             float matchPercentage,
             boolean usePrivateVersion
     ) throws SQLException {
-        List<String> mutations = variant.getMutations().stream()
-                .map(AAMutation::getMutationCode)
-                .collect(Collectors.toList());
-        String sql = """
-            select
-              s.sequence_name,
-              s.country,
-              s.date,
-              s.division,
-              s.location,
-              s.zip_code,
-              s.host,
-              s.age,
-              s.sex,
-              s.submitting_lab,
-              s.originating_lab,
-              x.mutations
-            from
-              (
-                select
-                  s.sequence_name,
-                  string_agg(m.aa_mutation, ',') as mutations
-                from
-                  (
-                    select m.sequence_name
-                    from spectrum_sequence_public_mutation_aa m
-                    where m.aa_mutation = any(?::text[])
-                    group by m.sequence_name
-                    having count(*) >= ?
-                  ) s
-                  join spectrum_sequence_public_mutation_aa m on s.sequence_name = m.sequence_name
-                group by s.sequence_name
-              ) x
-              join spectrum_sequence_public_meta s on x.sequence_name = s.sequence_name;
-        """;
-        if (usePrivateVersion) {
-            // TODO
-            sql = sql.replace("public", "private");
-        }
-        try (Connection conn = getDatabaseConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
-            statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
-            statement.setFloat(2, mutations.size() * matchPercentage);
-            try (ResultSet rs = statement.executeQuery()) {
-                List<SampleFull> result = new ArrayList<>();
-                while (rs.next()) {
-                    List<AAMutation> ms = Arrays.stream(rs.getString("mutations").split(","))
-                            .map(AAMutation::new).collect(Collectors.toList());
-                    SamplePrivateMetadata privateMetadata = null;
-                    if (usePrivateVersion) {
-                        privateMetadata = new SamplePrivateMetadata(
-                                rs.getString("country"),
-                                rs.getString("division"),
-                                rs.getString("location"),
-                                rs.getString("zip_code"),
-                                rs.getString("host"),
-                                rs.getInt("age"),
-                                rs.getString("sex"),
-                                rs.getString("submitting_lab"),
-                                rs.getString("originating_lab")
-                        );
-                    }
-                    if (!usePrivateVersion && !BSSE.equals(rs.getString("submitting_lab"))) {
-                        ms = null;
-                    }
-                    SampleFull s = new SampleFull(
-                            rs.getString("sequence_name"), rs.getString("country"),
-                            rs.getObject("date", LocalDate.class), ms, privateMetadata
+        return getSamples(variant, null, matchPercentage, usePrivateVersion);
+    }
+
+
+    public List<SampleFull> getSamples(
+            Variant variant,
+            String country,
+            float matchPercentage,
+            boolean usePrivateVersion
+    ) throws SQLException {
+        SampleSelection selection = new SampleSelection(usePrivateVersion, variant, country, matchPercentage);
+        try (Connection conn = getDatabaseConnection()) {
+            DSLContext ctx = getDSLCtx(conn);
+            Table<?> mutTbl = getMutTable(ctx, usePrivateVersion);
+            var sequences = getMetaTable(ctx, selection).as("meta");
+            var statement = ctx
+                    .select(
+                            MyDSL.fSequenceName(sequences),
+                            MyDSL.fDate(sequences),
+                            MyDSL.fRegion(sequences),
+                            MyDSL.fCountry(sequences),
+                            MyDSL.fDivision(sequences),
+                            MyDSL.fLocation(sequences),
+                            MyDSL.fZipCode(sequences),
+                            MyDSL.fHost(sequences),
+                            MyDSL.fAge(sequences),
+                            MyDSL.fSex(sequences),
+                            MyDSL.fSubmittingLab(sequences),
+                            MyDSL.fOriginatingLab(sequences),
+                            MyDSL.fAgeGroup(sequences),
+                            DSL.groupConcat(MyDSL.fAaMutation(mutTbl)).separator(",").as("mutations")
+                    )
+                    .from(MyDSL.metaJoinMut(sequences, mutTbl))
+                    .groupBy(
+                            MyDSL.fSequenceName(sequences),
+                            MyDSL.fDate(sequences),
+                            MyDSL.fRegion(sequences),
+                            MyDSL.fCountry(sequences),
+                            MyDSL.fDivision(sequences),
+                            MyDSL.fLocation(sequences),
+                            MyDSL.fZipCode(sequences),
+                            MyDSL.fHost(sequences),
+                            MyDSL.fAge(sequences),
+                            MyDSL.fSex(sequences),
+                            MyDSL.fSubmittingLab(sequences),
+                            MyDSL.fOriginatingLab(sequences),
+                            MyDSL.fAgeGroup(sequences)
                     );
-                    result.add(s);
+            List<SampleFull> result = new ArrayList<>();
+            for (var r : statement.fetch()) {
+                List<AAMutation> ms = Arrays.stream(r.get("mutations", String.class).split(","))
+                        .map(AAMutation::new).collect(Collectors.toList());
+                SamplePrivateMetadata privateMetadata = null;
+                if (usePrivateVersion) {
+                    privateMetadata = new SamplePrivateMetadata(
+                            r.get("country", String.class),
+                            r.get("division", String.class),
+                            r.get("location", String.class),
+                            r.get("zip_code", String.class),
+                            r.get("host", String.class),
+                            r.get("age", Integer.class),
+                            r.get("sex", String.class),
+                            r.get("submitting_lab", String.class),
+                            r.get("originating_lab", String.class)
+                    );
                 }
-                return result;
+                if (!usePrivateVersion && !BSSE.equals(r.get("submitting_lab", String.class))) {
+                    ms = null;
+                }
+                SampleFull s = new SampleFull(
+                        r.get("sequence_name", String.class),
+                        r.get("country", String.class),
+                        r.get("date", LocalDate.class),
+                        ms,
+                        privateMetadata
+                );
+                result.add(s);
             }
+            return result;
         }
     }
 
@@ -595,55 +501,32 @@ public class DatabaseService {
             Variant variant,
             float matchPercentage
     ) throws SQLException {
-        List<String> mutations = variant.getMutations().stream()
-                .map(AAMutation::getMutationCode)
-                .collect(Collectors.toList());
-        String sql = """
-            select
-              extract(isoyear from x.date) as year,
-              extract(week from x.date) as week,
-              x.zip_code,
-              count(*) as count
-            from
-              (
-                select
-                  s.sequence_name,
-                  s.zip_code,
-                  s.date
-                from
-                  spectrum_sequence_private_meta s
-                  join spectrum_sequence_private_mutation_aa m on s.sequence_name = m.sequence_name
-                where
-                    m.aa_mutation = any(?::text[])
-                    and s.country = 'Switzerland'
-                    and s.zip_code is not null
-                group by
-                  s.sequence_name, s.zip_code, s.date
-                having count(*) >= ?
-              ) x
-            group by
-              x.zip_code,
-              extract(isoyear from x.date),
-              extract(week from x.date);
-        """;
-        try (Connection conn = getDatabaseConnection();
-             PreparedStatement statement = conn.prepareStatement(sql)) {
-            statement.setArray(1, conn.createArrayOf("text", mutations.toArray()));
-            statement.setFloat(2, mutations.size() * matchPercentage);
-            try (ResultSet rs = statement.executeQuery()) {
-                List<Distribution<WeekAndZipCode, Count>> result = new ArrayList<>();
-                while (rs.next()) {
-                    Distribution<WeekAndZipCode, Count> d = new Distribution<>(
-                            new WeekAndZipCode(
-                                    YearWeek.of(rs.getInt("year"), rs.getInt("week")),
-                                    rs.getString("zip_code")
-                            ),
-                            new Count(rs.getInt("count"))
+        SampleSelection selection = new SampleSelection(true, variant, "Switzerland", matchPercentage);
+        try (Connection conn = getDatabaseConnection()) {
+            DSLContext ctx = getDSLCtx(conn);
+            var sequences = getMetaTable(ctx, selection).as("meta");
+            var statement = ctx
+                    .select(
+                            MyDSL.extractIsoYear(MyDSL.fDate(sequences)).as("year"),
+                            DSL.extract(MyDSL.fDate(sequences), DatePart.WEEK).as("week"),
+                            MyDSL.fZipCode(sequences).as("zip_code"),
+                            DSL.count().as("count")
+                    )
+                    .from(sequences)
+                    .where(MyDSL.fZipCode(sequences).isNotNull())
+                    .groupBy(
+                            MyDSL.fZipCode(sequences),
+                            MyDSL.extractIsoYear(MyDSL.fDate(sequences)),
+                            DSL.extract(MyDSL.fDate(sequences), DatePart.WEEK)
                     );
-                    result.add(d);
-                }
-                return result;
-            }
+            return statement.fetch()
+                    .map(r -> new Distribution<>(
+                            new WeekAndZipCode(
+                                    YearWeek.of(r.value1(), r.value2()),
+                                    r.value3()
+                            ),
+                            new Count(r.value4())
+                    ));
         }
     }
 
@@ -677,6 +560,85 @@ public class DatabaseService {
                 }
                 return result;
             }
+        }
+    }
+
+
+    private Table<?> getMetaTable(DSLContext ctx, boolean usePrivate) {
+        SpectrumMetadataTable table = !usePrivate ? SpectrumMetadataTable.PUBLIC : SpectrumMetadataTable.PRIVATE;
+        return ctx
+                .select(
+                        table.asterisk(),
+                        DSL
+                                .when(table.AGE.lt(10), "0-9")
+                                .when(table.AGE.lt(20), "10-19")
+                                .when(table.AGE.lt(30), "20-29")
+                                .when(table.AGE.lt(40), "30-39")
+                                .when(table.AGE.lt(50), "40-49")
+                                .when(table.AGE.lt(60), "50-59")
+                                .when(table.AGE.lt(70), "60-69")
+                                .when(table.AGE.lt(80), "70-79")
+                                .otherwise("80+").as("age_group")
+                )
+                .from(table)
+                .asTable("spectrum_metadata");
+    }
+
+
+    private Table<?> getMetaTable(DSLContext ctx, SampleSelection selection) {
+        List<String> mutations = selection.getVariant().getMutations().stream()
+                .map(AAMutation::getMutationCode)
+                .collect(Collectors.toUnmodifiableList());
+        Table<?> metaTbl = getMetaTable(ctx, selection.isUsePrivate());
+        Table<?> mutTbl = getMutTable(ctx, selection.isUsePrivate());
+        List<Condition> conditions = new ArrayList<>();
+        conditions.add(MyDSL.aaMutationsAny(mutTbl, mutations));
+        if (selection.getCountry() != null) {
+            conditions.add(MyDSL.countryConstantEq(metaTbl, selection.getCountry()));
+        }
+        return ctx.
+                select(
+                        MyDSL.fSequenceName(metaTbl),
+                        MyDSL.fDate(metaTbl),
+                        MyDSL.fRegion(metaTbl),
+                        MyDSL.fCountry(metaTbl),
+                        MyDSL.fDivision(metaTbl),
+                        MyDSL.fLocation(metaTbl),
+                        MyDSL.fZipCode(metaTbl),
+                        MyDSL.fHost(metaTbl),
+                        MyDSL.fAge(metaTbl),
+                        MyDSL.fSex(metaTbl),
+                        MyDSL.fSubmittingLab(metaTbl),
+                        MyDSL.fOriginatingLab(metaTbl),
+                        MyDSL.fAgeGroup(metaTbl)
+                )
+                .from(MyDSL.metaJoinMut(metaTbl, mutTbl))
+                .where(conditions)
+                .groupBy(
+                        MyDSL.fSequenceName(metaTbl),
+                        MyDSL.fDate(metaTbl),
+                        MyDSL.fRegion(metaTbl),
+                        MyDSL.fCountry(metaTbl),
+                        MyDSL.fDivision(metaTbl),
+                        MyDSL.fLocation(metaTbl),
+                        MyDSL.fZipCode(metaTbl),
+                        MyDSL.fHost(metaTbl),
+                        MyDSL.fAge(metaTbl),
+                        MyDSL.fSex(metaTbl),
+                        MyDSL.fSubmittingLab(metaTbl),
+                        MyDSL.fOriginatingLab(metaTbl),
+                        MyDSL.fAgeGroup(metaTbl)
+                )
+                .having(DSL.count().ge((int) Math.ceil(selection.getMatchPercentage() * mutations.size())))
+                .asTable();
+    }
+
+
+    private Table<?> getMutTable(DSLContext ctx, boolean usePrivate) {
+        if (usePrivate) {
+            return ctx.select().from(Tables.SPECTRUM_SEQUENCE_PRIVATE_MUTATION_AA).asTable();
+        } else {
+            return ctx.select().from(Tables.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA).asTable();
         }
     }
 }

@@ -12,6 +12,8 @@ import org.jooq.covspectrum.tables.SpectrumSequencePrivateMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePrivateMutationAa;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMutationAa;
+import org.jooq.covspectrum.tables.VariantMutationAa;
+import org.jooq.covspectrum.tables.VariantMutationNucleotide;
 
 
 /**
@@ -59,4 +61,14 @@ public class Tables {
      * The table <code>public.spectrum_sequence_public_mutation_aa</code>.
      */
     public static final SpectrumSequencePublicMutationAa SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA = SpectrumSequencePublicMutationAa.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA;
+
+    /**
+     * The table <code>public.variant_mutation_aa</code>.
+     */
+    public static final VariantMutationAa VARIANT_MUTATION_AA = VariantMutationAa.VARIANT_MUTATION_AA;
+
+    /**
+     * The table <code>public.variant_mutation_nucleotide</code>.
+     */
+    public static final VariantMutationNucleotide VARIANT_MUTATION_NUCLEOTIDE = VariantMutationNucleotide.VARIANT_MUTATION_NUCLEOTIDE;
 }
