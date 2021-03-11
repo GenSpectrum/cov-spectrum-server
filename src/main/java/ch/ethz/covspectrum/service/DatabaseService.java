@@ -568,7 +568,7 @@ public class DatabaseService {
                                 .when(table.AGE.lt(60), "50-59")
                                 .when(table.AGE.lt(70), "60-69")
                                 .when(table.AGE.lt(80), "70-79")
-                                .otherwise("80+").as("age_group")
+                                .when(table.AGE.ge(80), "80+").as("age_group")
                 )
                 .from(table)
                 .asTable("spectrum_metadata");
