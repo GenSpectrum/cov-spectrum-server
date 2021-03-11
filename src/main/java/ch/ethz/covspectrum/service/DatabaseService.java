@@ -70,28 +70,6 @@ public class DatabaseService {
     }
 
 
-    public List<Variant> getKnownVariants() throws SQLException {
-        try (Connection conn = getDatabaseConnection()) {
-            DSLContext ctx = getDSLCtx(conn);
-            var statement = ctx
-                    .select(
-                            Tables.VARIANT_MUTATION_AA.VARIANT_NAME,
-                            DSL.groupConcat(Tables.VARIANT_MUTATION_AA.AA_MUTATION).separator(",").as("mutations")
-                    )
-                    .from(Tables.VARIANT_MUTATION_AA)
-                    .groupBy(Tables.VARIANT_MUTATION_AA.VARIANT_NAME)
-                    .orderBy(Tables.VARIANT_MUTATION_AA.VARIANT_NAME);
-            return statement.fetch()
-                    .map(r -> new Variant(
-                            r.get(Tables.VARIANT_MUTATION_AA.VARIANT_NAME),
-                            Arrays.stream(r.get("mutations", String.class).split(","))
-                                    .map(AAMutation::new)
-                                    .collect(Collectors.toSet())
-                    ));
-        }
-    }
-
-
     public int getNumberSequences(YearWeek week, String country) throws SQLException {
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
