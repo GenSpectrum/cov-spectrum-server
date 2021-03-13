@@ -1,15 +1,17 @@
 package ch.ethz.covspectrum.controller.computed;
 
+import ch.ethz.covspectrum.entity.VariantStatistics;
 import ch.ethz.covspectrum.entity.core.AAMutation;
+import ch.ethz.covspectrum.entity.core.DataType;
 import ch.ethz.covspectrum.entity.core.SampleName;
 import ch.ethz.covspectrum.entity.core.Variant;
-import ch.ethz.covspectrum.entity.VariantStatistics;
 import ch.ethz.covspectrum.service.DatabaseService;
 import ch.ethz.covspectrum.util.BoundedPriorityHeap;
 import ch.ethz.covspectrum.util.Counter;
 import ch.ethz.covspectrum.util.Utils;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,6 +39,8 @@ public class VariantComputedController {
 
 
     /**
+     * This endpoint is deprecated and will be removed very soon! Please use /find-interesting-variants.
+     * <p>
      * Uses a very basic to find variants that experienced relative growth compared to the previous week. The method
      * is not optimal at all.
      */
@@ -143,7 +147,6 @@ public class VariantComputedController {
         int t0TotalCount = databaseService.getNumberSequences(t0, country);
 
 
-
         // Step 3: Look up the number of sequences for the found variants in the week before and compare the two weeks.
         // Fetch mutations
         List<Pair<AAMutation, Set<SampleName>>> t0Mutations = databaseService.getMutations(t0, country);
@@ -230,6 +233,22 @@ public class VariantComputedController {
 
         this.findNewVariantsCache.put(cacheKey, finalVariantStatistics);
         return finalVariantStatistics;
+    }
+
+
+    @GetMapping(
+            value="/find-interesting-variants",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public String findInterestingVariants(
+            @RequestParam String country,
+            @RequestParam(required = false) DataType dataType
+    ) throws SQLException {
+        String result = databaseService.getPrecomputedInterestingVariants(country, dataType);
+        if (result == null) {
+            return "[]";
+        }
+        return result;
     }
 
 

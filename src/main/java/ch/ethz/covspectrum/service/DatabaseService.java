@@ -10,6 +10,7 @@ import org.javatuples.Pair;
 import org.jooq.*;
 import org.jooq.covspectrum.Tables;
 import org.jooq.impl.DSL;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.threeten.extra.YearWeek;
 
@@ -555,6 +556,32 @@ public class DatabaseService {
                     result.add(d);
                 }
                 return result;
+            }
+        }
+    }
+
+
+    public String getPrecomputedInterestingVariants(
+            String country,
+            @Nullable DataType dataType
+    ) throws SQLException {
+        // TODO Use datatype
+        String sql = """
+            select result
+            from spectrum_new_interesting_variant
+            where country = ?
+            order by insertion_timestamp desc
+            limit 1;
+        """;
+        try (Connection conn = getDatabaseConnection();
+             PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setString(1, country);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("result");
+                } else {
+                    return null;
+                }
             }
         }
     }
