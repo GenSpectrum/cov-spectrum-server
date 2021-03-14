@@ -605,6 +605,7 @@ public class DatabaseService {
                                 .when(table.AGE.ge(80), "80+").as("age_group")
                 )
                 .from(table)
+                .where(table.DATE.isNotNull())
                 .asTable("spectrum_metadata");
 
         List<Condition> conditions = new ArrayList<>();
