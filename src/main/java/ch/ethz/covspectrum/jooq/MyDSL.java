@@ -123,6 +123,16 @@ public class MyDSL {
     }
 
 
+    public static Field<Boolean> fHospitalized(Table<?> table) {
+        return table.field("hospitalized", Boolean.class);
+    }
+
+
+    public static Field<Boolean> fDeceased(Table<?> table) {
+        return table.field("deceased", Boolean.class);
+    }
+
+
     public static Field<String> fAaMutation(Table<?> table) {
         return table.field("aa_mutation", String.class);
     }

@@ -11,6 +11,9 @@ public class SampleSelection {
     private final Variant variant;
 
     @Nullable
+    private final String region;
+
+    @Nullable
     private final String country;
 
     private final float matchPercentage;
@@ -70,8 +73,21 @@ public class SampleSelection {
             float matchPercentage,
             DataType dataType
     ) {
+        this(usePrivate, variant, null, country, matchPercentage, dataType);
+    }
+
+
+    public SampleSelection(
+            boolean usePrivate,
+            Variant variant,
+            String region,
+            String country,
+            float matchPercentage,
+            DataType dataType
+    ) {
         this.usePrivate = usePrivate;
         this.variant = variant;
+        this.region = region;
         this.country = country;
         this.matchPercentage = matchPercentage;
         this.dataType = dataType;
@@ -87,6 +103,9 @@ public class SampleSelection {
         return variant;
     }
 
+    public String getRegion() {
+        return region;
+    }
 
     public String getCountry() {
         return country;

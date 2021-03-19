@@ -1,8 +1,8 @@
 package ch.ethz.covspectrum.service;
 
 import ch.ethz.covspectrum.entity.api.*;
-import ch.ethz.covspectrum.entity.core.*;
 import ch.ethz.covspectrum.entity.core.DataType;
+import ch.ethz.covspectrum.entity.core.*;
 import ch.ethz.covspectrum.jooq.MyDSL;
 import ch.ethz.covspectrum.jooq.SpectrumMetadataTable;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
@@ -420,6 +420,62 @@ public class DatabaseService {
     }
 
 
+    public List<WeightedSample> getSamples2(
+            String region,
+            String country,
+            String mutations,
+            float matchPercentage,
+            DataType dataType,
+            boolean usePrivateVersion
+    ) throws SQLException {
+        Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
+                .map(AAMutation::new)
+                .collect(Collectors.toSet());;
+        Variant variant = new Variant(aaMutations);
+        SampleSelection selection = new SampleSelection(
+                usePrivateVersion, variant, region, country, matchPercentage, dataType);
+        try (Connection conn = getDatabaseConnection()) {
+            DSLContext ctx = getDSLCtx(conn);
+            var samples = getMetaTable(ctx, selection).as("meta");
+            var statement = ctx
+                    .select(
+                            MyDSL.fDate(samples),
+                            MyDSL.fRegion(samples),
+                            MyDSL.fCountry(samples),
+                            MyDSL.fDivision(samples),
+                            MyDSL.fZipCode(samples),
+                            MyDSL.fAgeGroup(samples),
+                            MyDSL.fHospitalized(samples),
+                            MyDSL.fDeceased(samples),
+                            DSL.count().as("count")
+                    )
+                    .from(samples)
+                    .groupBy(
+                            MyDSL.fDate(samples),
+                            MyDSL.fRegion(samples),
+                            MyDSL.fCountry(samples),
+                            MyDSL.fDivision(samples),
+                            MyDSL.fZipCode(samples),
+                            MyDSL.fAgeGroup(samples),
+                            MyDSL.fHospitalized(samples),
+                            MyDSL.fDeceased(samples)
+                    );
+            return statement.fetch()
+                    .map(r -> new WeightedSample(
+                            r.get("date", LocalDate.class),
+                            r.get("region", String.class),
+                            r.get("country", String.class),
+                            r.get("division", String.class),
+                            r.get("zip_code", String.class),
+                            r.get("age_group", String.class),
+                            r.get("hospitalized", Boolean.class),
+                            r.get("deceased", Boolean.class),
+                            r.get("count", Integer.class)
+                    ));
+        }
+    }
+
+
     public List<SampleSequence> getSampleSequences(
             List<SampleName> sampleNames,
             boolean usePrivateVersion
@@ -619,6 +675,9 @@ public class DatabaseService {
                     .collect(Collectors.toUnmodifiableList());
             conditions.add(MyDSL.aaMutationsAny(mutTbl, mutations));
         }
+        if (selection.getRegion() != null) {
+            conditions.add(MyDSL.fRegion(metaTbl).eq(selection.getRegion()));
+        }
         if (selection.getCountry() != null) {
             conditions.add(MyDSL.countryConstantEq(metaTbl, selection.getCountry()));
         }
@@ -641,6 +700,8 @@ public class DatabaseService {
                 MyDSL.fSex(metaTbl),
                 MyDSL.fSubmittingLab(metaTbl),
                 MyDSL.fOriginatingLab(metaTbl),
+                MyDSL.fHospitalized(metaTbl),
+                MyDSL.fDeceased(metaTbl),
                 MyDSL.fAgeGroup(metaTbl)
         );
         if (selection.getVariant() == null) {

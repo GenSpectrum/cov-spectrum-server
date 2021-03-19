@@ -53,6 +53,26 @@ public class SampleResourceController {
     }
 
 
+    @GetMapping("/sample2")
+    public List<WeightedSample> getSamples2(
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) String country,
+            @RequestParam String mutations,
+            @RequestParam(defaultValue = "1") float matchPercentage,
+            @RequestParam(required = false) DataType dataType,
+            Principal principal
+    ) throws SQLException {
+        return databaseService.getSamples2(
+                region,
+                country,
+                mutations,
+                matchPercentage,
+                dataType,
+                principal != null
+        );
+    }
+
+
     @GetMapping("/sample-fasta")
     public String getFasta(
             @RequestParam(required = false) String country,

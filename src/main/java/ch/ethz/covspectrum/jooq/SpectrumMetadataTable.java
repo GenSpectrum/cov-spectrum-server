@@ -53,6 +53,12 @@ public class SpectrumMetadataTable extends CustomTable<SpectrumMetadataRecord> {
     public final TableField<SpectrumMetadataRecord, String> ORIGINATING_LAB
             = createField(name("originating_lab"), SQLDataType.CLOB);
 
+    public final TableField<SpectrumMetadataRecord, Boolean> HOSPITALIZED
+            = createField(name("hospitalized"), SQLDataType.BOOLEAN);
+
+    public final TableField<SpectrumMetadataRecord, Boolean> DECEASED
+            = createField(name("deceased"), SQLDataType.BOOLEAN);
+
 
     protected SpectrumMetadataTable(String tableName) {
         super(name(tableName));
