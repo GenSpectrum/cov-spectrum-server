@@ -13,9 +13,9 @@ public class WeightedSample {
 
     private final String division;
 
-    private final String zip_code;
+    private final String zipCode;
 
-    private final String age_group;
+    private final String ageGroup;
 
     private final Boolean hospitalized;
 
@@ -28,8 +28,8 @@ public class WeightedSample {
             String region,
             String country,
             String division,
-            String zip_code,
-            String age_group,
+            String zipCode,
+            String ageGroup,
             Boolean hospitalized,
             Boolean deceased,
             int count
@@ -38,8 +38,8 @@ public class WeightedSample {
         this.region = region;
         this.country = country;
         this.division = division;
-        this.zip_code = zip_code;
-        this.age_group = age_group;
+        this.zipCode = zipCode;
+        this.ageGroup = ageGroup;
         this.hospitalized = hospitalized;
         this.deceased = deceased;
         this.count = count;
@@ -61,12 +61,12 @@ public class WeightedSample {
         return division;
     }
 
-    public String getZip_code() {
-        return zip_code;
+    public String getZipCode() {
+        return zipCode;
     }
 
-    public String getAge_group() {
-        return age_group;
+    public String getAgeGroup() {
+        return ageGroup;
     }
 
     public Boolean getHospitalized() {
