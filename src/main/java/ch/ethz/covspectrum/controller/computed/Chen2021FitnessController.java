@@ -48,7 +48,7 @@ public class Chen2021FitnessController {
             @RequestParam(defaultValue = "0.95") float alpha,
             @RequestParam(defaultValue = "4.8") float generationTime,
             @RequestParam(defaultValue = "1") float reproductionNumberWildtype,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate plotStartDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate plotStartDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate plotEndDate,
             @RequestParam(defaultValue = "1000") int initialWildtypeCases,
             @RequestParam(defaultValue = "100") int initialVariantCases
@@ -58,7 +58,8 @@ public class Chen2021FitnessController {
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());
         Variant variant = new Variant(aaMutations);
-        var dailyTimeDistribution = databaseService.getDailyTimeDistribution(variant, country, matchPercentage, dataType);
+        var dailyTimeDistribution = databaseService.getDailyTimeDistribution(
+                variant, country, matchPercentage, dataType, plotStartDate, plotEndDate);
         if (dailyTimeDistribution.size() < 3) {
             return Optional.empty();
         }
@@ -69,17 +70,12 @@ public class Chen2021FitnessController {
                 .map(Distribution::getX)
                 .min(Comparator.comparing(LocalDate::toEpochDay))
                 .get();
-        if (plotStartDate != null) {
-            if (plotStartDate.isBefore(t0Date)) {
-                t0Date = plotStartDate;
-            }
+        if (plotStartDate.isBefore(t0Date)) {
+            t0Date = plotStartDate;
         }
 
-        // The plot will start at the plotStartDate if provided; otherwise at 0
-        int plotStartT = 0;
-        if (plotStartDate != null) {
-            plotStartT = (int) ChronoUnit.DAYS.between(t0Date, plotStartDate);
-        }
+        // The plot will start at the plotStartDate
+        int plotStartT = (int) ChronoUnit.DAYS.between(t0Date, plotStartDate);
 
         // Build data object
         List<Integer> t = new ArrayList<>();

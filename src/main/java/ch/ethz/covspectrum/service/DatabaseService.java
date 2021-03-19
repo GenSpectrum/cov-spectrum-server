@@ -119,7 +119,9 @@ public class DatabaseService {
             Variant variant,
             String country,
             float matchPercentage,
-            DataType dataType
+            DataType dataType,
+            LocalDate fromDate,
+            LocalDate endDate
     ) throws SQLException {
         SampleSelection selection = new SampleSelection(false, variant, country, matchPercentage, dataType);
         try (Connection conn = getDatabaseConnection()) {
@@ -134,7 +136,8 @@ public class DatabaseService {
                     .from(metaTbl)
                     .where(
                             MyDSL.fCountry(metaTbl).eq(country),
-                            MyDSL.fDate(metaTbl).isNotNull()
+                            MyDSL.fDate(metaTbl).isNotNull(),
+                            MyDSL.fDate(metaTbl).between(fromDate, endDate)
                     )
                     .groupBy(MyDSL.fDate(metaTbl))
                     .asTable();
@@ -154,6 +157,7 @@ public class DatabaseService {
                             MyDSL.fCount(countPerDate)
                     )
                     .orderBy(MyDSL.fDate(countPerDate));
+            System.out.println(statement);
             return statement.fetch()
                     .map(r -> new Distribution<>(
                             r.value1(),
