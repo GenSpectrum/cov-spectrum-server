@@ -17,6 +17,8 @@ public class WeightedSample {
 
     private final String ageGroup;
 
+    private final String sex;
+
     private final Boolean hospitalized;
 
     private final Boolean deceased;
@@ -30,6 +32,7 @@ public class WeightedSample {
             String division,
             String zipCode,
             String ageGroup,
+            String sex,
             Boolean hospitalized,
             Boolean deceased,
             int count
@@ -40,6 +43,7 @@ public class WeightedSample {
         this.division = division;
         this.zipCode = zipCode;
         this.ageGroup = ageGroup;
+        this.sex = sex;
         this.hospitalized = hospitalized;
         this.deceased = deceased;
         this.count = count;
@@ -67,6 +71,10 @@ public class WeightedSample {
 
     public String getAgeGroup() {
         return ageGroup;
+    }
+
+    public String getSex() {
+        return sex;
     }
 
     public Boolean getHospitalized() {

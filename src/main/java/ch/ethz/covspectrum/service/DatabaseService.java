@@ -460,6 +460,7 @@ public class DatabaseService {
                             MyDSL.fDivision(samples),
                             MyDSL.fZipCode(samples),
                             MyDSL.fAgeGroup(samples),
+                            MyDSL.fSex(samples),
                             MyDSL.fHospitalized(samples),
                             MyDSL.fDeceased(samples),
                             DSL.count().as("count")
@@ -472,6 +473,7 @@ public class DatabaseService {
                             MyDSL.fDivision(samples),
                             MyDSL.fZipCode(samples),
                             MyDSL.fAgeGroup(samples),
+                            MyDSL.fSex(samples),
                             MyDSL.fHospitalized(samples),
                             MyDSL.fDeceased(samples)
                     );
@@ -483,6 +485,7 @@ public class DatabaseService {
                             r.get("division", String.class),
                             r.get("zip_code", String.class),
                             r.get("age_group", String.class),
+                            r.get("sex", String.class),
                             r.get("hospitalized", Boolean.class),
                             r.get("deceased", Boolean.class),
                             r.get("count", Integer.class)
