@@ -117,6 +117,7 @@ public class DatabaseService {
 
     public List<Distribution<LocalDate, CountAndProportionWithCI>> getDailyTimeDistribution(
             Variant variant,
+            String region,
             String country,
             float matchPercentage,
             DataType dataType,
@@ -125,22 +126,20 @@ public class DatabaseService {
     ) throws SQLException {
         SampleSelection selection = new SampleSelection()
                 .setUsePrivate(false).setVariant(variant).setMatchPercentage(matchPercentage)
-                .setCountry(country).setDataType(dataType);
+                .setRegion(region).setCountry(country)
+                .setDateFrom(fromDate).setDateTo(endDate).setDataType(dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             Table<?> matchedSequences = getMetaTable(ctx, selection);
-            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection().setUsePrivate(false).setDataType(dataType));
+            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection()
+                    .setUsePrivate(false).setRegion(region).setCountry(country)
+                    .setDateFrom(fromDate).setDateTo(endDate).setDataType(dataType));
             Table<?> countPerDate = ctx
                     .select(
                             MyDSL.fDate(metaTbl),
                             DSL.count().as("count")
                     )
                     .from(metaTbl)
-                    .where(
-                            MyDSL.fCountry(metaTbl).eq(country),
-                            MyDSL.fDate(metaTbl).isNotNull(),
-                            MyDSL.fDate(metaTbl).between(fromDate, endDate)
-                    )
                     .groupBy(MyDSL.fDate(metaTbl))
                     .asTable();
             var statement = ctx
@@ -159,7 +158,6 @@ public class DatabaseService {
                             MyDSL.fCount(countPerDate)
                     )
                     .orderBy(MyDSL.fDate(countPerDate));
-            System.out.println(statement);
             return statement.fetch()
                     .map(r -> new Distribution<>(
                             r.value1(),

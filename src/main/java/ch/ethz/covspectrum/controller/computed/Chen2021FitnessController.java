@@ -41,7 +41,8 @@ public class Chen2021FitnessController {
 
     @GetMapping
     public Optional<ApiResponse> compute(
-            @RequestParam String country,
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) String country,
             @RequestParam String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage,
             @RequestParam(required = false) DataType dataType,
@@ -59,7 +60,7 @@ public class Chen2021FitnessController {
                 .collect(Collectors.toSet());
         Variant variant = new Variant(aaMutations);
         var dailyTimeDistribution = databaseService.getDailyTimeDistribution(
-                variant, country, matchPercentage, dataType, plotStartDate, plotEndDate);
+                variant, region, country, matchPercentage, dataType, plotStartDate, plotEndDate);
         if (dailyTimeDistribution.size() < 3) {
             return Optional.empty();
         }
