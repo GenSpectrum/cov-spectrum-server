@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.threeten.extra.YearWeek;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 
 
@@ -27,7 +27,7 @@ public class SequencingPlotController {
 
 
     @GetMapping("/time-intensity-distribution")
-    public List<Distribution<YearWeek, CasesAndSequences>> getTimeIntensityDistribution(
+    public List<Distribution<LocalDate, CasesAndSequences>> getTimeIntensityDistribution(
             @RequestParam String country,
             @RequestParam(required = false) DataType dataType
     ) throws SQLException {

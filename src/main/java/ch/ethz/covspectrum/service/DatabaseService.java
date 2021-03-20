@@ -596,22 +596,21 @@ public class DatabaseService {
     }
 
 
-    public List<Distribution<YearWeek, CasesAndSequences>> getTimeIntensityDistribution(
+    public List<Distribution<LocalDate, CasesAndSequences>> getTimeIntensityDistribution(
             String country,
             DataType dataType
     ) throws SQLException {
         String sql = """
             select
-              extract(isoyear from date) as year,
-              extract(week from date) as week,
+              date,
               sum(coalesce(cases, 0)) as cases,
               sum(coalesce(sequenced, 0)) as sequenced
             from spectrum_sequence_intensity
             where
               extract(isoyear from date) >= 2020
               and country = ?
-            group by year, week
-            order by year, week;
+            group by date
+            order by date;
         """;
         if (dataType == DataType.SURVEILLANCE) {
             sql = sql.replace("spectrum_sequence_intensity", "spectrum_sequence_intensity_surveillance");
@@ -620,10 +619,10 @@ public class DatabaseService {
              PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setString(1, country);
             try (ResultSet rs = statement.executeQuery()) {
-                List<Distribution<YearWeek, CasesAndSequences>> result = new ArrayList<>();
+                List<Distribution<LocalDate, CasesAndSequences>> result = new ArrayList<>();
                 while (rs.next()) {
-                    Distribution<YearWeek, CasesAndSequences> d = new Distribution<>(
-                            YearWeek.of(rs.getInt("year"), rs.getInt("week")),
+                    Distribution<LocalDate, CasesAndSequences> d = new Distribution<>(
+                            rs.getDate("date").toLocalDate(),
                             new CasesAndSequences(rs.getInt("cases"), rs.getInt("sequenced"))
                     );
                     result.add(d);
