@@ -60,7 +60,7 @@ public class DatabaseService {
     public List<String> getCountryNames() throws SQLException {
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
-            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection(false));
+            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection().setUsePrivate(false));
             var statement = ctx
                     .selectDistinct(MyDSL.fCountry(metaTbl))
                     .from(metaTbl)
@@ -74,7 +74,7 @@ public class DatabaseService {
     public int getNumberSequences(YearWeek week, String country) throws SQLException {
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
-            var metaTbl = getMetaTable(ctx, new SampleSelection(false));
+            var metaTbl = getMetaTable(ctx, new SampleSelection().setUsePrivate(false));
             var statement = ctx
                     .select(DSL.count().as("count"))
                     .from(metaTbl)
@@ -91,7 +91,7 @@ public class DatabaseService {
         int MINIMAL_NUMBER_OF_SAMPLES = 5;
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
-            var metaTbl = getMetaTable(ctx, new SampleSelection(false));
+            var metaTbl = getMetaTable(ctx, new SampleSelection().setUsePrivate(false));
             var mutTbl = getMutTable(ctx, false);
             var statement = ctx
                     .select(
@@ -123,11 +123,13 @@ public class DatabaseService {
             LocalDate fromDate,
             LocalDate endDate
     ) throws SQLException {
-        SampleSelection selection = new SampleSelection(false, variant, country, matchPercentage, dataType);
+        SampleSelection selection = new SampleSelection()
+                .setUsePrivate(false).setVariant(variant).setMatchPercentage(matchPercentage)
+                .setCountry(country).setDataType(dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             Table<?> matchedSequences = getMetaTable(ctx, selection);
-            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection(false, dataType));
+            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection().setUsePrivate(false).setDataType(dataType));
             Table<?> countPerDate = ctx
                     .select(
                             MyDSL.fDate(metaTbl),
@@ -173,11 +175,13 @@ public class DatabaseService {
             float matchPercentage,
             DataType dataType
     ) throws SQLException {
-        SampleSelection selection = new SampleSelection(false, variant, country, matchPercentage, dataType);
+        SampleSelection selection = new SampleSelection()
+                .setUsePrivate(false).setVariant(variant).setMatchPercentage(matchPercentage)
+                .setCountry(country).setDataType(dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             var sequences = getMetaTable(ctx, selection);
-            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection(false, dataType));
+            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection().setUsePrivate(false).setDataType(dataType));
             Table<?> countPerYearWeek = ctx
                     .select(
                             MyDSL.extractIsoYear(MyDSL.fDate(metaTbl)).as("year"),
@@ -226,10 +230,13 @@ public class DatabaseService {
             boolean usePrivateVersion,
             DataType dataType
     ) throws SQLException {
-        SampleSelection selection = new SampleSelection(usePrivateVersion, variant, country, matchPercentage, dataType);
+        SampleSelection selection = new SampleSelection()
+                .setUsePrivate(usePrivateVersion).setVariant(variant).setMatchPercentage(matchPercentage)
+                .setCountry(country).setDataType(dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
-            Table<?> metaTbl = getMetaTable(ctx, new SampleSelection(usePrivateVersion, dataType));
+            Table<?> metaTbl = getMetaTable(ctx,
+                    new SampleSelection().setUsePrivate(usePrivateVersion).setDataType(dataType));
             var sequences = getMetaTable(ctx, selection).as("meta");
             var groupedByAgeGroup = ctx
                     .select(MyDSL.fAgeGroup(sequences), DSL.count().as("count"))
@@ -351,7 +358,9 @@ public class DatabaseService {
             boolean usePrivateVersion,
             DataType dataType
     ) throws SQLException {
-        SampleSelection selection = new SampleSelection(usePrivateVersion, variant, country, matchPercentage, dataType);
+        SampleSelection selection = new SampleSelection()
+                .setUsePrivate(usePrivateVersion).setVariant(variant).setMatchPercentage(matchPercentage)
+                .setCountry(country).setDataType(dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             Table<?> mutTbl = getMutTable(ctx, usePrivateVersion);
@@ -430,14 +439,18 @@ public class DatabaseService {
             String mutations,
             float matchPercentage,
             DataType dataType,
+            LocalDate dateFrom,
+            LocalDate dateTo,
             boolean usePrivateVersion
     ) throws SQLException {
         Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
                 .map(AAMutation::new)
                 .collect(Collectors.toSet());;
         Variant variant = new Variant(aaMutations);
-        SampleSelection selection = new SampleSelection(
-                usePrivateVersion, variant, region, country, matchPercentage, dataType);
+        SampleSelection selection = new SampleSelection()
+                .setUsePrivate(usePrivateVersion).setVariant(variant).setMatchPercentage(matchPercentage)
+                .setRegion(region).setCountry(country).setDataType(dataType)
+                .setDateFrom(dateFrom).setDateTo(dateTo);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             var samples = getMetaTable(ctx, selection).as("meta");
@@ -553,7 +566,9 @@ public class DatabaseService {
             float matchPercentage,
             DataType dataType
     ) throws SQLException {
-        SampleSelection selection = new SampleSelection(true, variant, "Switzerland", matchPercentage, dataType);
+        SampleSelection selection = new SampleSelection()
+                .setUsePrivate(true).setVariant(variant).setMatchPercentage(matchPercentage)
+                .setCountry("Switzerland").setDataType(dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             var sequences = getMetaTable(ctx, selection).as("meta");
@@ -690,6 +705,12 @@ public class DatabaseService {
                 conditions.add(MyDSL.fSubmittingLab(metaTbl).eq(BSSE)
                         .or(MyDSL.fSubmittingLab(metaTbl).eq(HUG)));
             }
+        }
+        if (selection.getDateFrom() != null) {
+            conditions.add(MyDSL.fDate(metaTbl).ge(selection.getDateFrom()));
+        }
+        if (selection.getDateTo() != null) {
+            conditions.add(MyDSL.fDate(metaTbl).le(selection.getDateTo()));
         }
         List<Field<?>> fields = Arrays.asList(
                 MyDSL.fSequenceName(metaTbl),

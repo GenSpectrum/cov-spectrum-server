@@ -4,6 +4,7 @@ import ch.ethz.covspectrum.entity.core.*;
 import ch.ethz.covspectrum.entity.api.ResultList;
 import ch.ethz.covspectrum.service.DatabaseService;
 import ch.ethz.covspectrum.util.Utils;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -60,6 +62,8 @@ public class SampleResourceController {
             @RequestParam String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage,
             @RequestParam(required = false) DataType dataType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             Principal principal
     ) throws SQLException {
         return databaseService.getSamples2(
@@ -68,6 +72,8 @@ public class SampleResourceController {
                 mutations,
                 matchPercentage,
                 dataType,
+                dateFrom,
+                dateTo,
                 principal != null
         );
     }

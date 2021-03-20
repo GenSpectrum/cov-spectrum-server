@@ -1,124 +1,96 @@
 package ch.ethz.covspectrum.entity.core;
 
-import org.springframework.lang.Nullable;
+import java.time.LocalDate;
 
 
 public class SampleSelection {
 
-    private final boolean usePrivate;
+    private boolean usePrivate = false;
 
-    @Nullable
-    private final Variant variant;
+    private Variant variant;
 
-    @Nullable
-    private final String region;
+    private String region;
 
-    @Nullable
-    private final String country;
+    private String country;
 
-    private final float matchPercentage;
+    private float matchPercentage = 1;
 
-    @Nullable
-    private final DataType dataType;
+    private DataType dataType;
 
+    private LocalDate dateFrom;
 
-    public SampleSelection(
-            boolean usePrivate
-    ) {
-        this(usePrivate, null, null, 0, null);
-    }
-
-
-    public SampleSelection(
-            boolean usePrivate,
-            DataType dataType
-    ) {
-        this(usePrivate, null, null, 0, dataType);
-    }
-
-
-    public SampleSelection(
-            boolean usePrivate,
-            Variant variant,
-            float matchPercentage
-    ) {
-        this(usePrivate, variant, null, matchPercentage, null);
-    }
-
-
-    public SampleSelection(
-            boolean usePrivate,
-            Variant variant,
-            float matchPercentage,
-            DataType dataType
-    ) {
-        this(usePrivate, variant, null, matchPercentage, dataType);
-    }
-
-
-    public SampleSelection(
-            boolean usePrivate,
-            Variant variant,
-            String country,
-            float matchPercentage
-    ) {
-        this(usePrivate, variant, country, matchPercentage, null);
-    }
-
-
-    public SampleSelection(
-            boolean usePrivate,
-            Variant variant,
-            String country,
-            float matchPercentage,
-            DataType dataType
-    ) {
-        this(usePrivate, variant, null, country, matchPercentage, dataType);
-    }
-
-
-    public SampleSelection(
-            boolean usePrivate,
-            Variant variant,
-            String region,
-            String country,
-            float matchPercentage,
-            DataType dataType
-    ) {
-        this.usePrivate = usePrivate;
-        this.variant = variant;
-        this.region = region;
-        this.country = country;
-        this.matchPercentage = matchPercentage;
-        this.dataType = dataType;
-    }
+    private LocalDate dateTo;
 
 
     public boolean isUsePrivate() {
         return usePrivate;
     }
 
+    public SampleSelection setUsePrivate(boolean usePrivate) {
+        this.usePrivate = usePrivate;
+        return this;
+    }
 
     public Variant getVariant() {
         return variant;
+    }
+
+    public SampleSelection setVariant(Variant variant) {
+        this.variant = variant;
+        return this;
     }
 
     public String getRegion() {
         return region;
     }
 
+    public SampleSelection setRegion(String region) {
+        this.region = region;
+        return this;
+    }
+
     public String getCountry() {
         return country;
     }
 
+    public SampleSelection setCountry(String country) {
+        this.country = country;
+        return this;
+    }
 
     public float getMatchPercentage() {
         return matchPercentage;
     }
 
+    public SampleSelection setMatchPercentage(float matchPercentage) {
+        this.matchPercentage = matchPercentage;
+        return this;
+    }
 
-    @Nullable
     public DataType getDataType() {
         return dataType;
+    }
+
+    public SampleSelection setDataType(DataType dataType) {
+        this.dataType = dataType;
+        return this;
+    }
+
+    public LocalDate getDateFrom() {
+        return dateFrom;
+    }
+
+    public SampleSelection setDateFrom(LocalDate dateFrom) {
+        this.dateFrom = dateFrom;
+        return this;
+    }
+
+    public LocalDate getDateTo() {
+        return dateTo;
+    }
+
+    public SampleSelection setDateTo(LocalDate dateTo) {
+        this.dateTo = dateTo;
+        return this;
     }
 }
