@@ -28,10 +28,11 @@ public class SequencingPlotController {
 
     @GetMapping("/time-intensity-distribution")
     public List<Distribution<LocalDate, CasesAndSequences>> getTimeIntensityDistribution(
-            @RequestParam String country,
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) String country,
             @RequestParam(required = false) DataType dataType
     ) throws SQLException {
-        return databaseService.getTimeIntensityDistribution(country, dataType);
+        return databaseService.getTimeIntensityDistribution(region, country, dataType);
     }
 
 }

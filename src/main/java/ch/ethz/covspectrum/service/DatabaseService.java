@@ -600,33 +600,47 @@ public class DatabaseService {
 
 
     public List<Distribution<LocalDate, CasesAndSequences>> getTimeIntensityDistribution(
+            String region,
             String country,
             DataType dataType
     ) throws SQLException {
         String sql = """
             select
               date,
-              sum(coalesce(cases, 0)) as cases,
-              sum(coalesce(sequenced, 0)) as sequenced
+              region,
+              country,
+              cases,
+              sequenced,
+              sequenced_surveillance
             from spectrum_sequence_intensity
-            where
-              extract(isoyear from date) >= 2020
-              and country = ?
-            group by date
-            order by date;
+            where date is not null and
         """;
-        if (dataType == DataType.SURVEILLANCE) {
-            sql = sql.replace("spectrum_sequence_intensity", "spectrum_sequence_intensity_surveillance");
+        if (country == null && region == null) {
+            sql += " country is null and region is null\n";
+        } else if (country == null) {
+            sql += " country is null and region = ?\n";
+        } else {
+            sql += " country = ?\n";
         }
+        sql += "order by date;";
         try (Connection conn = getDatabaseConnection();
              PreparedStatement statement = conn.prepareStatement(sql)) {
-            statement.setString(1, country);
+            if (country == null && region == null) {
+                // No params
+            } else if (country == null) {
+                statement.setString(1, region);
+            } else {
+                statement.setString(1, country);
+            }
             try (ResultSet rs = statement.executeQuery()) {
                 List<Distribution<LocalDate, CasesAndSequences>> result = new ArrayList<>();
                 while (rs.next()) {
                     Distribution<LocalDate, CasesAndSequences> d = new Distribution<>(
                             rs.getDate("date").toLocalDate(),
-                            new CasesAndSequences(rs.getInt("cases"), rs.getInt("sequenced"))
+                            new CasesAndSequences(
+                                    rs.getInt("cases"),
+                                    rs.getInt(dataType == DataType.SURVEILLANCE ? "sequenced_surveillance" : "sequenced")
+                            )
                     );
                     result.add(d);
                 }
