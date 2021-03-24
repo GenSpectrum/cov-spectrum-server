@@ -441,10 +441,13 @@ public class DatabaseService {
             LocalDate dateTo,
             boolean usePrivateVersion
     ) throws SQLException {
-        Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
-                .map(AAMutation::new)
-                .collect(Collectors.toSet());;
-        Variant variant = new Variant(aaMutations);
+        Variant variant = null;
+        if (mutations != null) {
+            Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
+                    .map(AAMutation::new)
+                    .collect(Collectors.toSet());
+            variant = new Variant(aaMutations);
+        }
         SampleSelection selection = new SampleSelection()
                 .setUsePrivate(usePrivateVersion).setVariant(variant).setMatchPercentage(matchPercentage)
                 .setRegion(region).setCountry(country).setDataType(dataType)

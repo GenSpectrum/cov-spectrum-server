@@ -59,7 +59,7 @@ public class SampleResourceController {
     public List<WeightedSample> getSamples2(
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String country,
-            @RequestParam String mutations,
+            @RequestParam(required = false) String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage,
             @RequestParam(required = false) DataType dataType,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
