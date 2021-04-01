@@ -765,10 +765,6 @@ public class DatabaseService {
 
 
     private Table<?> getMutTable(DSLContext ctx, boolean usePrivate) {
-        if (usePrivate) {
-            return ctx.select().from(Tables.SPECTRUM_SEQUENCE_PRIVATE_MUTATION_AA).asTable();
-        } else {
-            return ctx.select().from(Tables.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA).asTable();
-        }
+        return ctx.select().from(Tables.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA).asTable();
     }
 }
