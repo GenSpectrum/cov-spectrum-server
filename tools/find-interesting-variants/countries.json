@@ -28,10 +28,6 @@
     "resourceCategory": "S"
   },
   {
-    "name": "Aruba",
-    "resourceCategory": "S"
-  },
-  {
     "name": "Australia",
     "resourceCategory": "L"
   },
@@ -128,7 +124,15 @@
     "resourceCategory": "S"
   },
   {
+    "name": "Congo",
+    "resourceCategory": "S"
+  },
+  {
     "name": "Costa Rica",
+    "resourceCategory": "S"
+  },
+  {
+    "name": "Cote d'Ivoire",
     "resourceCategory": "S"
   },
   {
@@ -140,23 +144,15 @@
     "resourceCategory": "S"
   },
   {
-    "name": "Curacao",
-    "resourceCategory": "S"
-  },
-  {
     "name": "Cyprus",
     "resourceCategory": "S"
   },
   {
-    "name": "Czech Republic",
+    "name": "Czechia",
     "resourceCategory": "S"
   },
   {
-    "name": "Côte d'Ivoire",
-    "resourceCategory": "S"
-  },
-  {
-    "name": "Democratic Republic of the Congo",
+    "name": "Democratic Republic of Congo",
     "resourceCategory": "S"
   },
   {
@@ -185,6 +181,10 @@
   },
   {
     "name": "Estonia",
+    "resourceCategory": "S"
+  },
+  {
+    "name": "Eswatini",
     "resourceCategory": "S"
   },
   {
@@ -221,14 +221,6 @@
   },
   {
     "name": "Greece",
-    "resourceCategory": "S"
-  },
-  {
-    "name": "Guadeloupe",
-    "resourceCategory": "S"
-  },
-  {
-    "name": "Guam",
     "resourceCategory": "S"
   },
   {
@@ -277,7 +269,7 @@
   },
   {
     "name": "Italy",
-    "resourceCategory": "M"
+    "resourceCategory": "S"
   },
   {
     "name": "Jamaica",
@@ -344,6 +336,10 @@
     "resourceCategory": "S"
   },
   {
+    "name": "Mauritius",
+    "resourceCategory": "S"
+  },
+  {
     "name": "Mexico",
     "resourceCategory": "S"
   },
@@ -373,6 +369,10 @@
   },
   {
     "name": "Myanmar",
+    "resourceCategory": "S"
+  },
+  {
+    "name": "Namibia",
     "resourceCategory": "S"
   },
   {
@@ -440,10 +440,6 @@
     "resourceCategory": "S"
   },
   {
-    "name": "Republic of the Congo",
-    "resourceCategory": "S"
-  },
-  {
     "name": "Romania",
     "resourceCategory": "S"
   },
@@ -456,19 +452,11 @@
     "resourceCategory": "S"
   },
   {
-    "name": "Saint Barthélemy",
-    "resourceCategory": "S"
-  },
-  {
     "name": "Saint Kitts and Nevis",
     "resourceCategory": "S"
   },
   {
     "name": "Saint Lucia",
-    "resourceCategory": "S"
-  },
-  {
-    "name": "Saint Martin",
     "resourceCategory": "S"
   },
   {
@@ -493,10 +481,6 @@
   },
   {
     "name": "Singapore",
-    "resourceCategory": "S"
-  },
-  {
-    "name": "Sint Maarten",
     "resourceCategory": "S"
   },
   {
@@ -544,7 +528,7 @@
     "resourceCategory": "S"
   },
   {
-    "name": "Timor-Leste",
+    "name": "Timor",
     "resourceCategory": "S"
   },
   {
@@ -564,10 +548,6 @@
     "resourceCategory": "S"
   },
   {
-    "name": "USA",
-    "resourceCategory": "XXL"
-  },
-  {
     "name": "Uganda",
     "resourceCategory": "S"
   },
@@ -582,6 +562,10 @@
   {
     "name": "United Kingdom",
     "resourceCategory": "XXXL"
+  },
+  {
+    "name": "United States",
+    "resourceCategory": "XXL"
   },
   {
     "name": "Uruguay",
