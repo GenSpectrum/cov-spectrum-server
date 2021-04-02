@@ -4,6 +4,8 @@ import ch.ethz.covspectrum.service.DatabaseService;
 import ch.ethz.covspectrum.util.Counter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.threeten.extra.Days;
@@ -45,7 +47,7 @@ public class FindInterestingVariants {
             int maxVariantLength,
             int maxNumberOfVariants
     ) throws SQLException, JsonProcessingException {
-        // TODO Implement DataType filter!
+        // TODO Implement DataType filter?!
 
         /* Assumptions and settings */
         double GENERATION_TIME = 4.8;
@@ -258,10 +260,18 @@ public class FindInterestingVariants {
             }
         }
 
+        // We calculate a "uniqueness score" for each mutation defined as the number of samples of a variant divided by
+        // the number of total occurrences of that mutation. This can help us to understand if a mutation is unique to
+        // the variant or shared by other variants as well.
+        Map<String, Integer> mutationToNumberOccurrences = new HashMap<>();
+        for (Map.Entry<String, List<String>> mutationAndSamples : mutationToSamples.entrySet()) {
+            mutationToNumberOccurrences.put(mutationAndSamples.getKey(), mutationAndSamples.getValue().size());
+        }
+
         // Loop through the selected samples and compute the logistic growth rate
         int failed = 0;
         int total = 0;
-        List<IdentifiedVariant> identifiedVariants = new ArrayList<>();
+        List<ResultVariant> resultVariants = new ArrayList<>();
         for (Map.Entry<Variant, SampleSet> entry : variantToSamples.entrySet()) {
             Variant variant = entry.getKey();
             SampleSet samples = entry.getValue();
@@ -275,10 +285,14 @@ public class FindInterestingVariants {
                 k.set(_t, k.get(_t) + 1);
                 numberSamples++;
             }
+            final int finalNumberSamples = numberSamples;
+            List<ResultMutation> mutations = variant.getMutations().stream()
+                    .map(m -> new ResultMutation(m, finalNumberSamples * 1.0 / mutationToNumberOccurrences.get(m)))
+                    .collect(Collectors.toList());
             try {
                 double a = logisticCurveOptimizer.fit(t, k, n);
-                identifiedVariants.add(new IdentifiedVariant(
-                        variant,
+                resultVariants.add(new ResultVariant(
+                        mutations,
                         a,
                         fromAToFd(a, GENERATION_TIME),
                         numberSamples,
@@ -293,19 +307,24 @@ public class FindInterestingVariants {
         logger.info("Simplex failed for " + failed + " out of " + total + ".");
 
         // We will only keep variants with f >= 0.05 and at most maxNumberOfVariants variants.
-        List<IdentifiedVariant> results = identifiedVariants.stream()
+        resultVariants = resultVariants.stream()
                 .filter(v -> v.getF() >= MIN_F)
-                .sorted(Comparator.comparingDouble(IdentifiedVariant::getF).reversed())
+                .sorted(Comparator.comparingDouble(ResultVariant::getF).reversed())
                 .limit(maxNumberOfVariants)
                 .collect(Collectors.toUnmodifiableList());
+
+        // Create the final result object
+        Result result = new Result(LocalDate.now(), resultVariants);
 
 
         // Step 4: Format results as JSON
         ObjectMapper objectMapper = new ObjectMapper();
-        String json = objectMapper.writeValueAsString(results);
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        String json = objectMapper.writeValueAsString(result);
 
         // Step 5: Save to database
-        logger.info("Start writing the results (" + results.size() + " variants) into the database.");
+        logger.info("Start writing the results (" + resultVariants.size() + " variants) into the database.");
         Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
         try (Connection conn = this.databaseService.getDatabaseConnection()) {
             String sql = """

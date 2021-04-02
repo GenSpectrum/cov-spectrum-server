@@ -1,9 +1,11 @@
 package ch.ethz.covspectrum.fiv;
 
 
-public class IdentifiedVariant {
+import java.util.List;
 
-    private final Variant variant;
+public class ResultVariant {
+
+    private final List<ResultMutation> mutations;
 
     private final double a;
 
@@ -14,14 +16,14 @@ public class IdentifiedVariant {
     private final double relativeNumberSamplesInPastThreeMonths;
 
 
-    public IdentifiedVariant(
-            Variant variant,
+    public ResultVariant(
+            List<ResultMutation> mutations,
             double a,
             double f,
             int absoluteNumberSamplesInPastThreeMonths,
             double relativeNumberSamplesInPastThreeMonths
     ) {
-        this.variant = variant;
+        this.mutations = mutations;
         this.a = a;
         this.f = f;
         this.absoluteNumberSamplesInPastThreeMonths = absoluteNumberSamplesInPastThreeMonths;
@@ -29,8 +31,8 @@ public class IdentifiedVariant {
     }
 
 
-    public Variant getVariant() {
-        return variant;
+    public List<ResultMutation> getMutations() {
+        return mutations;
     }
 
 
