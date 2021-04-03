@@ -246,7 +246,7 @@ public class VariantComputedController {
     ) throws SQLException {
         String result = databaseService.getPrecomputedInterestingVariants(country, dataType);
         if (result == null) {
-            return "[]";
+            return "{\"computedAt\": \"2020-01-01\", \"variants\": []}";
         }
         return result;
     }
