@@ -15,15 +15,10 @@ import org.springframework.stereotype.Service;
 import org.threeten.extra.YearWeek;
 
 import java.beans.PropertyVetoException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.Date;
+import java.sql.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -480,7 +475,7 @@ public class DatabaseService {
                             MyDSL.fHospitalized(samples),
                             MyDSL.fDeceased(samples)
                     );
-            return statement.fetch()
+            List<WeightedSample> results = statement.fetch()
                     .map(r -> new WeightedSample(
                             r.get("date", LocalDate.class),
                             r.get("region", String.class),
@@ -493,6 +488,8 @@ public class DatabaseService {
                             r.get("deceased", Boolean.class),
                             r.get("count", Integer.class)
                     ));
+            incrementSampleUsageStatistics(selection);
+            return results;
         }
     }
 
@@ -767,5 +764,50 @@ public class DatabaseService {
 
     private Table<?> getMutTable(DSLContext ctx, boolean usePrivate) {
         return ctx.select().from(Tables.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA).asTable();
+    }
+
+
+    private void incrementSampleUsageStatistics(SampleSelection selection) throws SQLException {
+        String sql = """
+            insert into spectrum_api_usage_sample as s (
+                isoyear, isoweek, usage_count,
+                private_version, region, country, mutations, match_percentage,
+                data_type, date_from, date_to
+            )
+            values (
+                extract(isoyear from current_date), extract(week from current_date), 1,
+                ?, ?, ?, ?, ?, ?, ?, ?
+            )
+            on conflict on constraint spectrum_api_usage_sample_unique_constraint
+              do update
+              set usage_count = s.usage_count + 1;
+        """;
+        try (Connection conn = getDatabaseConnection()) {
+            try (PreparedStatement statement = conn.prepareStatement(sql)) {
+                statement.setBoolean(1, selection.isUsePrivate());
+                statement.setString(2, Objects.requireNonNullElse(selection.getRegion(), ""));
+                statement.setString(3, Objects.requireNonNullElse(selection.getCountry(), ""));
+                String mutationsString = "";
+                if (selection.getVariant() != null) {
+                    mutationsString = selection.getVariant().getMutations().stream()
+                            .map(AAMutation::decode)
+                            .map(AAMutationDecoded::toString)
+                            .sorted()
+                            .collect(Collectors.joining(","));
+                }
+                statement.setString(4, mutationsString);
+                statement.setFloat(5, selection.getMatchPercentage());
+                String dataType = "";
+                if (selection.getDataType() != null) {
+                    dataType = selection.getDataType().toString();
+                }
+                statement.setString(6, dataType);
+                statement.setDate(7, Date.valueOf(Objects.requireNonNullElse(selection.getDateFrom(),
+                        LocalDate.of(1990, 1, 1))));
+                statement.setDate(8, Date.valueOf(Objects.requireNonNullElse(selection.getDateFrom(),
+                        LocalDate.of(1990, 1, 1))));
+                statement.execute();
+            }
+        }
     }
 }

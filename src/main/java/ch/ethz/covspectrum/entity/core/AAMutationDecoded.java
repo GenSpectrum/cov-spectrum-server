@@ -32,4 +32,10 @@ public class AAMutationDecoded {
     public String getBase() {
         return base;
     }
+
+
+    @Override
+    public String toString() {
+        return gene.toLowerCase() + ":" + position + (base != null ? base.toLowerCase() : "");
+    }
 }
