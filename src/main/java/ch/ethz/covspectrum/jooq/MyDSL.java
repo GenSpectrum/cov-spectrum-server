@@ -1,13 +1,14 @@
 package ch.ethz.covspectrum.jooq;
 
-import org.jooq.*;
+import ch.ethz.covspectrum.entity.core.AAMutation;
+import ch.ethz.covspectrum.entity.core.AAMutationDecoded;
 import org.jooq.Record;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.threeten.extra.YearWeek;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 
@@ -51,9 +52,14 @@ public class MyDSL {
     }
 
 
-    public static Condition aaMutationsAny(Table<?> table, Collection<String> aaMutations){
-        String[] arr = aaMutations.toArray(String[]::new);
-        return table.field("aa_mutation", String.class).eq(DSL.any(arr));
+    public static Condition aaMutationEq(Table<?> table, AAMutation aaMutation){
+        AAMutationDecoded decoded = aaMutation.decode();
+        Condition c = table.field("aa_mutation_gene", String.class).eq(decoded.getGene().toLowerCase())
+                .and(table.field("aa_mutation_position", Integer.class).eq(decoded.getPosition()));
+        if (decoded.getBase() != null) {
+            c = c.and(table.field("aa_mutation_base", String.class).eq(decoded.getBase().toLowerCase()));
+        }
+        return c;
     }
 
 

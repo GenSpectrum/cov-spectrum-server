@@ -703,13 +703,13 @@ public class DatabaseService {
         List<Condition> conditions = new ArrayList<>();
 
         Table<?> mutTbl = null;
-        List<String> mutations = null;
         if (selection.getVariant() != null) {
             mutTbl = getMutTable(ctx, selection.isUsePrivate());
-            mutations = selection.getVariant().getMutations().stream()
-                    .map(AAMutation::getMutationCode)
-                    .collect(Collectors.toUnmodifiableList());
-            conditions.add(MyDSL.aaMutationsAny(mutTbl, mutations));
+            Condition c = DSL.falseCondition();
+            for (AAMutation mutation : selection.getVariant().getMutations()) {
+                c = c.or(MyDSL.aaMutationEq(mutTbl, mutation));
+            }
+            conditions.add(c);
         }
         if (selection.getRegion() != null) {
             conditions.add(MyDSL.fRegion(metaTbl).eq(selection.getRegion()));
@@ -758,7 +758,8 @@ public class DatabaseService {
                     .from(MyDSL.metaJoinMut(metaTbl, mutTbl))
                     .where(conditions)
                     .groupBy(fields)
-                    .having(DSL.count().ge((int) Math.ceil(selection.getMatchPercentage() * mutations.size())))
+                    .having(DSL.count().ge((int) Math.ceil(
+                            selection.getMatchPercentage() * selection.getVariant().getMutations().size())))
                     .asTable();
         }
     }
