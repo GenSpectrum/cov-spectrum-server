@@ -13,7 +13,7 @@ import org.jooq.ForeignKey;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row12;
+import org.jooq.Row14;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -107,6 +107,16 @@ public class SpectrumSequencePrivateMeta extends TableImpl<SpectrumSequencePriva
      */
     public final TableField<SpectrumSequencePrivateMetaRecord, String> ORIGINATING_LAB = createField(DSL.name("originating_lab"), SQLDataType.CLOB, this, "");
 
+    /**
+     * The column <code>public.spectrum_sequence_private_meta.hospitalized</code>.
+     */
+    public final TableField<SpectrumSequencePrivateMetaRecord, Boolean> HOSPITALIZED = createField(DSL.name("hospitalized"), SQLDataType.BOOLEAN, this, "");
+
+    /**
+     * The column <code>public.spectrum_sequence_private_meta.deceased</code>.
+     */
+    public final TableField<SpectrumSequencePrivateMetaRecord, Boolean> DECEASED = createField(DSL.name("deceased"), SQLDataType.BOOLEAN, this, "");
+
     private SpectrumSequencePrivateMeta(Name alias, Table<SpectrumSequencePrivateMetaRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -177,11 +187,11 @@ public class SpectrumSequencePrivateMeta extends TableImpl<SpectrumSequencePriva
     }
 
     // -------------------------------------------------------------------------
-    // Row12 type methods
+    // Row14 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row12<String, LocalDate, String, String, String, String, String, String, Integer, String, String, String> fieldsRow() {
-        return (Row12) super.fieldsRow();
+    public Row14<String, LocalDate, String, String, String, String, String, String, Integer, String, String, String, Boolean, Boolean> fieldsRow() {
+        return (Row14) super.fieldsRow();
     }
 }

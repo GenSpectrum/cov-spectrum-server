@@ -8,13 +8,14 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.jooq.Catalog;
+import org.jooq.Sequence;
 import org.jooq.Table;
 import org.jooq.covspectrum.tables.ConsensusSequence;
 import org.jooq.covspectrum.tables.GisaidSequence;
 import org.jooq.covspectrum.tables.SpectrumAccount;
+import org.jooq.covspectrum.tables.SpectrumNewInterestingVariant;
 import org.jooq.covspectrum.tables.SpectrumSequenceIntensity;
 import org.jooq.covspectrum.tables.SpectrumSequencePrivateMeta;
-import org.jooq.covspectrum.tables.SpectrumSequencePrivateMutationAa;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMutationAa;
 import org.jooq.covspectrum.tables.VariantMutationAa;
@@ -51,6 +52,11 @@ public class Public extends SchemaImpl {
     public final SpectrumAccount SPECTRUM_ACCOUNT = SpectrumAccount.SPECTRUM_ACCOUNT;
 
     /**
+     * The table <code>public.spectrum_new_interesting_variant</code>.
+     */
+    public final SpectrumNewInterestingVariant SPECTRUM_NEW_INTERESTING_VARIANT = SpectrumNewInterestingVariant.SPECTRUM_NEW_INTERESTING_VARIANT;
+
+    /**
      * The table <code>public.spectrum_sequence_intensity</code>.
      */
     public final SpectrumSequenceIntensity SPECTRUM_SEQUENCE_INTENSITY = SpectrumSequenceIntensity.SPECTRUM_SEQUENCE_INTENSITY;
@@ -59,11 +65,6 @@ public class Public extends SchemaImpl {
      * The table <code>public.spectrum_sequence_private_meta</code>.
      */
     public final SpectrumSequencePrivateMeta SPECTRUM_SEQUENCE_PRIVATE_META = SpectrumSequencePrivateMeta.SPECTRUM_SEQUENCE_PRIVATE_META;
-
-    /**
-     * The table <code>public.spectrum_sequence_private_mutation_aa</code>.
-     */
-    public final SpectrumSequencePrivateMutationAa SPECTRUM_SEQUENCE_PRIVATE_MUTATION_AA = SpectrumSequencePrivateMutationAa.SPECTRUM_SEQUENCE_PRIVATE_MUTATION_AA;
 
     /**
      * The table <code>public.spectrum_sequence_public_meta</code>.
@@ -99,14 +100,20 @@ public class Public extends SchemaImpl {
     }
 
     @Override
+    public final List<Sequence<?>> getSequences() {
+        return Arrays.<Sequence<?>>asList(
+            Sequences.SPECTRUM_NEW_INTERESTING_VARIANT_ID_SEQ);
+    }
+
+    @Override
     public final List<Table<?>> getTables() {
         return Arrays.<Table<?>>asList(
             ConsensusSequence.CONSENSUS_SEQUENCE,
             GisaidSequence.GISAID_SEQUENCE,
             SpectrumAccount.SPECTRUM_ACCOUNT,
+            SpectrumNewInterestingVariant.SPECTRUM_NEW_INTERESTING_VARIANT,
             SpectrumSequenceIntensity.SPECTRUM_SEQUENCE_INTENSITY,
             SpectrumSequencePrivateMeta.SPECTRUM_SEQUENCE_PRIVATE_META,
-            SpectrumSequencePrivateMutationAa.SPECTRUM_SEQUENCE_PRIVATE_MUTATION_AA,
             SpectrumSequencePublicMeta.SPECTRUM_SEQUENCE_PUBLIC_META,
             SpectrumSequencePublicMutationAa.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA,
             VariantMutationAa.VARIANT_MUTATION_AA,

@@ -343,6 +343,16 @@ public class GisaidSequence extends TableImpl<GisaidSequenceRecord> {
      */
     public final TableField<GisaidSequenceRecord, String> NEXTCLADE_ERRORS = createField(DSL.name("nextclade_errors"), SQLDataType.CLOB, this, "");
 
+    /**
+     * The column <code>public.gisaid_sequence.iso_country</code>.
+     */
+    public final TableField<GisaidSequenceRecord, String> ISO_COUNTRY = createField(DSL.name("iso_country"), SQLDataType.CLOB, this, "");
+
+    /**
+     * The column <code>public.gisaid_sequence.iso_country_exposure</code>.
+     */
+    public final TableField<GisaidSequenceRecord, String> ISO_COUNTRY_EXPOSURE = createField(DSL.name("iso_country_exposure"), SQLDataType.CLOB, this, "");
+
     private GisaidSequence(Name alias, Table<GisaidSequenceRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -383,17 +393,17 @@ public class GisaidSequence extends TableImpl<GisaidSequenceRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.GISAID_SEQUENCE_AGE_INDEX2, Indexes.GISAID_SEQUENCE_COUNTRY_EXPOSURE_INDEX2, Indexes.GISAID_SEQUENCE_COUNTRY_INDEX2, Indexes.GISAID_SEQUENCE_DATE_INDEX2, Indexes.GISAID_SEQUENCE_DATE_SUBMITTED_INDEX2, Indexes.GISAID_SEQUENCE_DIVISION_EXPOSURE_INDEX2, Indexes.GISAID_SEQUENCE_DIVISION_INDEX2, Indexes.GISAID_SEQUENCE_GISAID_EPI_ISL_INDEX2, Indexes.GISAID_SEQUENCE_HOST_INDEX2, Indexes.GISAID_SEQUENCE_ORIGINATING_LAB_INDEX2, Indexes.GISAID_SEQUENCE_REGION_EXPOSURE_INDEX2, Indexes.GISAID_SEQUENCE_REGION_INDEX2, Indexes.GISAID_SEQUENCE_SEX_INDEX2, Indexes.GISAID_SEQUENCE_SUBMITTING_LAB_INDEX2);
+        return Arrays.<Index>asList(Indexes.GISAID_SEQUENCE_AGE_INDEX, Indexes.GISAID_SEQUENCE_COUNTRY_EXPOSURE_INDEX, Indexes.GISAID_SEQUENCE_COUNTRY_INDEX, Indexes.GISAID_SEQUENCE_DATE_INDEX, Indexes.GISAID_SEQUENCE_DATE_SUBMITTED_INDEX, Indexes.GISAID_SEQUENCE_DIVISION_EXPOSURE_INDEX, Indexes.GISAID_SEQUENCE_DIVISION_INDEX, Indexes.GISAID_SEQUENCE_GISAID_EPI_ISL_INDEX, Indexes.GISAID_SEQUENCE_HOST_INDEX, Indexes.GISAID_SEQUENCE_ISO_COUNTRY_IDX, Indexes.GISAID_SEQUENCE_ORIGINATING_LAB_INDEX, Indexes.GISAID_SEQUENCE_REGION_EXPOSURE_INDEX, Indexes.GISAID_SEQUENCE_REGION_INDEX, Indexes.GISAID_SEQUENCE_SEX_INDEX, Indexes.GISAID_SEQUENCE_SUBMITTING_LAB_INDEX);
     }
 
     @Override
     public UniqueKey<GisaidSequenceRecord> getPrimaryKey() {
-        return Keys.GISAID_SEQUENCE_STAGING_PKEY;
+        return Keys.GISAID_SEQUENCE_PKEY;
     }
 
     @Override
     public List<UniqueKey<GisaidSequenceRecord>> getKeys() {
-        return Arrays.<UniqueKey<GisaidSequenceRecord>>asList(Keys.GISAID_SEQUENCE_STAGING_PKEY);
+        return Arrays.<UniqueKey<GisaidSequenceRecord>>asList(Keys.GISAID_SEQUENCE_PKEY);
     }
 
     @Override

@@ -845,6 +845,34 @@ public class GisaidSequenceRecord extends UpdatableRecordImpl<GisaidSequenceReco
         return (String) get(58);
     }
 
+    /**
+     * Setter for <code>public.gisaid_sequence.iso_country</code>.
+     */
+    public void setIsoCountry(String value) {
+        set(59, value);
+    }
+
+    /**
+     * Getter for <code>public.gisaid_sequence.iso_country</code>.
+     */
+    public String getIsoCountry() {
+        return (String) get(59);
+    }
+
+    /**
+     * Setter for <code>public.gisaid_sequence.iso_country_exposure</code>.
+     */
+    public void setIsoCountryExposure(String value) {
+        set(60, value);
+    }
+
+    /**
+     * Getter for <code>public.gisaid_sequence.iso_country_exposure</code>.
+     */
+    public String getIsoCountryExposure() {
+        return (String) get(60);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -868,7 +896,7 @@ public class GisaidSequenceRecord extends UpdatableRecordImpl<GisaidSequenceReco
     /**
      * Create a detached, initialised GisaidSequenceRecord
      */
-    public GisaidSequenceRecord(String strain, String virus, String gisaidEpiIsl, String genbankAccession, LocalDate date, String dateStr, String region, String country, String division, String location, String regionExposure, String countryExposure, String divisionExposure, String segment, Integer length, String host, Integer age, String sex, String nextstrainClade, String pangolinLineage, String gisaidClade, String originatingLab, String submittingLab, String authors, String url, String title, String paperUrl, LocalDate dateSubmitted, String originalSeq, String alignedSeq, String purposeOfSequencing, String nextcladeClade, Double nextcladeQcOverallScore, String nextcladeQcOverallStatus, Integer nextcladeTotalGaps, Integer nextcladeTotalInsertions, Integer nextcladeTotalMissing, Integer nextcladeTotalMutations, Integer nextcladeTotalNonAcgtns, Integer nextcladeTotalPcrPrimerChanges, Integer nextcladeAlignmentStart, Integer nextcladeAlignmentEnd, Integer nextcladeAlignmentScore, Double nextcladeQcMissingDataScore, String nextcladeQcMissingDataStatus, Integer nextcladeQcMissingDataTotal, Double nextcladeQcMixedSitesScore, String nextcladeQcMixedSitesStatus, Integer nextcladeQcMixedSitesTotal, Integer nextcladeQcPrivateMutationsCutoff, Integer nextcladeQcPrivateMutationsExcess, Double nextcladeQcPrivateMutationsScore, String nextcladeQcPrivateMutationsStatus, Integer nextcladeQcPrivateMutationsTotal, String nextcladeQcSnpClustersClustered, Double nextcladeQcSnpClustersScore, String nextcladeQcSnpClustersStatus, Integer nextcladeQcSnpClustersTotal, String nextcladeErrors) {
+    public GisaidSequenceRecord(String strain, String virus, String gisaidEpiIsl, String genbankAccession, LocalDate date, String dateStr, String region, String country, String division, String location, String regionExposure, String countryExposure, String divisionExposure, String segment, Integer length, String host, Integer age, String sex, String nextstrainClade, String pangolinLineage, String gisaidClade, String originatingLab, String submittingLab, String authors, String url, String title, String paperUrl, LocalDate dateSubmitted, String originalSeq, String alignedSeq, String purposeOfSequencing, String nextcladeClade, Double nextcladeQcOverallScore, String nextcladeQcOverallStatus, Integer nextcladeTotalGaps, Integer nextcladeTotalInsertions, Integer nextcladeTotalMissing, Integer nextcladeTotalMutations, Integer nextcladeTotalNonAcgtns, Integer nextcladeTotalPcrPrimerChanges, Integer nextcladeAlignmentStart, Integer nextcladeAlignmentEnd, Integer nextcladeAlignmentScore, Double nextcladeQcMissingDataScore, String nextcladeQcMissingDataStatus, Integer nextcladeQcMissingDataTotal, Double nextcladeQcMixedSitesScore, String nextcladeQcMixedSitesStatus, Integer nextcladeQcMixedSitesTotal, Integer nextcladeQcPrivateMutationsCutoff, Integer nextcladeQcPrivateMutationsExcess, Double nextcladeQcPrivateMutationsScore, String nextcladeQcPrivateMutationsStatus, Integer nextcladeQcPrivateMutationsTotal, String nextcladeQcSnpClustersClustered, Double nextcladeQcSnpClustersScore, String nextcladeQcSnpClustersStatus, Integer nextcladeQcSnpClustersTotal, String nextcladeErrors, String isoCountry, String isoCountryExposure) {
         super(GisaidSequence.GISAID_SEQUENCE);
 
         setStrain(strain);
@@ -930,5 +958,7 @@ public class GisaidSequenceRecord extends UpdatableRecordImpl<GisaidSequenceReco
         setNextcladeQcSnpClustersStatus(nextcladeQcSnpClustersStatus);
         setNextcladeQcSnpClustersTotal(nextcladeQcSnpClustersTotal);
         setNextcladeErrors(nextcladeErrors);
+        setIsoCountry(isoCountry);
+        setIsoCountryExposure(isoCountryExposure);
     }
 }

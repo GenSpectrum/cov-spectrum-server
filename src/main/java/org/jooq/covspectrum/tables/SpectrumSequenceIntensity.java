@@ -4,17 +4,22 @@
 package org.jooq.covspectrum.tables;
 
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row4;
+import org.jooq.Row6;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
+import org.jooq.covspectrum.Indexes;
 import org.jooq.covspectrum.Public;
 import org.jooq.covspectrum.tables.records.SpectrumSequenceIntensityRecord;
 import org.jooq.impl.DSL;
@@ -44,24 +49,34 @@ public class SpectrumSequenceIntensity extends TableImpl<SpectrumSequenceIntensi
     }
 
     /**
-     * The column <code>public.spectrum_sequence_intensity.country</code>.
-     */
-    public final TableField<SpectrumSequenceIntensityRecord, String> COUNTRY = createField(DSL.name("country"), SQLDataType.CLOB, this, "");
-
-    /**
      * The column <code>public.spectrum_sequence_intensity.date</code>.
      */
     public final TableField<SpectrumSequenceIntensityRecord, LocalDate> DATE = createField(DSL.name("date"), SQLDataType.LOCALDATE, this, "");
 
     /**
-     * The column <code>public.spectrum_sequence_intensity.sequenced</code>.
+     * The column <code>public.spectrum_sequence_intensity.region</code>.
      */
-    public final TableField<SpectrumSequenceIntensityRecord, Long> SEQUENCED = createField(DSL.name("sequenced"), SQLDataType.BIGINT, this, "");
+    public final TableField<SpectrumSequenceIntensityRecord, String> REGION = createField(DSL.name("region"), SQLDataType.CLOB, this, "");
+
+    /**
+     * The column <code>public.spectrum_sequence_intensity.country</code>.
+     */
+    public final TableField<SpectrumSequenceIntensityRecord, String> COUNTRY = createField(DSL.name("country"), SQLDataType.CLOB, this, "");
 
     /**
      * The column <code>public.spectrum_sequence_intensity.cases</code>.
      */
-    public final TableField<SpectrumSequenceIntensityRecord, Integer> CASES = createField(DSL.name("cases"), SQLDataType.INTEGER, this, "");
+    public final TableField<SpectrumSequenceIntensityRecord, Long> CASES = createField(DSL.name("cases"), SQLDataType.BIGINT, this, "");
+
+    /**
+     * The column <code>public.spectrum_sequence_intensity.sequenced</code>.
+     */
+    public final TableField<SpectrumSequenceIntensityRecord, BigDecimal> SEQUENCED = createField(DSL.name("sequenced"), SQLDataType.NUMERIC, this, "");
+
+    /**
+     * The column <code>public.spectrum_sequence_intensity.sequenced_surveillance</code>.
+     */
+    public final TableField<SpectrumSequenceIntensityRecord, BigDecimal> SEQUENCED_SURVEILLANCE = createField(DSL.name("sequenced_surveillance"), SQLDataType.NUMERIC, this, "");
 
     private SpectrumSequenceIntensity(Name alias, Table<SpectrumSequenceIntensityRecord> aliased) {
         this(alias, aliased, null);
@@ -102,6 +117,11 @@ public class SpectrumSequenceIntensity extends TableImpl<SpectrumSequenceIntensi
     }
 
     @Override
+    public List<Index> getIndexes() {
+        return Arrays.<Index>asList(Indexes.SPECTRUM_SEQUENCE_INTENSITY_COUNTRY_IDX, Indexes.SPECTRUM_SEQUENCE_INTENSITY_REGION_IDX);
+    }
+
+    @Override
     public SpectrumSequenceIntensity as(String alias) {
         return new SpectrumSequenceIntensity(DSL.name(alias), this);
     }
@@ -128,11 +148,11 @@ public class SpectrumSequenceIntensity extends TableImpl<SpectrumSequenceIntensi
     }
 
     // -------------------------------------------------------------------------
-    // Row4 type methods
+    // Row6 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row4<String, LocalDate, Long, Integer> fieldsRow() {
-        return (Row4) super.fieldsRow();
+    public Row6<LocalDate, String, String, Long, BigDecimal, BigDecimal> fieldsRow() {
+        return (Row6) super.fieldsRow();
     }
 }

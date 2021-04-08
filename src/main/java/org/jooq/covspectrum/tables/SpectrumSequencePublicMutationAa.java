@@ -4,25 +4,17 @@
 package org.jooq.covspectrum.tables;
 
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.jooq.Field;
-import org.jooq.ForeignKey;
-import org.jooq.Index;
-import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row2;
-import org.jooq.Schema;
-import org.jooq.Table;
-import org.jooq.TableField;
-import org.jooq.TableOptions;
+import org.jooq.*;
 import org.jooq.covspectrum.Indexes;
 import org.jooq.covspectrum.Public;
 import org.jooq.covspectrum.tables.records.SpectrumSequencePublicMutationAaRecord;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
+
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
@@ -55,6 +47,21 @@ public class SpectrumSequencePublicMutationAa extends TableImpl<SpectrumSequence
      * The column <code>public.spectrum_sequence_public_mutation_aa.aa_mutation</code>.
      */
     public final TableField<SpectrumSequencePublicMutationAaRecord, String> AA_MUTATION = createField(DSL.name("aa_mutation"), SQLDataType.CLOB, this, "");
+
+    /**
+     * The column <code>public.spectrum_sequence_public_mutation_aa.aa_mutation_gene</code>.
+     */
+    public final TableField<SpectrumSequencePublicMutationAaRecord, String> AA_MUTATION_GENE = createField(DSL.name("aa_mutation_gene"), SQLDataType.CLOB, this, "");
+
+    /**
+     * The column <code>public.spectrum_sequence_public_mutation_aa.aa_mutation_position</code>.
+     */
+    public final TableField<SpectrumSequencePublicMutationAaRecord, Integer> AA_MUTATION_POSITION = createField(DSL.name("aa_mutation_position"), SQLDataType.INTEGER, this, "");
+
+    /**
+     * The column <code>public.spectrum_sequence_public_mutation_aa.aa_mutation_base</code>.
+     */
+    public final TableField<SpectrumSequencePublicMutationAaRecord, String> AA_MUTATION_BASE = createField(DSL.name("aa_mutation_base"), SQLDataType.CLOB, this, "");
 
     private SpectrumSequencePublicMutationAa(Name alias, Table<SpectrumSequencePublicMutationAaRecord> aliased) {
         this(alias, aliased, null);
@@ -96,7 +103,7 @@ public class SpectrumSequencePublicMutationAa extends TableImpl<SpectrumSequence
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA_AA_MUTATION_IDX, Indexes.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA_SEQUENCE_NAME_IDX);
+        return Arrays.<Index>asList(Indexes.SPECTRUM_SEQUENCE_PUBLIC_MUTA_AA_MUTATION_GENE_AA_MUTATION__IDX, Indexes.SPECTRUM_SEQUENCE_PUBLIC_MUTA_AA_MUTATION_GENE_AA_MUTATION_IDX1, Indexes.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA_AA_MUTATION_IDX, Indexes.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA_SEQUENCE_NAME_IDX);
     }
 
     @Override
@@ -126,11 +133,11 @@ public class SpectrumSequencePublicMutationAa extends TableImpl<SpectrumSequence
     }
 
     // -------------------------------------------------------------------------
-    // Row2 type methods
+    // Row5 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row2<String, String> fieldsRow() {
-        return (Row2) super.fieldsRow();
+    public Row5<String, String, String, Integer, String> fieldsRow() {
+        return (Row5) super.fieldsRow();
     }
 }

@@ -7,9 +7,9 @@ package org.jooq.covspectrum;
 import org.jooq.covspectrum.tables.ConsensusSequence;
 import org.jooq.covspectrum.tables.GisaidSequence;
 import org.jooq.covspectrum.tables.SpectrumAccount;
+import org.jooq.covspectrum.tables.SpectrumNewInterestingVariant;
 import org.jooq.covspectrum.tables.SpectrumSequenceIntensity;
 import org.jooq.covspectrum.tables.SpectrumSequencePrivateMeta;
-import org.jooq.covspectrum.tables.SpectrumSequencePrivateMutationAa;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMutationAa;
 import org.jooq.covspectrum.tables.VariantMutationAa;
@@ -38,6 +38,11 @@ public class Tables {
     public static final SpectrumAccount SPECTRUM_ACCOUNT = SpectrumAccount.SPECTRUM_ACCOUNT;
 
     /**
+     * The table <code>public.spectrum_new_interesting_variant</code>.
+     */
+    public static final SpectrumNewInterestingVariant SPECTRUM_NEW_INTERESTING_VARIANT = SpectrumNewInterestingVariant.SPECTRUM_NEW_INTERESTING_VARIANT;
+
+    /**
      * The table <code>public.spectrum_sequence_intensity</code>.
      */
     public static final SpectrumSequenceIntensity SPECTRUM_SEQUENCE_INTENSITY = SpectrumSequenceIntensity.SPECTRUM_SEQUENCE_INTENSITY;
@@ -46,11 +51,6 @@ public class Tables {
      * The table <code>public.spectrum_sequence_private_meta</code>.
      */
     public static final SpectrumSequencePrivateMeta SPECTRUM_SEQUENCE_PRIVATE_META = SpectrumSequencePrivateMeta.SPECTRUM_SEQUENCE_PRIVATE_META;
-
-    /**
-     * The table <code>public.spectrum_sequence_private_mutation_aa</code>.
-     */
-    public static final SpectrumSequencePrivateMutationAa SPECTRUM_SEQUENCE_PRIVATE_MUTATION_AA = SpectrumSequencePrivateMutationAa.SPECTRUM_SEQUENCE_PRIVATE_MUTATION_AA;
 
     /**
      * The table <code>public.spectrum_sequence_public_meta</code>.
