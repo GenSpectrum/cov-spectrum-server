@@ -25,8 +25,8 @@ public class SimplexLogisticCurveOptimizer {
                 new MaxEval(50000),
                 new ObjectiveFunction(objective),
                 GoalType.MINIMIZE,
-                new InitialGuess(new double[]{0.1, 100}),
-                new NelderMeadSimplex(new double[]{0.2, 0.2}));
+                new InitialGuess(new double[]{0.085, 10}),
+                new NelderMeadSimplex(new double[]{0.05, 0.05}));
         return optimum.getPoint()[0];
     }
 
@@ -47,7 +47,7 @@ public class SimplexLogisticCurveOptimizer {
             final double a = variables[0];
             final double t0 = variables[1];
             List<Double> p = t.stream()
-                    .map(_t -> Math.exp(((_t - t0) * a) / (1 + Math.exp((_t - t0) * a))))
+                    .map(_t -> Math.exp(((_t - t0) * a)) / (1 + Math.exp((_t - t0) * a)))
                     .collect(Collectors.toList());
             double sum = 0;
             for (int i = 0; i < t.size(); i++) {
