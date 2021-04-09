@@ -426,7 +426,8 @@ public class DatabaseService {
     }
 
 
-    public List<WeightedSample> getSamples2(
+    public WeightedSampleResultSet getSamples2(
+            String fields,
             String region,
             String country,
             String mutations,
@@ -436,6 +437,31 @@ public class DatabaseService {
             LocalDate dateTo,
             boolean usePrivateVersion
     ) throws SQLException {
+        Map<String, Pair<String, Class<?>>> ALL_FIELDS = new HashMap<>() {{
+            put("date", new Pair<>("date", LocalDate.class));
+            put("region", new Pair<>("region", String.class));
+            put("country", new Pair<>("country", String.class));
+            put("division", new Pair<>("division", String.class));
+            put("zipCode", new Pair<>("zip_code", String.class));
+            put("ageGroup", new Pair<>("age_group", String.class));
+            put("sex", new Pair<>("sex", String.class));
+            put("hospitalized", new Pair<>("hospitalized", Boolean.class));
+            put("deceased", new Pair<>("deceased", Boolean.class));
+        }};
+        Set<String> groupByFieldNames;
+        if (fields != null) {
+            groupByFieldNames = new HashSet<>();
+            String[] split = fields.split(",");
+            for (int i = 0; i < split.length; i++) {
+                String field = split[i];
+                if (!ALL_FIELDS.containsKey(field)) {
+                    throw new RuntimeException("Unknown field: " + field);
+                }
+                groupByFieldNames.add(field);
+            }
+        } else {
+            groupByFieldNames = ALL_FIELDS.keySet();
+        }
         Variant variant = null;
         if (mutations != null) {
             Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
@@ -450,46 +476,59 @@ public class DatabaseService {
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             var samples = getMetaTable(ctx, selection).as("meta");
+            List<Field<?>> groupByFields = groupByFieldNames.stream()
+                    .map(name -> samples.field(ALL_FIELDS.get(name).getValue0(), ALL_FIELDS.get(name).getValue1()))
+                    .collect(Collectors.toList());
+            List<Field<?>> selectFields = new ArrayList<>(groupByFields);
+            selectFields.add(DSL.count().as("count"));
             var statement = ctx
-                    .select(
-                            MyDSL.fDate(samples),
-                            MyDSL.fRegion(samples),
-                            MyDSL.fCountry(samples),
-                            MyDSL.fDivision(samples),
-                            MyDSL.fZipCode(samples),
-                            MyDSL.fAgeGroup(samples),
-                            MyDSL.fSex(samples),
-                            MyDSL.fHospitalized(samples),
-                            MyDSL.fDeceased(samples),
-                            DSL.count().as("count")
-                    )
+                    .select(selectFields)
                     .from(samples)
-                    .groupBy(
-                            MyDSL.fDate(samples),
-                            MyDSL.fRegion(samples),
-                            MyDSL.fCountry(samples),
-                            MyDSL.fDivision(samples),
-                            MyDSL.fZipCode(samples),
-                            MyDSL.fAgeGroup(samples),
-                            MyDSL.fSex(samples),
-                            MyDSL.fHospitalized(samples),
-                            MyDSL.fDeceased(samples)
-                    );
+                    .groupBy(groupByFields);
             List<WeightedSample> results = statement.fetch()
-                    .map(r -> new WeightedSample(
-                            r.get("date", LocalDate.class),
-                            r.get("region", String.class),
-                            r.get("country", String.class),
-                            r.get("division", String.class),
-                            r.get("zip_code", String.class),
-                            r.get("age_group", String.class),
-                            r.get("sex", String.class),
-                            r.get("hospitalized", Boolean.class),
-                            r.get("deceased", Boolean.class),
-                            r.get("count", Integer.class)
-                    ));
+                    .map(r -> {
+                        LocalDate _date = null;
+                        String _region = null;
+                        String _country = null;
+                        String _division = null;
+                        String _zipCode = null;
+                        String _ageGroup = null;
+                        String _sex = null;
+                        Boolean _hospitalized = null;
+                        Boolean _deceased = null;
+                        int count = r.get("count", Integer.class);
+                        if (groupByFieldNames.contains("date")) {
+                            _date = r.get("date", LocalDate.class);
+                        }
+                        if (groupByFieldNames.contains("region")) {
+                            _region = r.get("region", String.class);
+                        }
+                        if (groupByFieldNames.contains("country")) {
+                            _country = r.get("country", String.class);
+                        }
+                        if (groupByFieldNames.contains("division")) {
+                            _division = r.get("division", String.class);
+                        }
+                        if (groupByFieldNames.contains("zipCode")) {
+                            _zipCode = r.get("zip_code", String.class);
+                        }
+                        if (groupByFieldNames.contains("ageGroup")) {
+                            _ageGroup = r.get("age_group", String.class);
+                        }
+                        if (groupByFieldNames.contains("sex")) {
+                            _sex = r.get("sex", String.class);
+                        }
+                        if (groupByFieldNames.contains("hospitalized")) {
+                            _hospitalized = r.get("hospitalized", Boolean.class);
+                        }
+                        if (groupByFieldNames.contains("deceased")) {
+                            _deceased = r.get("deceased", Boolean.class);
+                        }
+                        return new WeightedSample(_date, _region, _country, _division, _zipCode, _ageGroup, _sex,
+                                _hospitalized, _deceased, count);
+                    });
             incrementSampleUsageStatistics(selection);
-            return results;
+            return new WeightedSampleResultSet(new ArrayList<>(groupByFieldNames), results);
         }
     }
 

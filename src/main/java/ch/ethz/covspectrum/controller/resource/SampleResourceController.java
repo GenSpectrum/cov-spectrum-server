@@ -56,7 +56,8 @@ public class SampleResourceController {
 
 
     @GetMapping("/sample2")
-    public List<WeightedSample> getSamples2(
+    public WeightedSampleResultSet getSamples2(
+            @RequestParam(required = false) String fields,
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String country,
             @RequestParam(required = false) String mutations,
@@ -67,6 +68,7 @@ public class SampleResourceController {
             Principal principal
     ) throws SQLException {
         return databaseService.getSamples2(
+                fields,
                 region,
                 country,
                 mutations,
