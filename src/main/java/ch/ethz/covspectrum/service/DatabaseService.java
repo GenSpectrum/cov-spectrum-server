@@ -527,7 +527,7 @@ public class DatabaseService {
                         return new WeightedSample(_date, _region, _country, _division, _zipCode, _ageGroup, _sex,
                                 _hospitalized, _deceased, count);
                     });
-            incrementSampleUsageStatistics(selection);
+            incrementSampleUsageStatistics(selection, groupByFieldNames);
             return new WeightedSampleResultSet(new ArrayList<>(groupByFieldNames), results);
         }
     }
@@ -806,16 +806,19 @@ public class DatabaseService {
     }
 
 
-    private void incrementSampleUsageStatistics(SampleSelection selection) throws SQLException {
+    private void incrementSampleUsageStatistics(
+            SampleSelection selection,
+            Collection<String> groupByFieldNames
+    ) throws SQLException {
         String sql = """
             insert into spectrum_api_usage_sample as s (
                 isoyear, isoweek, usage_count,
-                private_version, region, country, mutations, match_percentage,
+                fields, private_version, region, country, mutations, match_percentage,
                 data_type, date_from, date_to
             )
             values (
                 extract(isoyear from current_date), extract(week from current_date), 1,
-                ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             on conflict on constraint spectrum_api_usage_sample_unique_constraint
               do update
@@ -823,9 +826,11 @@ public class DatabaseService {
         """;
         try (Connection conn = getDatabaseConnection()) {
             try (PreparedStatement statement = conn.prepareStatement(sql)) {
-                statement.setBoolean(1, selection.isUsePrivate());
-                statement.setString(2, Objects.requireNonNullElse(selection.getRegion(), ""));
-                statement.setString(3, Objects.requireNonNullElse(selection.getCountry(), ""));
+                statement.setString(1, groupByFieldNames.stream()
+                    .sorted().collect(Collectors.joining(",")));
+                statement.setBoolean(2, selection.isUsePrivate());
+                statement.setString(3, Objects.requireNonNullElse(selection.getRegion(), ""));
+                statement.setString(4, Objects.requireNonNullElse(selection.getCountry(), ""));
                 String mutationsString = "";
                 if (selection.getVariant() != null) {
                     mutationsString = selection.getVariant().getMutations().stream()
@@ -834,16 +839,16 @@ public class DatabaseService {
                             .sorted()
                             .collect(Collectors.joining(","));
                 }
-                statement.setString(4, mutationsString);
-                statement.setFloat(5, selection.getMatchPercentage());
+                statement.setString(5, mutationsString);
+                statement.setFloat(6, selection.getMatchPercentage());
                 String dataType = "";
                 if (selection.getDataType() != null) {
                     dataType = selection.getDataType().toString();
                 }
-                statement.setString(6, dataType);
-                statement.setDate(7, Date.valueOf(Objects.requireNonNullElse(selection.getDateFrom(),
-                        LocalDate.of(1990, 1, 1))));
+                statement.setString(7, dataType);
                 statement.setDate(8, Date.valueOf(Objects.requireNonNullElse(selection.getDateFrom(),
+                        LocalDate.of(1990, 1, 1))));
+                statement.setDate(9, Date.valueOf(Objects.requireNonNullElse(selection.getDateFrom(),
                         LocalDate.of(1990, 1, 1))));
                 statement.execute();
             }
