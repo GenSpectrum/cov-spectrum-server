@@ -28,7 +28,7 @@ public class FindInterestingVariants {
 
 
     public FindInterestingVariants() {
-        this.databaseService = new DatabaseService();
+        this.databaseService = new DatabaseService(new ObjectMapper());
         this.logisticCurveOptimizer = new SimplexLogisticCurveOptimizer();
     }
 

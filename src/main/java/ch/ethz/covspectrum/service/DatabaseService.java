@@ -5,6 +5,7 @@ import ch.ethz.covspectrum.entity.core.DataType;
 import ch.ethz.covspectrum.entity.core.*;
 import ch.ethz.covspectrum.jooq.MyDSL;
 import ch.ethz.covspectrum.jooq.SpectrumMetadataTable;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.javatuples.Pair;
 import org.jooq.*;
@@ -39,6 +40,13 @@ public class DatabaseService {
         } catch (PropertyVetoException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private final ObjectMapper objectMapper;
+
+
+    public DatabaseService(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
     }
 
 
@@ -427,15 +435,8 @@ public class DatabaseService {
 
 
     public WeightedSampleResultSet getSamples2(
-            String fields,
-            String region,
-            String country,
-            String mutations,
-            float matchPercentage,
-            DataType dataType,
-            LocalDate dateFrom,
-            LocalDate dateTo,
-            boolean usePrivateVersion
+            SampleSelection selection,
+            Collection<String> fields
     ) throws SQLException {
         Map<String, Pair<String, Class<?>>> ALL_FIELDS = new HashMap<>() {{
             put("date", new Pair<>("date", LocalDate.class));
@@ -448,35 +449,10 @@ public class DatabaseService {
             put("hospitalized", new Pair<>("hospitalized", Boolean.class));
             put("deceased", new Pair<>("deceased", Boolean.class));
         }};
-        Set<String> groupByFieldNames;
-        if (fields != null) {
-            groupByFieldNames = new HashSet<>();
-            String[] split = fields.split(",");
-            for (int i = 0; i < split.length; i++) {
-                String field = split[i];
-                if (!ALL_FIELDS.containsKey(field)) {
-                    throw new RuntimeException("Unknown field: " + field);
-                }
-                groupByFieldNames.add(field);
-            }
-        } else {
-            groupByFieldNames = ALL_FIELDS.keySet();
-        }
-        Variant variant = null;
-        if (mutations != null) {
-            Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
-                    .map(AAMutation::new)
-                    .collect(Collectors.toSet());
-            variant = new Variant(aaMutations);
-        }
-        SampleSelection selection = new SampleSelection()
-                .setUsePrivate(usePrivateVersion).setVariant(variant).setMatchPercentage(matchPercentage)
-                .setRegion(region).setCountry(country).setDataType(dataType)
-                .setDateFrom(dateFrom).setDateTo(dateTo);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             var samples = getMetaTable(ctx, selection).as("meta");
-            List<Field<?>> groupByFields = groupByFieldNames.stream()
+            List<Field<?>> groupByFields = fields.stream()
                     .map(name -> samples.field(ALL_FIELDS.get(name).getValue0(), ALL_FIELDS.get(name).getValue1()))
                     .collect(Collectors.toList());
             List<Field<?>> selectFields = new ArrayList<>(groupByFields);
@@ -497,38 +473,37 @@ public class DatabaseService {
                         Boolean _hospitalized = null;
                         Boolean _deceased = null;
                         int count = r.get("count", Integer.class);
-                        if (groupByFieldNames.contains("date")) {
+                        if (fields.contains("date")) {
                             _date = r.get("date", LocalDate.class);
                         }
-                        if (groupByFieldNames.contains("region")) {
+                        if (fields.contains("region")) {
                             _region = r.get("region", String.class);
                         }
-                        if (groupByFieldNames.contains("country")) {
+                        if (fields.contains("country")) {
                             _country = r.get("country", String.class);
                         }
-                        if (groupByFieldNames.contains("division")) {
+                        if (fields.contains("division")) {
                             _division = r.get("division", String.class);
                         }
-                        if (groupByFieldNames.contains("zipCode")) {
+                        if (fields.contains("zipCode")) {
                             _zipCode = r.get("zip_code", String.class);
                         }
-                        if (groupByFieldNames.contains("ageGroup")) {
+                        if (fields.contains("ageGroup")) {
                             _ageGroup = r.get("age_group", String.class);
                         }
-                        if (groupByFieldNames.contains("sex")) {
+                        if (fields.contains("sex")) {
                             _sex = r.get("sex", String.class);
                         }
-                        if (groupByFieldNames.contains("hospitalized")) {
+                        if (fields.contains("hospitalized")) {
                             _hospitalized = r.get("hospitalized", Boolean.class);
                         }
-                        if (groupByFieldNames.contains("deceased")) {
+                        if (fields.contains("deceased")) {
                             _deceased = r.get("deceased", Boolean.class);
                         }
                         return new WeightedSample(_date, _region, _country, _division, _zipCode, _ageGroup, _sex,
                                 _hospitalized, _deceased, count);
                     });
-            incrementSampleUsageStatistics(selection, groupByFieldNames);
-            return new WeightedSampleResultSet(new ArrayList<>(groupByFieldNames), results);
+            return new WeightedSampleResultSet(new ArrayList<>(fields), results);
         }
     }
 
@@ -806,10 +781,11 @@ public class DatabaseService {
     }
 
 
-    private void incrementSampleUsageStatistics(
+    public void incrementSampleUsageStatistics(
             SampleSelection selection,
             Collection<String> groupByFieldNames
     ) throws SQLException {
+        SampleSelectionCacheKey cacheKey = SampleSelectionCacheKey.fromSampleSelection(selection, groupByFieldNames);
         String sql = """
             insert into spectrum_api_usage_sample as s (
                 isoyear, isoweek, usage_count,
@@ -826,31 +802,58 @@ public class DatabaseService {
         """;
         try (Connection conn = getDatabaseConnection()) {
             try (PreparedStatement statement = conn.prepareStatement(sql)) {
-                statement.setString(1, groupByFieldNames.stream()
-                    .sorted().collect(Collectors.joining(",")));
-                statement.setBoolean(2, selection.isUsePrivate());
-                statement.setString(3, Objects.requireNonNullElse(selection.getRegion(), ""));
-                statement.setString(4, Objects.requireNonNullElse(selection.getCountry(), ""));
-                String mutationsString = "";
-                if (selection.getVariant() != null) {
-                    mutationsString = selection.getVariant().getMutations().stream()
-                            .map(AAMutation::decode)
-                            .map(AAMutationDecoded::toString)
-                            .sorted()
-                            .collect(Collectors.joining(","));
-                }
-                statement.setString(5, mutationsString);
-                statement.setFloat(6, selection.getMatchPercentage());
-                String dataType = "";
-                if (selection.getDataType() != null) {
-                    dataType = selection.getDataType().toString();
-                }
-                statement.setString(7, dataType);
-                statement.setDate(8, Date.valueOf(Objects.requireNonNullElse(selection.getDateFrom(),
-                        LocalDate.of(1990, 1, 1))));
-                statement.setDate(9, Date.valueOf(Objects.requireNonNullElse(selection.getDateFrom(),
-                        LocalDate.of(1990, 1, 1))));
+                statement.setString(1, cacheKey.getFields());
+                statement.setBoolean(2, cacheKey.isPrivateVersion());
+                statement.setString(3, cacheKey.getRegion());
+                statement.setString(4, cacheKey.getCountry());
+                statement.setString(5, cacheKey.getMutations());
+                statement.setFloat(6, cacheKey.getMatchPercentage());
+                statement.setString(7, cacheKey.getDataType());
+                statement.setDate(8, Date.valueOf(cacheKey.getDateFrom()));
+                statement.setDate(9, Date.valueOf(cacheKey.getDateTo()));
                 statement.execute();
+            }
+        }
+    }
+
+
+    public String fetchSamplesFromCache(
+            SampleSelection selection,
+            Collection<String> groupByFieldNames
+    ) throws SQLException {
+        SampleSelectionCacheKey cacheKey = SampleSelectionCacheKey.fromSampleSelection(selection, groupByFieldNames);
+        String sql = """
+            select cache
+            from spectrum_api_cache_sample c
+            where
+              c.fields = ?
+              and c.private_version = ?
+              and c.region = ?
+              and c.country = ?
+              and c.mutations = ?
+              and c.match_percentage = ?
+              and c.data_type = ?
+              and c.date_from = ?
+              and c.date_to = ?;
+        """;
+        try (Connection conn = getDatabaseConnection()) {
+            try (PreparedStatement statement = conn.prepareStatement(sql)) {
+                statement.setString(1, cacheKey.getFields());
+                statement.setBoolean(2, cacheKey.isPrivateVersion());
+                statement.setString(3, cacheKey.getRegion());
+                statement.setString(4, cacheKey.getCountry());
+                statement.setString(5, cacheKey.getMutations());
+                statement.setFloat(6, cacheKey.getMatchPercentage());
+                statement.setString(7, cacheKey.getDataType());
+                statement.setDate(8, Date.valueOf(cacheKey.getDateFrom()));
+                statement.setDate(9, Date.valueOf(cacheKey.getDateTo()));
+                try (ResultSet rs = statement.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getString("cache");
+                    } else {
+                        return null;
+                    }
+                }
             }
         }
     }

@@ -4,6 +4,8 @@ import org.javatuples.Pair;
 
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -96,7 +98,7 @@ public class SampleSelectionCacheKey {
     }
 
 
-    public static SampleSelectionCacheKey fromSampleSelection(SampleSelection selection, String fields) {
+    public static SampleSelectionCacheKey fromSampleSelection(SampleSelection selection, Collection<String> fields) {
         String mutationsString = "";
         if (selection.getVariant() != null) {
             mutationsString = selection.getVariant().getMutations().stream()
@@ -110,7 +112,7 @@ public class SampleSelectionCacheKey {
             dataType = selection.getDataType().toString();
         }
         return new SampleSelectionCacheKey(
-                fields,
+                fields.stream().sorted().collect(Collectors.joining(",")),
                 selection.isUsePrivate(),
                 Objects.requireNonNullElse(selection.getRegion(), ""),
                 Objects.requireNonNullElse(selection.getCountry(), ""),
@@ -118,7 +120,7 @@ public class SampleSelectionCacheKey {
                 selection.getMatchPercentage(),
                 dataType,
                 Objects.requireNonNullElse(selection.getDateFrom(), LocalDate.of(1990, 1, 1)),
-                Objects.requireNonNullElse(selection.getDateFrom(), LocalDate.of(1990, 1, 1))
+                Objects.requireNonNullElse(selection.getDateTo(), LocalDate.of(1990, 1, 1))
         );
     }
 
@@ -127,11 +129,11 @@ public class SampleSelectionCacheKey {
      *
      * @return (sample selection, fields)
      */
-    public Pair<SampleSelection, String> toSampleSelection() {
+    public Pair<SampleSelection, List<String>> toSampleSelection() {
         SampleSelection selection = new SampleSelection()
                 .setUsePrivate(privateVersion)
                 .setRegion(!region.equals("") ? region : null)
-                .setCountry(!country.equals("") ? region : null)
+                .setCountry(!country.equals("") ? country : null)
                 .setMatchPercentage(matchPercentage)
                 .setDateFrom(!dateFrom.equals(LocalDate.of(1990, 1, 1)) ? dateFrom : null)
                 .setDateTo(!dateTo.equals(LocalDate.of(1990, 1, 1)) ? dateTo : null);
@@ -143,6 +145,6 @@ public class SampleSelectionCacheKey {
         if (!dataType.equals("")) {
             selection.setDataType(DataType.valueOf(dataType));
         }
-        return new Pair<>(selection, fields);
+        return new Pair<>(selection, Arrays.stream(fields.split(",")).collect(Collectors.toList()));
     }
 }

@@ -1,6 +1,5 @@
 package ch.ethz.covspectrum.service;
 
-import ch.ethz.covspectrum.entity.core.AAMutation;
 import ch.ethz.covspectrum.entity.core.SampleSelection;
 import ch.ethz.covspectrum.entity.core.SampleSelectionCacheKey;
 import ch.ethz.covspectrum.entity.core.WeightedSampleResultSet;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -120,46 +118,27 @@ public class PreComputationService {
             """;
             try (PreparedStatement statement = conn.prepareStatement(insertSql)) {
                 for (SampleSelectionCacheKey cacheKey : cacheKeys) {
-                    Pair<SampleSelection, String> pair = cacheKey.toSampleSelection();
+                    Pair<SampleSelection, List<String>> pair = cacheKey.toSampleSelection();
                     SampleSelection selection = pair.getValue0();
-                    String fields = pair.getValue1();
-                    // TODO I really need a consistent set of arguments....
-                    String mutations = null;
-                    if (selection.getVariant() != null) {
-                        mutations = selection.getVariant().getMutations().stream().map(AAMutation::getMutationCode)
-                                .collect(Collectors.joining(","));
-                    }
-                    WeightedSampleResultSet samples = databaseService.getSamples2(
-                            fields,
-                            selection.getRegion(),
-                            selection.getCountry(),
-                            mutations,
-                            selection.getMatchPercentage(),
-                            selection.getDataType(),
-                            selection.getDateFrom(),
-                            selection.getDateTo(),
-                            selection.isUsePrivate()
-                    );
-                    try {
-                        String json = objectMapper.writeValueAsString(samples);
-                        statement.clearParameters();
-                        statement.setString(1, cacheKey.getFields());
-                        statement.setBoolean(2, cacheKey.isPrivateVersion());
-                        statement.setString(3, cacheKey.getRegion());
-                        statement.setString(4, cacheKey.getCountry());
-                        statement.setString(5, cacheKey.getMutations());
-                        statement.setFloat(6, cacheKey.getMatchPercentage());
-                        statement.setString(7, cacheKey.getDataType());
-                        statement.setDate(8, Date.valueOf(cacheKey.getDateFrom()));
-                        statement.setDate(9, Date.valueOf(cacheKey.getDateTo()));
-                        statement.setString(10, json);
-                        statement.execute();
-                        success++;
-                    } catch (JsonProcessingException e) {
-                        failed++;
-                        e.printStackTrace();
-                    }
+                    List<String> fields = pair.getValue1();
+                    WeightedSampleResultSet samples = databaseService.getSamples2(selection, fields);
+                    statement.clearParameters();
+                    statement.setString(1, cacheKey.getFields());
+                    statement.setBoolean(2, cacheKey.isPrivateVersion());
+                    statement.setString(3, cacheKey.getRegion());
+                    statement.setString(4, cacheKey.getCountry());
+                    statement.setString(5, cacheKey.getMutations());
+                    statement.setFloat(6, cacheKey.getMatchPercentage());
+                    statement.setString(7, cacheKey.getDataType());
+                    statement.setDate(8, Date.valueOf(cacheKey.getDateFrom()));
+                    statement.setDate(9, Date.valueOf(cacheKey.getDateTo()));
+                    statement.setString(10, objectMapper.writeValueAsString(samples));
+                    statement.execute();
+                    success++;
                 }
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+                failed++;
             }
             logger.info("Successfully pre-computed and cached " + success + " entries. " + failed + " failed.");
         }
