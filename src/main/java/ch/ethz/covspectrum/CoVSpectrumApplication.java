@@ -16,6 +16,8 @@ public class CoVSpectrumApplication {
     private static final Logger logger = LoggerFactory.getLogger(CoVSpectrumApplication.class);
 
     public static void main(String[] args) throws SQLException, JsonProcessingException {
+        System.getProperties().setProperty("org.jooq.no-logo", "true");
+
         if (args.length > 0) {
             if ("--help".equals(args[0])) {
                 System.out.println("There is no manual, sorry.");
