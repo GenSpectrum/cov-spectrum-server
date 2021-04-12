@@ -116,24 +116,29 @@ public class SampleResourceController {
             fieldsParsed = ALL_FIELDS;
         }
 
+        String result;
+
         // Check if the value has been pre-computed
         String cached = databaseService.fetchSamplesFromCache(selection, fieldsParsed);
         if (cached != null) {
-            return cached;
-        }
+            result = cached;
+        } else {
+            // If it's not pre-computed, compute now
+            WeightedSampleResultSet samples = databaseService.getSamples2(selection, fieldsParsed);
 
-        // If it's not pre-computed, compute now
-        WeightedSampleResultSet samples = databaseService.getSamples2(selection, fieldsParsed);
+            // Format results as JSON
+            try {
+                result = objectMapper.writeValueAsString(samples);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         // Increment the statistics
         databaseService.incrementSampleUsageStatistics(selection, fieldsParsed);
 
-        // Format results as JSON and respond.
-        try {
-            return objectMapper.writeValueAsString(samples);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        // Respond
+        return result;
     }
 
 
