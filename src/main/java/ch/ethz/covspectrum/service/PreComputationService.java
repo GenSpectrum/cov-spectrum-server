@@ -19,7 +19,7 @@ import java.util.List;
 @Service
 public class PreComputationService {
 
-    private final int MAX_CACHE_ENTRIES = 100;
+    private final int MAX_CACHE_ENTRIES = 2000;
 
     private final Logger logger = LoggerFactory.getLogger(PreComputationService.class);
 
@@ -74,6 +74,7 @@ public class PreComputationService {
                 group by
                   fields, private_version, region, country,
                   mutations, match_percentage, data_type, date_from, date_to
+                having sum(usage_count) >= 5
                 order by usage_count desc
                 limit greatest(? - (select count(*) from spectrum_api_cache_sample), 0);
             """;
