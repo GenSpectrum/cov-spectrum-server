@@ -21,11 +21,6 @@ public class AAMutation {
     }
 
 
-    public String getProtein() {
-        return mutationCode.split(":")[0];
-    }
-
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

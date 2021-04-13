@@ -50,7 +50,7 @@ public class SampleResourceController {
 
         Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
                 .map(AAMutation::new)
-                .collect(Collectors.toSet());;
+                .collect(Collectors.toSet());
         Variant variant = new Variant(aaMutations);
         List<SampleFull> samples = databaseService.getSamples(variant, country, matchPercentage,
                 principal != null, dataType);

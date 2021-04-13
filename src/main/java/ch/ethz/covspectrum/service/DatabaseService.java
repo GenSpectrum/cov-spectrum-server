@@ -74,50 +74,6 @@ public class DatabaseService {
     }
 
 
-    public int getNumberSequences(YearWeek week, String country) throws SQLException {
-        try (Connection conn = getDatabaseConnection()) {
-            DSLContext ctx = getDSLCtx(conn);
-            var metaTbl = getMetaTable(ctx, new SampleSelection().setUsePrivate(false));
-            var statement = ctx
-                    .select(DSL.count().as("count"))
-                    .from(metaTbl)
-                    .where(
-                            MyDSL.yearWeekConstantEq(metaTbl, week),
-                            MyDSL.countryConstantEq(metaTbl, country)
-                    );
-            return statement.fetch().get(0).value1();
-        }
-    }
-
-
-    public List<Pair<AAMutation, Set<SampleName>>> getMutations(YearWeek yearWeek, String country) throws SQLException {
-        int MINIMAL_NUMBER_OF_SAMPLES = 5;
-        try (Connection conn = getDatabaseConnection()) {
-            DSLContext ctx = getDSLCtx(conn);
-            var metaTbl = getMetaTable(ctx, new SampleSelection().setUsePrivate(false));
-            var mutTbl = getMutTable(ctx, false);
-            var statement = ctx
-                    .select(
-                            MyDSL.fAaMutation(mutTbl).as("mutation"),
-                            DSL.groupConcat(MyDSL.fSequenceName(metaTbl)).separator(",").as("strains")
-                    )
-                    .from(MyDSL.metaJoinMut(metaTbl, mutTbl))
-                    .where(
-                            MyDSL.yearWeekConstantEq(metaTbl, yearWeek),
-                            MyDSL.countryConstantEq(metaTbl, country)
-                    )
-                    .groupBy(MyDSL.fAaMutation(mutTbl))
-                    .having(DSL.count().ge(MINIMAL_NUMBER_OF_SAMPLES));
-            return statement.fetch()
-                    .map(r -> new Pair<>(
-                            new AAMutation(r.value1()),
-                            Arrays.stream(r.value2().split(","))
-                                    .map(SampleName::new).collect(Collectors.toSet())
-                    ));
-        }
-    }
-
-
     public List<Distribution<LocalDate, CountAndProportionWithCI>> getDailyTimeDistribution(
             Variant variant,
             String region,
