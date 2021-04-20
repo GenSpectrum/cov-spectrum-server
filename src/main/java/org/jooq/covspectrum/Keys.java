@@ -4,17 +4,24 @@
 package org.jooq.covspectrum;
 
 
+import org.jooq.ForeignKey;
 import org.jooq.TableField;
 import org.jooq.UniqueKey;
 import org.jooq.covspectrum.tables.ConsensusSequence;
 import org.jooq.covspectrum.tables.GisaidSequence;
 import org.jooq.covspectrum.tables.SpectrumAccount;
+import org.jooq.covspectrum.tables.SpectrumApiCacheSample;
+import org.jooq.covspectrum.tables.SpectrumApiUsageSample;
+import org.jooq.covspectrum.tables.SpectrumCountry;
 import org.jooq.covspectrum.tables.SpectrumNewInterestingVariant;
 import org.jooq.covspectrum.tables.VariantMutationAa;
 import org.jooq.covspectrum.tables.VariantMutationNucleotide;
 import org.jooq.covspectrum.tables.records.ConsensusSequenceRecord;
 import org.jooq.covspectrum.tables.records.GisaidSequenceRecord;
 import org.jooq.covspectrum.tables.records.SpectrumAccountRecord;
+import org.jooq.covspectrum.tables.records.SpectrumApiCacheSampleRecord;
+import org.jooq.covspectrum.tables.records.SpectrumApiUsageSampleRecord;
+import org.jooq.covspectrum.tables.records.SpectrumCountryRecord;
 import org.jooq.covspectrum.tables.records.SpectrumNewInterestingVariantRecord;
 import org.jooq.covspectrum.tables.records.VariantMutationAaRecord;
 import org.jooq.covspectrum.tables.records.VariantMutationNucleotideRecord;
@@ -34,9 +41,21 @@ public class Keys {
     // -------------------------------------------------------------------------
 
     public static final UniqueKey<ConsensusSequenceRecord> CONSENSUS_SEQUENCE_PKEY = Internal.createUniqueKey(ConsensusSequence.CONSENSUS_SEQUENCE, DSL.name("consensus_sequence_pkey"), new TableField[] { ConsensusSequence.CONSENSUS_SEQUENCE.SAMPLE_NAME }, true);
-    public static final UniqueKey<GisaidSequenceRecord> GISAID_SEQUENCE_PKEY = Internal.createUniqueKey(GisaidSequence.GISAID_SEQUENCE, DSL.name("gisaid_sequence_pkey"), new TableField[] { GisaidSequence.GISAID_SEQUENCE.STRAIN }, true);
+    public static final UniqueKey<GisaidSequenceRecord> GISAID_SEQUENCE_STAGING_PKEY = Internal.createUniqueKey(GisaidSequence.GISAID_SEQUENCE, DSL.name("gisaid_sequence_staging_pkey"), new TableField[] { GisaidSequence.GISAID_SEQUENCE.STRAIN }, true);
     public static final UniqueKey<SpectrumAccountRecord> SPECTRUM_ACCOUNT_PKEY = Internal.createUniqueKey(SpectrumAccount.SPECTRUM_ACCOUNT, DSL.name("spectrum_account_pkey"), new TableField[] { SpectrumAccount.SPECTRUM_ACCOUNT.USERNAME }, true);
+    public static final UniqueKey<SpectrumApiCacheSampleRecord> SPECTRUM_API_CACHE_SAMPLE_PKEY = Internal.createUniqueKey(SpectrumApiCacheSample.SPECTRUM_API_CACHE_SAMPLE, DSL.name("spectrum_api_cache_sample_pkey"), new TableField[] { SpectrumApiCacheSample.SPECTRUM_API_CACHE_SAMPLE.ID }, true);
+    public static final UniqueKey<SpectrumApiUsageSampleRecord> SPECTRUM_API_USAGE_SAMPLE_PKEY = Internal.createUniqueKey(SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE, DSL.name("spectrum_api_usage_sample_pkey"), new TableField[] { SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.ID }, true);
+    public static final UniqueKey<SpectrumApiUsageSampleRecord> SPECTRUM_API_USAGE_SAMPLE_UNIQUE_CONSTRAINT = Internal.createUniqueKey(SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE, DSL.name("spectrum_api_usage_sample_unique_constraint"), new TableField[] { SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.ISOYEAR, SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.ISOWEEK, SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.FIELDS, SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.PRIVATE_VERSION, SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.REGION, SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.COUNTRY, SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.MUTATIONS, SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.MATCH_PERCENTAGE, SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.PANGOLIN_LINEAGE, SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.DATA_TYPE, SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.DATE_FROM, SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE.DATE_TO }, true);
+    public static final UniqueKey<SpectrumCountryRecord> SPECTRUM_COUNTRY_NAME_KEY = Internal.createUniqueKey(SpectrumCountry.SPECTRUM_COUNTRY, DSL.name("spectrum_country_name_key"), new TableField[] { SpectrumCountry.SPECTRUM_COUNTRY.NAME }, true);
+    public static final UniqueKey<SpectrumCountryRecord> SPECTRUM_COUNTRY_PKEY = Internal.createUniqueKey(SpectrumCountry.SPECTRUM_COUNTRY, DSL.name("spectrum_country_pkey"), new TableField[] { SpectrumCountry.SPECTRUM_COUNTRY.ISO_CODE }, true);
+    public static final UniqueKey<SpectrumCountryRecord> SPECTRUM_COUNTRY_URL_COMPONENT_KEY = Internal.createUniqueKey(SpectrumCountry.SPECTRUM_COUNTRY, DSL.name("spectrum_country_url_component_key"), new TableField[] { SpectrumCountry.SPECTRUM_COUNTRY.URL_COMPONENT }, true);
     public static final UniqueKey<SpectrumNewInterestingVariantRecord> SPECTRUM_NEW_INTERESTING_VARIANT_PKEY = Internal.createUniqueKey(SpectrumNewInterestingVariant.SPECTRUM_NEW_INTERESTING_VARIANT, DSL.name("spectrum_new_interesting_variant_pkey"), new TableField[] { SpectrumNewInterestingVariant.SPECTRUM_NEW_INTERESTING_VARIANT.ID }, true);
     public static final UniqueKey<VariantMutationAaRecord> VARIANT_MUTATION_AA_PKEY = Internal.createUniqueKey(VariantMutationAa.VARIANT_MUTATION_AA, DSL.name("variant_mutation_aa_pkey"), new TableField[] { VariantMutationAa.VARIANT_MUTATION_AA.VARIANT_NAME, VariantMutationAa.VARIANT_MUTATION_AA.AA_MUTATION }, true);
     public static final UniqueKey<VariantMutationNucleotideRecord> VARIANT_MUTATION_NUCLEOTIDE_PKEY = Internal.createUniqueKey(VariantMutationNucleotide.VARIANT_MUTATION_NUCLEOTIDE, DSL.name("variant_mutation_nucleotide_pkey"), new TableField[] { VariantMutationNucleotide.VARIANT_MUTATION_NUCLEOTIDE.VARIANT_NAME, VariantMutationNucleotide.VARIANT_MUTATION_NUCLEOTIDE.NUCLEOTIDE_MUTATION }, true);
+
+    // -------------------------------------------------------------------------
+    // FOREIGN KEY definitions
+    // -------------------------------------------------------------------------
+
+    public static final ForeignKey<SpectrumNewInterestingVariantRecord, SpectrumCountryRecord> SPECTRUM_NEW_INTERESTING_VARIANT__SPECTRUM_NEW_INTERESTING_VARIANT_SPECTRUM_COUNTRY_NAME_FK = Internal.createForeignKey(SpectrumNewInterestingVariant.SPECTRUM_NEW_INTERESTING_VARIANT, DSL.name("spectrum_new_interesting_variant_spectrum_country_name_fk"), new TableField[] { SpectrumNewInterestingVariant.SPECTRUM_NEW_INTERESTING_VARIANT.COUNTRY }, Keys.SPECTRUM_COUNTRY_NAME_KEY, new TableField[] { SpectrumCountry.SPECTRUM_COUNTRY.NAME }, true);
 }

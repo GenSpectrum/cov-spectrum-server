@@ -20,6 +20,9 @@ public class SpectrumMetadataTable extends CustomTable<SpectrumMetadataRecord> {
     public final TableField<SpectrumMetadataRecord, String> SEQUENCE_NAME
             = createField(name("sequence_name"), SQLDataType.CLOB);
 
+    public final TableField<SpectrumMetadataRecord, String> PANGOLIN_LINEAGE
+            = createField(name("pangolin_lineage"), SQLDataType.CLOB);
+
     public final TableField<SpectrumMetadataRecord, LocalDate> DATE
             = createField(name("date"), SQLDataType.LOCALDATE);
 

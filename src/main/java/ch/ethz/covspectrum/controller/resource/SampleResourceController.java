@@ -41,18 +41,26 @@ public class SampleResourceController {
     @GetMapping("/sample")
     public ResultList<SampleFull> getSamples(
             @RequestParam(required = false) String country,
-            @RequestParam String mutations,
+            @RequestParam(required = false) String mutations,
+            @RequestParam(required = false) String pangolinLineage,
             @RequestParam(defaultValue = "1") float matchPercentage,
             @RequestParam(required = false) DataType dataType,
             Principal principal
     ) throws SQLException {
         int TOTAL_RETURN_NUMBER = 1000;  // I don't want to return too much right now...
 
-        Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
-                .map(AAMutation::new)
-                .collect(Collectors.toSet());
-        Variant variant = new Variant(aaMutations);
-        List<SampleFull> samples = databaseService.getSamples(variant, country, matchPercentage,
+        if (mutations == null && pangolinLineage == null) {
+            throw new RuntimeException("Either mutations or pangolinLineage must be given.");
+        }
+
+        Variant variant = null;
+        if (mutations != null) {
+            Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
+                    .map(AAMutation::new)
+                    .collect(Collectors.toSet());
+            variant = new Variant(aaMutations);
+        }
+        List<SampleFull> samples = databaseService.getSamples(variant, pangolinLineage, country, matchPercentage,
                 principal != null, dataType);
         int totalNumber = samples.size();
         if (totalNumber > TOTAL_RETURN_NUMBER) {
@@ -72,6 +80,7 @@ public class SampleResourceController {
             @RequestParam(required = false) String country,
             @RequestParam(required = false) String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage,
+            @RequestParam(required = false) String pangolinLineage,
             @RequestParam(required = false) DataType dataType,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
@@ -87,7 +96,7 @@ public class SampleResourceController {
         }
         SampleSelection selection = new SampleSelection()
                 .setUsePrivate(principal != null).setVariant(variant).setMatchPercentage(matchPercentage)
-                .setRegion(region).setCountry(country).setDataType(dataType)
+                .setPangolinLineage(pangolinLineage).setRegion(region).setCountry(country).setDataType(dataType)
                 .setDateFrom(dateFrom).setDateTo(dateTo);
 
         // Choose fields
@@ -145,12 +154,14 @@ public class SampleResourceController {
     @GetMapping("/sample-fasta")
     public String getFasta(
             @RequestParam(required = false) String country,
-            @RequestParam String mutations,
+            @RequestParam(required = false) String mutations,
+            @RequestParam(required = false) String pangolinLineage,
             @RequestParam(defaultValue = "1") float matchPercentage,
             @RequestParam(required = false) DataType dataType,
             Principal principal
     ) throws SQLException {
-        List<SampleFull> samples = this.getSamples(country, mutations, matchPercentage, dataType, principal).getData();
+        List<SampleFull> samples = this.getSamples(country, mutations, pangolinLineage, matchPercentage, dataType,
+                principal).getData();
         List<SampleName> names = samples.stream()
                 .map(s -> new SampleName(s.getName()))
                 .collect(Collectors.toList());

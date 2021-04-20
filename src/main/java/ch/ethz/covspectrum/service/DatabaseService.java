@@ -1,6 +1,8 @@
 package ch.ethz.covspectrum.service;
 
-import ch.ethz.covspectrum.entity.api.*;
+import ch.ethz.covspectrum.entity.api.CasesAndSequences;
+import ch.ethz.covspectrum.entity.api.CountAndProportionWithCI;
+import ch.ethz.covspectrum.entity.api.Distribution;
 import ch.ethz.covspectrum.entity.core.DataType;
 import ch.ethz.covspectrum.entity.core.*;
 import ch.ethz.covspectrum.jooq.MyDSL;
@@ -13,7 +15,6 @@ import org.jooq.covspectrum.Tables;
 import org.jooq.impl.DSL;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
-import org.threeten.extra.YearWeek;
 
 import java.beans.PropertyVetoException;
 import java.sql.Date;
@@ -79,13 +80,14 @@ public class DatabaseService {
             String region,
             String country,
             float matchPercentage,
+            String pangolinLineage,
             DataType dataType,
             LocalDate fromDate,
             LocalDate endDate
     ) throws SQLException {
         SampleSelection selection = new SampleSelection()
                 .setUsePrivate(false).setVariant(variant).setMatchPercentage(matchPercentage)
-                .setRegion(region).setCountry(country)
+                .setPangolinLineage(pangolinLineage).setRegion(region).setCountry(country)
                 .setDateFrom(fromDate).setDateTo(endDate).setDataType(dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
@@ -128,6 +130,7 @@ public class DatabaseService {
 
     public List<SampleFull> getSamples(
             Variant variant,
+            String pangolinLineage,
             String country,
             float matchPercentage,
             boolean usePrivateVersion,
@@ -135,7 +138,7 @@ public class DatabaseService {
     ) throws SQLException {
         SampleSelection selection = new SampleSelection()
                 .setUsePrivate(usePrivateVersion).setVariant(variant).setMatchPercentage(matchPercentage)
-                .setCountry(country).setDataType(dataType);
+                .setPangolinLineage(pangolinLineage).setCountry(country).setDataType(dataType);
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
             Table<?> mutTbl = getMutTable(ctx, usePrivateVersion);
@@ -459,6 +462,9 @@ public class DatabaseService {
             }
             conditions.add(c);
         }
+        if (selection.getPangolinLineage() != null) {
+            conditions.add(MyDSL.fPangolinLineage(metaTbl).eq(selection.getPangolinLineage()));
+        }
         if (selection.getRegion() != null) {
             conditions.add(MyDSL.fRegion(metaTbl).eq(selection.getRegion()));
         }
@@ -526,12 +532,12 @@ public class DatabaseService {
         String sql = """
             insert into spectrum_api_usage_sample as s (
                 isoyear, isoweek, usage_count,
-                fields, private_version, region, country, mutations, match_percentage,
+                fields, private_version, region, country, mutations, match_percentage, pangolin_lineage,
                 data_type, date_from, date_to
             )
             values (
                 extract(isoyear from current_date), extract(week from current_date), 1,
-                ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             on conflict on constraint spectrum_api_usage_sample_unique_constraint
               do update
@@ -545,9 +551,10 @@ public class DatabaseService {
                 statement.setString(4, cacheKey.getCountry());
                 statement.setString(5, cacheKey.getMutations());
                 statement.setFloat(6, cacheKey.getMatchPercentage());
-                statement.setString(7, cacheKey.getDataType());
-                statement.setDate(8, Date.valueOf(cacheKey.getDateFrom()));
-                statement.setDate(9, Date.valueOf(cacheKey.getDateTo()));
+                statement.setString(7, cacheKey.getPangolinLineage());
+                statement.setString(8, cacheKey.getDataType());
+                statement.setDate(9, Date.valueOf(cacheKey.getDateFrom()));
+                statement.setDate(10, Date.valueOf(cacheKey.getDateTo()));
                 statement.execute();
             }
         }
@@ -569,6 +576,7 @@ public class DatabaseService {
               and c.country = ?
               and c.mutations = ?
               and c.match_percentage = ?
+              and c.pangolin_lineage = ?
               and c.data_type = ?
               and c.date_from = ?
               and c.date_to = ?;
@@ -581,9 +589,10 @@ public class DatabaseService {
                 statement.setString(4, cacheKey.getCountry());
                 statement.setString(5, cacheKey.getMutations());
                 statement.setFloat(6, cacheKey.getMatchPercentage());
-                statement.setString(7, cacheKey.getDataType());
-                statement.setDate(8, Date.valueOf(cacheKey.getDateFrom()));
-                statement.setDate(9, Date.valueOf(cacheKey.getDateTo()));
+                statement.setString(7, cacheKey.getPangolinLineage());
+                statement.setString(8, cacheKey.getDataType());
+                statement.setDate(9, Date.valueOf(cacheKey.getDateFrom()));
+                statement.setDate(10, Date.valueOf(cacheKey.getDateTo()));
                 try (ResultSet rs = statement.executeQuery()) {
                     if (rs.next()) {
                         return rs.getString("cache");

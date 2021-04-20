@@ -23,6 +23,8 @@ public class SampleSelectionCacheKey {
 
     private final float matchPercentage;
 
+    private final String pangolinLineage;
+
     private final String dataType;
 
     private final LocalDate dateFrom;
@@ -37,6 +39,7 @@ public class SampleSelectionCacheKey {
             String country,
             String mutations,
             float matchPercentage,
+            String pangolinLineage,
             String dataType,
             LocalDate dateFrom,
             LocalDate dateTo
@@ -47,6 +50,7 @@ public class SampleSelectionCacheKey {
         this.country = country;
         this.mutations = mutations;
         this.matchPercentage = matchPercentage;
+        this.pangolinLineage = pangolinLineage;
         this.dataType = dataType;
         this.dateFrom = dateFrom;
         this.dateTo = dateTo;
@@ -80,6 +84,11 @@ public class SampleSelectionCacheKey {
 
     public float getMatchPercentage() {
         return matchPercentage;
+    }
+
+
+    public String getPangolinLineage() {
+        return pangolinLineage;
     }
 
 
@@ -118,6 +127,7 @@ public class SampleSelectionCacheKey {
                 Objects.requireNonNullElse(selection.getCountry(), ""),
                 mutationsString,
                 selection.getMatchPercentage(),
+                Objects.requireNonNullElse(selection.getPangolinLineage(), ""),
                 dataType,
                 Objects.requireNonNullElse(selection.getDateFrom(), LocalDate.of(1990, 1, 1)),
                 Objects.requireNonNullElse(selection.getDateTo(), LocalDate.of(1990, 1, 1))
@@ -135,6 +145,7 @@ public class SampleSelectionCacheKey {
                 .setRegion(!region.equals("") ? region : null)
                 .setCountry(!country.equals("") ? country : null)
                 .setMatchPercentage(matchPercentage)
+                .setPangolinLineage(!pangolinLineage.equals("") ? pangolinLineage : null)
                 .setDateFrom(!dateFrom.equals(LocalDate.of(1990, 1, 1)) ? dateFrom : null)
                 .setDateTo(!dateTo.equals(LocalDate.of(1990, 1, 1)) ? dateTo : null);
         if (!mutations.equals("")) {

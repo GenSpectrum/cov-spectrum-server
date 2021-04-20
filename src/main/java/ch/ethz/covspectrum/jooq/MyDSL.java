@@ -79,6 +79,11 @@ public class MyDSL {
     }
 
 
+    public static Field<String> fPangolinLineage(Table<?> table) {
+        return table.field("pangolin_lineage", String.class);
+    }
+
+
     public static Field<String> fRegion(Table<?> table) {
         return table.field("region", String.class);
     }

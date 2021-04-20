@@ -43,8 +43,9 @@ public class Chen2021FitnessController {
     public Optional<ApiResponse> compute(
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String country,
-            @RequestParam String mutations,
+            @RequestParam(required = false) String mutations,
             @RequestParam(defaultValue = "1") float matchPercentage,
+            @RequestParam(required = false) String pangolinLineage,
             @RequestParam(required = false) DataType dataType,
             @RequestParam(defaultValue = "0.95") float alpha,
             @RequestParam(defaultValue = "4.8") float generationTime,
@@ -54,13 +55,20 @@ public class Chen2021FitnessController {
             @RequestParam(defaultValue = "1000") int initialWildtypeCases,
             @RequestParam(defaultValue = "100") int initialVariantCases
     ) throws IOException, SQLException {
+        if (mutations == null && pangolinLineage == null) {
+            throw new RuntimeException("Either mutations or pangolinLineage must be given.");
+        }
+
         // Get input data for the model
-        Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
-                .map(AAMutation::new)
-                .collect(Collectors.toSet());
-        Variant variant = new Variant(aaMutations);
+        Variant variant = null;
+        if (mutations != null) {
+            Set<AAMutation> aaMutations = Arrays.stream(mutations.split(","))
+                    .map(AAMutation::new)
+                    .collect(Collectors.toSet());
+            variant = new Variant(aaMutations);
+        }
         var dailyTimeDistribution = databaseService.getDailyTimeDistribution(
-                variant, region, country, matchPercentage, dataType, plotStartDate, plotEndDate);
+                variant, region, country, matchPercentage, pangolinLineage, dataType, plotStartDate, plotEndDate);
         if (dailyTimeDistribution.size() < 3) {
             return Optional.empty();
         }

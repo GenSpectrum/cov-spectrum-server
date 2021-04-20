@@ -13,7 +13,7 @@ import org.jooq.ForeignKey;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row14;
+import org.jooq.Row15;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -117,6 +117,11 @@ public class SpectrumSequencePrivateMeta extends TableImpl<SpectrumSequencePriva
      */
     public final TableField<SpectrumSequencePrivateMetaRecord, Boolean> DECEASED = createField(DSL.name("deceased"), SQLDataType.BOOLEAN, this, "");
 
+    /**
+     * The column <code>public.spectrum_sequence_private_meta.pangolin_lineage</code>.
+     */
+    public final TableField<SpectrumSequencePrivateMetaRecord, String> PANGOLIN_LINEAGE = createField(DSL.name("pangolin_lineage"), SQLDataType.CLOB, this, "");
+
     private SpectrumSequencePrivateMeta(Name alias, Table<SpectrumSequencePrivateMetaRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -157,7 +162,7 @@ public class SpectrumSequencePrivateMeta extends TableImpl<SpectrumSequencePriva
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_AGE_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_COUNTRY_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_DATE_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_DIVISION_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_HOST_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_LOCATION_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_REGION_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_SEQUENCE_NAME_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_SEX_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_ZIP_CODE_IDX);
+        return Arrays.<Index>asList(Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_AGE_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_COUNTRY_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_DATE_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_DIVISION_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_HOST_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_LOCATION_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_PANGOLIN_LINEAGE_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_REGION_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_SEQUENCE_NAME_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_SEX_IDX, Indexes.SPECTRUM_SEQUENCE_PRIVATE_META_ZIP_CODE_IDX);
     }
 
     @Override
@@ -187,11 +192,11 @@ public class SpectrumSequencePrivateMeta extends TableImpl<SpectrumSequencePriva
     }
 
     // -------------------------------------------------------------------------
-    // Row14 type methods
+    // Row15 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row14<String, LocalDate, String, String, String, String, String, String, Integer, String, String, String, Boolean, Boolean> fieldsRow() {
-        return (Row14) super.fieldsRow();
+    public Row15<String, LocalDate, String, String, String, String, String, String, Integer, String, String, String, Boolean, Boolean, String> fieldsRow() {
+        return (Row15) super.fieldsRow();
     }
 }

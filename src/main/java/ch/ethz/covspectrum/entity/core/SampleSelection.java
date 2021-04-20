@@ -9,6 +9,8 @@ public class SampleSelection {
 
     private Variant variant;
 
+    private String pangolinLineage;
+
     private String region;
 
     private String country;
@@ -37,6 +39,15 @@ public class SampleSelection {
 
     public SampleSelection setVariant(Variant variant) {
         this.variant = variant;
+        return this;
+    }
+
+    public String getPangolinLineage() {
+        return pangolinLineage;
+    }
+
+    public SampleSelection setPangolinLineage(String pangolinLineage) {
+        this.pangolinLineage = pangolinLineage;
         return this;
     }
 
