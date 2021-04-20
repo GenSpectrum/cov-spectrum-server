@@ -7,6 +7,9 @@ package org.jooq.covspectrum;
 import org.jooq.covspectrum.tables.ConsensusSequence;
 import org.jooq.covspectrum.tables.GisaidSequence;
 import org.jooq.covspectrum.tables.SpectrumAccount;
+import org.jooq.covspectrum.tables.SpectrumApiCacheSample;
+import org.jooq.covspectrum.tables.SpectrumApiUsageSample;
+import org.jooq.covspectrum.tables.SpectrumCountry;
 import org.jooq.covspectrum.tables.SpectrumNewInterestingVariant;
 import org.jooq.covspectrum.tables.SpectrumSequenceIntensity;
 import org.jooq.covspectrum.tables.SpectrumSequencePrivateMeta;
@@ -36,6 +39,21 @@ public class Tables {
      * The table <code>public.spectrum_account</code>.
      */
     public static final SpectrumAccount SPECTRUM_ACCOUNT = SpectrumAccount.SPECTRUM_ACCOUNT;
+
+    /**
+     * The table <code>public.spectrum_api_cache_sample</code>.
+     */
+    public static final SpectrumApiCacheSample SPECTRUM_API_CACHE_SAMPLE = SpectrumApiCacheSample.SPECTRUM_API_CACHE_SAMPLE;
+
+    /**
+     * The table <code>public.spectrum_api_usage_sample</code>.
+     */
+    public static final SpectrumApiUsageSample SPECTRUM_API_USAGE_SAMPLE = SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE;
+
+    /**
+     * The table <code>public.spectrum_country</code>.
+     */
+    public static final SpectrumCountry SPECTRUM_COUNTRY = SpectrumCountry.SPECTRUM_COUNTRY;
 
     /**
      * The table <code>public.spectrum_new_interesting_variant</code>.

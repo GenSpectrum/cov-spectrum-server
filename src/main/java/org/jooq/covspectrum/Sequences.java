@@ -16,6 +16,16 @@ import org.jooq.impl.SQLDataType;
 public class Sequences {
 
     /**
+     * The sequence <code>public.spectrum_api_cache_sample_id_seq</code>
+     */
+    public static final Sequence<Integer> SPECTRUM_API_CACHE_SAMPLE_ID_SEQ = Internal.createSequence("spectrum_api_cache_sample_id_seq", Public.PUBLIC, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
+
+    /**
+     * The sequence <code>public.spectrum_api_usage_sample_id_seq</code>
+     */
+    public static final Sequence<Integer> SPECTRUM_API_USAGE_SAMPLE_ID_SEQ = Internal.createSequence("spectrum_api_usage_sample_id_seq", Public.PUBLIC, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
+
+    /**
      * The sequence <code>public.spectrum_new_interesting_variant_id_seq</code>
      */
     public static final Sequence<Integer> SPECTRUM_NEW_INTERESTING_VARIANT_ID_SEQ = Internal.createSequence("spectrum_new_interesting_variant_id_seq", Public.PUBLIC, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);

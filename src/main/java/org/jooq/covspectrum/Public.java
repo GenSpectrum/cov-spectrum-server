@@ -13,6 +13,9 @@ import org.jooq.Table;
 import org.jooq.covspectrum.tables.ConsensusSequence;
 import org.jooq.covspectrum.tables.GisaidSequence;
 import org.jooq.covspectrum.tables.SpectrumAccount;
+import org.jooq.covspectrum.tables.SpectrumApiCacheSample;
+import org.jooq.covspectrum.tables.SpectrumApiUsageSample;
+import org.jooq.covspectrum.tables.SpectrumCountry;
 import org.jooq.covspectrum.tables.SpectrumNewInterestingVariant;
 import org.jooq.covspectrum.tables.SpectrumSequenceIntensity;
 import org.jooq.covspectrum.tables.SpectrumSequencePrivateMeta;
@@ -50,6 +53,21 @@ public class Public extends SchemaImpl {
      * The table <code>public.spectrum_account</code>.
      */
     public final SpectrumAccount SPECTRUM_ACCOUNT = SpectrumAccount.SPECTRUM_ACCOUNT;
+
+    /**
+     * The table <code>public.spectrum_api_cache_sample</code>.
+     */
+    public final SpectrumApiCacheSample SPECTRUM_API_CACHE_SAMPLE = SpectrumApiCacheSample.SPECTRUM_API_CACHE_SAMPLE;
+
+    /**
+     * The table <code>public.spectrum_api_usage_sample</code>.
+     */
+    public final SpectrumApiUsageSample SPECTRUM_API_USAGE_SAMPLE = SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE;
+
+    /**
+     * The table <code>public.spectrum_country</code>.
+     */
+    public final SpectrumCountry SPECTRUM_COUNTRY = SpectrumCountry.SPECTRUM_COUNTRY;
 
     /**
      * The table <code>public.spectrum_new_interesting_variant</code>.
@@ -102,6 +120,8 @@ public class Public extends SchemaImpl {
     @Override
     public final List<Sequence<?>> getSequences() {
         return Arrays.<Sequence<?>>asList(
+            Sequences.SPECTRUM_API_CACHE_SAMPLE_ID_SEQ,
+            Sequences.SPECTRUM_API_USAGE_SAMPLE_ID_SEQ,
             Sequences.SPECTRUM_NEW_INTERESTING_VARIANT_ID_SEQ);
     }
 
@@ -111,6 +131,9 @@ public class Public extends SchemaImpl {
             ConsensusSequence.CONSENSUS_SEQUENCE,
             GisaidSequence.GISAID_SEQUENCE,
             SpectrumAccount.SPECTRUM_ACCOUNT,
+            SpectrumApiCacheSample.SPECTRUM_API_CACHE_SAMPLE,
+            SpectrumApiUsageSample.SPECTRUM_API_USAGE_SAMPLE,
+            SpectrumCountry.SPECTRUM_COUNTRY,
             SpectrumNewInterestingVariant.SPECTRUM_NEW_INTERESTING_VARIANT,
             SpectrumSequenceIntensity.SPECTRUM_SEQUENCE_INTENSITY,
             SpectrumSequencePrivateMeta.SPECTRUM_SEQUENCE_PRIVATE_META,

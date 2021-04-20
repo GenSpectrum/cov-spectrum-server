@@ -135,6 +135,20 @@ public class SpectrumNewInterestingVariant extends TableImpl<SpectrumNewInterest
     }
 
     @Override
+    public List<ForeignKey<SpectrumNewInterestingVariantRecord, ?>> getReferences() {
+        return Arrays.<ForeignKey<SpectrumNewInterestingVariantRecord, ?>>asList(Keys.SPECTRUM_NEW_INTERESTING_VARIANT__SPECTRUM_NEW_INTERESTING_VARIANT_SPECTRUM_COUNTRY_NAME_FK);
+    }
+
+    private transient SpectrumCountry _spectrumCountry;
+
+    public SpectrumCountry spectrumCountry() {
+        if (_spectrumCountry == null)
+            _spectrumCountry = new SpectrumCountry(this, Keys.SPECTRUM_NEW_INTERESTING_VARIANT__SPECTRUM_NEW_INTERESTING_VARIANT_SPECTRUM_COUNTRY_NAME_FK);
+
+        return _spectrumCountry;
+    }
+
+    @Override
     public SpectrumNewInterestingVariant as(String alias) {
         return new SpectrumNewInterestingVariant(DSL.name(alias), this);
     }
