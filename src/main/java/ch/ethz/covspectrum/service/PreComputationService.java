@@ -49,7 +49,7 @@ public class PreComputationService {
             String fetchSql = """
                 select
                   fields, private_version, region, country,
-                  mutations, match_percentage, data_type, date_from, date_to,
+                  mutations, match_percentage, pangolin_lineage, data_type, date_from, date_to,
                   sum(usage_count) as usage_count
                 from
                   spectrum_api_usage_sample u
@@ -67,13 +67,14 @@ public class PreComputationService {
                       and u.country = c.country
                       and u.mutations = c.mutations
                       and u.match_percentage = c.match_percentage
+                      and u.pangolin_lineage = c.pangolin_lineage
                       and u.data_type = c.data_type
                       and u.date_from = c.date_from
                       and u.date_to = c.date_to
                   )
                 group by
                   fields, private_version, region, country,
-                  mutations, match_percentage, data_type, date_from, date_to
+                  mutations, match_percentage, pangolin_lineage, data_type, date_from, date_to
                 having sum(usage_count) >= 5
                 order by usage_count desc
                 limit greatest(? - (select count(*) from spectrum_api_cache_sample), 0);
@@ -89,6 +90,7 @@ public class PreComputationService {
                                 rs.getString("country"),
                                 rs.getString("mutations"),
                                 rs.getFloat("match_percentage"),
+                                rs.getString("pangolin_lineage"),
                                 rs.getString("data_type"),
                                 rs.getDate("date_from").toLocalDate(),
                                 rs.getDate("date_to").toLocalDate()
@@ -110,12 +112,13 @@ public class PreComputationService {
                   country,
                   mutations,
                   match_percentage,
+                  pangolin_lineage,
                   data_type,
                   date_from,
                   date_to,
                   cache
                 )
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """;
             try (PreparedStatement statement = conn.prepareStatement(insertSql)) {
                 for (SampleSelectionCacheKey cacheKey : cacheKeys) {
@@ -130,10 +133,11 @@ public class PreComputationService {
                     statement.setString(4, cacheKey.getCountry());
                     statement.setString(5, cacheKey.getMutations());
                     statement.setFloat(6, cacheKey.getMatchPercentage());
-                    statement.setString(7, cacheKey.getDataType());
-                    statement.setDate(8, Date.valueOf(cacheKey.getDateFrom()));
-                    statement.setDate(9, Date.valueOf(cacheKey.getDateTo()));
-                    statement.setString(10, objectMapper.writeValueAsString(samples));
+                    statement.setString(7, cacheKey.getPangolinLineage());
+                    statement.setString(8, cacheKey.getDataType());
+                    statement.setDate(9, Date.valueOf(cacheKey.getDateFrom()));
+                    statement.setDate(10, Date.valueOf(cacheKey.getDateTo()));
+                    statement.setString(11, objectMapper.writeValueAsString(samples));
                     statement.execute();
                     success++;
                 }
