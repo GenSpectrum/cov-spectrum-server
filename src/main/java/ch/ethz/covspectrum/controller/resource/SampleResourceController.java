@@ -100,6 +100,17 @@ public class SampleResourceController {
                 .setDateFrom(dateFrom).setDateTo(dateTo);
 
         // Choose fields
+        Set<String> DEFAULT_FIELDS = new HashSet<>() {{
+            add("date");
+            add("region");
+            add("country");
+            add("division");
+            add("zipCode");
+            add("ageGroup");
+            add("sex");
+            add("hospitalized");
+            add("deceased");
+        }};
         Set<String> ALL_FIELDS = new HashSet<>() {{
             add("date");
             add("region");
@@ -110,6 +121,7 @@ public class SampleResourceController {
             add("sex");
             add("hospitalized");
             add("deceased");
+            add("pangolinLineage");
         }};
         Set<String> fieldsParsed;
         if (fields != null) {
@@ -122,7 +134,7 @@ public class SampleResourceController {
                 fieldsParsed.add(field);
             }
         } else {
-            fieldsParsed = ALL_FIELDS;
+            fieldsParsed = DEFAULT_FIELDS;
         }
 
         String result;

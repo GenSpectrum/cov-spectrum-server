@@ -28,6 +28,7 @@ public class WeightedSampleResultSetSerializer extends JsonSerializer<WeightedSa
                     case "hospitalized" -> gen.writeObjectField("hospitalized",
                             weightedSample.getHospitalized());
                     case "deceased" -> gen.writeObjectField("deceased", weightedSample.getDeceased());
+                    case "pangolinLineage" -> gen.writeObjectField("pangolinLineage", weightedSample.getPangolinLineage());
                     default -> throw new RuntimeException("Unexpected field name: " + field);
                 }
             }

@@ -225,6 +225,7 @@ public class DatabaseService {
             put("sex", new Pair<>("sex", String.class));
             put("hospitalized", new Pair<>("hospitalized", Boolean.class));
             put("deceased", new Pair<>("deceased", Boolean.class));
+            put("pangolinLineage", new Pair<>("pangolin_lineage", String.class));
         }};
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
@@ -249,6 +250,7 @@ public class DatabaseService {
                         String _sex = null;
                         Boolean _hospitalized = null;
                         Boolean _deceased = null;
+                        String _pangolinLineage = null;
                         int count = r.get("count", Integer.class);
                         if (fields.contains("date")) {
                             _date = r.get("date", LocalDate.class);
@@ -277,8 +279,11 @@ public class DatabaseService {
                         if (fields.contains("deceased")) {
                             _deceased = r.get("deceased", Boolean.class);
                         }
+                        if (fields.contains("pangolinLineage")) {
+                            _pangolinLineage = r.get("pangolin_lineage", String.class);
+                        }
                         return new WeightedSample(_date, _region, _country, _division, _zipCode, _ageGroup, _sex,
-                                _hospitalized, _deceased, count);
+                                _hospitalized, _deceased, _pangolinLineage, count);
                     });
             return new WeightedSampleResultSet(new ArrayList<>(fields), results);
         }
@@ -498,7 +503,8 @@ public class DatabaseService {
                 MyDSL.fOriginatingLab(metaTbl),
                 MyDSL.fHospitalized(metaTbl),
                 MyDSL.fDeceased(metaTbl),
-                MyDSL.fAgeGroup(metaTbl)
+                MyDSL.fAgeGroup(metaTbl),
+                MyDSL.fPangolinLineage(metaTbl)
         );
         if (selection.getVariant() == null) {
             return ctx.
