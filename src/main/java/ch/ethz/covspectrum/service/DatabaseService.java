@@ -467,8 +467,15 @@ public class DatabaseService {
             }
             conditions.add(c);
         }
-        if (selection.getPangolinLineage() != null) {
-            conditions.add(MyDSL.fPangolinLineage(metaTbl).eq(selection.getPangolinLineage()));
+        String pangolinLineage = selection.getPangolinLineage();
+        if (pangolinLineage != null) {
+            if (pangolinLineage.endsWith("*")) {
+                // Prefix search: Look for all lineages that start with the provided query
+                String sqlLikeQuery = pangolinLineage.substring(0, pangolinLineage.length() - 1) + "%";
+                conditions.add(MyDSL.fPangolinLineage(metaTbl).like(sqlLikeQuery));
+            } else {
+                conditions.add(MyDSL.fPangolinLineage(metaTbl).eq(pangolinLineage));
+            }
         }
         if (selection.getRegion() != null) {
             conditions.add(MyDSL.fRegion(metaTbl).eq(selection.getRegion()));
