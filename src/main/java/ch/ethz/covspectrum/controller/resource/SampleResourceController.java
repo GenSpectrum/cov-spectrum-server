@@ -8,10 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.sql.SQLException;
@@ -179,6 +176,21 @@ public class SampleResourceController {
                 .collect(Collectors.toList());
         List<SampleSequence> sequences = databaseService.getSampleSequences(names, principal != null);
         return Utils.toFasta(sequences);
+    }
+
+
+    /**
+     * Returns the mutations that occur in at least 20% of the sequences of the lineage.
+     */
+    @GetMapping("/pangolin-lineage/{name}")
+    public PangolinLineageResponse getPangolinLineage(
+            @PathVariable String name,
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) String country,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo
+    ) throws SQLException {
+        return databaseService.getPangolinLineageInformation(name, region, country, dateFrom, dateTo);
     }
 
 }

@@ -641,4 +641,98 @@ public class DatabaseService {
             }
         }
     }
+
+
+    public PangolinLineageResponse getPangolinLineageInformation(
+            String name,
+            String region,
+            String country,
+            LocalDate dateFrom,
+            LocalDate dateTo
+    ) throws SQLException {
+        String sqlConditions1 = "m.pangolin_lineage = ?";
+        String sqlConditions2 = "plm.pangolin_lineage = ?";
+        int preparedStatementArgumentPairs = 1;
+        if (region != null) {
+            sqlConditions1 += " and m.region = ?";
+            sqlConditions2 += " and plm.region = ?";
+            preparedStatementArgumentPairs++;
+        }
+        if (country != null) {
+            sqlConditions1 += " and m.country = ?";
+            sqlConditions2 += " and plm.country = ?";
+            preparedStatementArgumentPairs++;
+        }
+        if (dateFrom != null) {
+            sqlConditions1 += " and m.date >= ?";
+            sqlConditions2 += " and plm.date >= ?";
+            preparedStatementArgumentPairs++;
+        }
+        if (dateTo != null) {
+            sqlConditions1 += " and m.date <= ?";
+            sqlConditions2 += " and plm.date <= ?";
+            preparedStatementArgumentPairs++;
+        }
+        String sql = """
+                select
+                  x.aa_mutation,
+                  x.count,
+                  x.proportion
+                from
+                  (
+                    select
+                      plm.aa_mutation,
+                      sum(plm.count) as count,
+                      sum(plm.count) * 1.0 / (
+                        select count(*)
+                        from spectrum_sequence_public_meta m
+                        where
+                          """ + sqlConditions1 + """
+                  ) as proportion
+                from spectrum_pangolin_lineage_mutation plm
+                where
+                  """ + sqlConditions2 + """
+                        group by plm.aa_mutation
+                      ) x
+                    where x.proportion >= 0.2
+                    order by x.proportion desc;
+                """;
+        try (Connection conn = getDatabaseConnection()) {
+            try (PreparedStatement statement = conn.prepareStatement(sql)) {
+                statement.setString(1, name);
+                statement.setString(1 + preparedStatementArgumentPairs, name);
+                int i = 2;
+                if (region != null) {
+                    statement.setString(i, region);
+                    statement.setString(i + preparedStatementArgumentPairs, region);
+                    i++;
+                }
+                if (country != null) {
+                    statement.setString(i, country);
+                    statement.setString(i + preparedStatementArgumentPairs, country);
+                    i++;
+                }
+                if (dateFrom != null) {
+                    statement.setDate(i, Date.valueOf(dateFrom));
+                    statement.setDate(i + preparedStatementArgumentPairs, Date.valueOf(dateFrom));
+                    i++;
+                }
+                if (dateTo != null) {
+                    statement.setDate(i, Date.valueOf(dateTo));
+                    statement.setDate(i + preparedStatementArgumentPairs, Date.valueOf(dateTo));
+                    i++;
+                }
+                try (ResultSet rs = statement.executeQuery()) {
+                    List<MutationCount> mutationCounts = new ArrayList<>();
+                    while (rs.next()) {
+                        mutationCounts.add(new MutationCount()
+                                .setMutation(rs.getString("aa_mutation"))
+                                .setCount(rs.getInt("count"))
+                                .setProportion(rs.getFloat("proportion")));
+                    }
+                    return new PangolinLineageResponse().setCommonMutations(mutationCounts);
+                }
+            }
+        }
+    }
 }
