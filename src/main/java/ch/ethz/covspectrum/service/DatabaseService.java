@@ -616,4 +616,29 @@ public class DatabaseService {
             }
         }
     }
+
+
+    public String getWasteWaterResults(String country, String variantName) throws SQLException {
+        if (!country.equals("Switzerland")) {
+            return "null";
+        }
+
+        String sql = """
+            select data
+            from spectrum_waste_water_result
+            where variant_name = ?;
+        """;
+        try (Connection conn = getDatabaseConnection()) {
+            try (PreparedStatement statement = conn.prepareStatement(sql)) {
+                statement.setString(1, variantName);
+                try (ResultSet rs = statement.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getString("data");
+                    } else {
+                        return "null";
+                    }
+                }
+            }
+        }
+    }
 }
