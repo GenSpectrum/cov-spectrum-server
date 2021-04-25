@@ -469,10 +469,20 @@ public class DatabaseService {
         }
         String pangolinLineage = selection.getPangolinLineage();
         if (pangolinLineage != null) {
+            pangolinLineage = pangolinLineage.toUpperCase();
             if (pangolinLineage.endsWith("*")) {
-                // Prefix search: Look for all lineages that start with the provided query
-                String sqlLikeQuery = pangolinLineage.substring(0, pangolinLineage.length() - 1) + "%";
-                conditions.add(MyDSL.fPangolinLineage(metaTbl).like(sqlLikeQuery));
+                // Prefix search: Return the lineage and all sub-lineages. I.e., for both "B.1.*" and "B.1*", B.1 and
+                // all lineages starting with "B.1." should be returned. "B.11" should not be returned.
+                String rootLineage = pangolinLineage.substring(0, pangolinLineage.length() - 1);
+                if (rootLineage.endsWith(".")) {
+                    rootLineage = rootLineage.substring(0, rootLineage.length() - 1);
+                }
+                String subLineages = rootLineage + ".%";
+                conditions.add(
+                        MyDSL.fPangolinLineage(metaTbl).eq(rootLineage).or(
+                                MyDSL.fPangolinLineage(metaTbl).like(subLineages)
+                        )
+                );
             } else {
                 conditions.add(MyDSL.fPangolinLineage(metaTbl).eq(pangolinLineage));
             }
