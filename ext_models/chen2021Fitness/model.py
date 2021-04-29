@@ -103,6 +103,6 @@ def predict_case_numbers(
 ) -> PlotAbsoluteNumbers:
     return PlotAbsoluteNumbers(
         t,
-        np.round(initial_wildtype * (reproduction_number_wildtype ** ((t - min(t)) / generation_time))).astype(int),
-        np.round(initial_variant * (reproduction_number_variant ** ((t - min(t)) / generation_time))).astype(int)
+        np.clip(np.round(initial_wildtype * (reproduction_number_wildtype ** ((t - min(t)) / generation_time))).astype(int), 0, 2147483647),
+        np.clip(np.round(initial_variant * (reproduction_number_variant ** ((t - min(t)) / generation_time))).astype(int), 0, 2147483647)
     )
