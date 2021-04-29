@@ -86,6 +86,11 @@ public class SpectrumApiCacheSample extends TableImpl<SpectrumApiCacheSampleReco
     public final TableField<SpectrumApiCacheSampleRecord, Double> MATCH_PERCENTAGE = createField(DSL.name("match_percentage"), SQLDataType.DOUBLE.nullable(false), this, "");
 
     /**
+     * The column <code>public.spectrum_api_cache_sample.pangolin_lineage</code>.
+     */
+    public final TableField<SpectrumApiCacheSampleRecord, String> PANGOLIN_LINEAGE = createField(DSL.name("pangolin_lineage"), SQLDataType.CLOB.nullable(false), this, "");
+
+    /**
      * The column <code>public.spectrum_api_cache_sample.data_type</code>.
      */
     public final TableField<SpectrumApiCacheSampleRecord, String> DATA_TYPE = createField(DSL.name("data_type"), SQLDataType.CLOB.nullable(false), this, "");
@@ -104,11 +109,6 @@ public class SpectrumApiCacheSample extends TableImpl<SpectrumApiCacheSampleReco
      * The column <code>public.spectrum_api_cache_sample.cache</code>.
      */
     public final TableField<SpectrumApiCacheSampleRecord, String> CACHE = createField(DSL.name("cache"), SQLDataType.CLOB.nullable(false), this, "");
-
-    /**
-     * The column <code>public.spectrum_api_cache_sample.pangolin_lineage</code>.
-     */
-    public final TableField<SpectrumApiCacheSampleRecord, String> PANGOLIN_LINEAGE = createField(DSL.name("pangolin_lineage"), SQLDataType.CLOB, this, "");
 
     private SpectrumApiCacheSample(Name alias, Table<SpectrumApiCacheSampleRecord> aliased) {
         this(alias, aliased, null);
@@ -199,7 +199,7 @@ public class SpectrumApiCacheSample extends TableImpl<SpectrumApiCacheSampleReco
     // -------------------------------------------------------------------------
 
     @Override
-    public Row12<Integer, String, Boolean, String, String, String, Double, String, LocalDate, LocalDate, String, String> fieldsRow() {
+    public Row12<Integer, String, Boolean, String, String, String, Double, String, String, LocalDate, LocalDate, String> fieldsRow() {
         return (Row12) super.fieldsRow();
     }
 }

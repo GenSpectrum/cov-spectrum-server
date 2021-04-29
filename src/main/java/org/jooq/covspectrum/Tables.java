@@ -11,10 +11,13 @@ import org.jooq.covspectrum.tables.SpectrumApiCacheSample;
 import org.jooq.covspectrum.tables.SpectrumApiUsageSample;
 import org.jooq.covspectrum.tables.SpectrumCountry;
 import org.jooq.covspectrum.tables.SpectrumNewInterestingVariant;
+import org.jooq.covspectrum.tables.SpectrumPangolinLineageMutation;
+import org.jooq.covspectrum.tables.SpectrumPangolinLineageRecentMetrics;
 import org.jooq.covspectrum.tables.SpectrumSequenceIntensity;
 import org.jooq.covspectrum.tables.SpectrumSequencePrivateMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMutationAa;
+import org.jooq.covspectrum.tables.SpectrumWasteWaterResult;
 import org.jooq.covspectrum.tables.VariantMutationAa;
 import org.jooq.covspectrum.tables.VariantMutationNucleotide;
 
@@ -61,6 +64,16 @@ public class Tables {
     public static final SpectrumNewInterestingVariant SPECTRUM_NEW_INTERESTING_VARIANT = SpectrumNewInterestingVariant.SPECTRUM_NEW_INTERESTING_VARIANT;
 
     /**
+     * The table <code>public.spectrum_pangolin_lineage_mutation</code>.
+     */
+    public static final SpectrumPangolinLineageMutation SPECTRUM_PANGOLIN_LINEAGE_MUTATION = SpectrumPangolinLineageMutation.SPECTRUM_PANGOLIN_LINEAGE_MUTATION;
+
+    /**
+     * The table <code>public.spectrum_pangolin_lineage_recent_metrics</code>.
+     */
+    public static final SpectrumPangolinLineageRecentMetrics SPECTRUM_PANGOLIN_LINEAGE_RECENT_METRICS = SpectrumPangolinLineageRecentMetrics.SPECTRUM_PANGOLIN_LINEAGE_RECENT_METRICS;
+
+    /**
      * The table <code>public.spectrum_sequence_intensity</code>.
      */
     public static final SpectrumSequenceIntensity SPECTRUM_SEQUENCE_INTENSITY = SpectrumSequenceIntensity.SPECTRUM_SEQUENCE_INTENSITY;
@@ -79,6 +92,11 @@ public class Tables {
      * The table <code>public.spectrum_sequence_public_mutation_aa</code>.
      */
     public static final SpectrumSequencePublicMutationAa SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA = SpectrumSequencePublicMutationAa.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA;
+
+    /**
+     * The table <code>public.spectrum_waste_water_result</code>.
+     */
+    public static final SpectrumWasteWaterResult SPECTRUM_WASTE_WATER_RESULT = SpectrumWasteWaterResult.SPECTRUM_WASTE_WATER_RESULT;
 
     /**
      * The table <code>public.variant_mutation_aa</code>.

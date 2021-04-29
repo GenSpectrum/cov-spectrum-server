@@ -29,4 +29,9 @@ public class Sequences {
      * The sequence <code>public.spectrum_new_interesting_variant_id_seq</code>
      */
     public static final Sequence<Integer> SPECTRUM_NEW_INTERESTING_VARIANT_ID_SEQ = Internal.createSequence("spectrum_new_interesting_variant_id_seq", Public.PUBLIC, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
+
+    /**
+     * The sequence <code>public.spectrum_pangolin_lineage_recent_metrics_id_seq</code>
+     */
+    public static final Sequence<Integer> SPECTRUM_PANGOLIN_LINEAGE_RECENT_METRICS_ID_SEQ = Internal.createSequence("spectrum_pangolin_lineage_recent_metrics_id_seq", Public.PUBLIC, SQLDataType.INTEGER.nullable(false), null, null, null, null, false, null);
 }
