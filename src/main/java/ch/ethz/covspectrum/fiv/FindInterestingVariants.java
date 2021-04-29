@@ -1,5 +1,8 @@
 package ch.ethz.covspectrum.fiv;
 
+import ch.ethz.covspectrum.entity.core.AAMutation;
+import ch.ethz.covspectrum.entity.core.SampleSelection;
+import ch.ethz.covspectrum.entity.core.WeightedSampleResultSet;
 import ch.ethz.covspectrum.entity.model.chen2021fitness.Response;
 import ch.ethz.covspectrum.entity.model.chen2021fitness.WithoutPredictionRequest;
 import ch.ethz.covspectrum.service.DatabaseService;
@@ -124,7 +127,7 @@ public class FindInterestingVariants {
 
 
         // Step 2: Find all variants that are not too rare (>= MIN_NUMBER_SAMPLES)
-        // We look for variants with a length between 1 and MAX_VARIANT_LENGTH
+        // We look at combinations of up to MAX_VARIANT_LENGTH mutations.
         Map<Integer, Set<Variant>> variantsPerLength = new HashMap<>();
         Map<Variant, SampleSet> variantToSamples = new HashMap<>();
         Map<SampleSet, Variant> samplesToVariant = new HashMap<>();
@@ -220,7 +223,9 @@ public class FindInterestingVariants {
         }
 
 
-        // Step 3: Compute fitness advantage of the variants
+        // Step 3: Compute fitness advantage of the variants. We use f_d because it only depends on the generation
+        //         time (which we can safely consider as constant) but not on the reproduction number (which is
+        //         varying a lot...).
         variantsPerLength = null;
         samplesToVariant = null;
         logger.info(variantToSamples.size() + " variants were selected. Start estimating their fitness...");
@@ -310,24 +315,68 @@ public class FindInterestingVariants {
         }
         logger.info("Fitness advantage estimation failed for " + failed + " out of " + total + ".");
 
-        // We will only keep variants with f >= 0.05 and at most maxNumberOfVariants variants.
+        // We will only keep variants where the lower bound of the CI of f >= 0.05.
         resultVariants = resultVariants.stream()
                 .filter(v -> v.getF().getCiLower() >= MIN_F)
+                .collect(Collectors.toUnmodifiableList());
+
+        // TODO WIP
+
+        // Step 4:  Compare the fitness advantage of the found variants with those of "known" variants. We use
+        //          pangolin lineages as reference variants.
+
+        // Fetch the pre-computed fitness advantage values of all pangolin lineages.
+
+
+        // Find out the pangolin lineages of the variants
+        for (ResultVariant variant : resultVariants) {
+            WeightedSampleResultSet lineages = databaseService.getSamples2(
+                    new SampleSelection()
+                            .setDateFrom(startDate)
+                            .setDateTo(endDate)
+                            .setMatchPercentage(1)
+                            .setVariant(new ch.ethz.covspectrum.entity.core.Variant(
+                                    variant.getMutations().stream()
+                                            .map(m -> new AAMutation(m.getMutation()))
+                                            .collect(Collectors.toSet())
+                            )),
+                    Collections.singletonList("pangolinLineage")
+            );
+
+            // Step 4a: If the majority of the sequences of the variant belong to the same pangolin lineage,
+            //          the variant shall be compared against that lineage. The variant will only be kept if
+            //          it has a significant higher transmission advantage than the known pangolin lineage.
+            //          We consider the f of the variant as "significant higher" if the lower bound of the CI
+            //          of the f of the variant is larger than the point estimate of the f of the pangolin lineage.
+
+
+
+            // Step 4b: If the variant cannot be matched to a single pangolin lineage, we compare the f of
+            //          the variant with the unweighted mean of the fitness advantage values of all lineages
+            //          that contain at least 5% of the sequences of the variant.
+
+
+
+        }
+
+        // We will only keep the top maxNumberOfVariants variants.
+        resultVariants = resultVariants.stream()
                 .sorted(Comparator.comparingDouble((ResultVariant v) -> v.getF().getValue()).reversed())
                 .limit(maxNumberOfVariants)
                 .collect(Collectors.toUnmodifiableList());
 
+
+        // Step 5: Save to database
         // Create the final result object
         Result result = new Result(LocalDate.now(), resultVariants);
 
-
-        // Step 4: Format results as JSON
+        // Format results as JSON
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         String json = objectMapper.writeValueAsString(result);
 
-        // Step 5: Save to database
+        // Write..
         logger.info("Start writing the results (" + resultVariants.size() + " variants) into the database.");
         Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
         try (Connection conn = this.databaseService.getDatabaseConnection()) {
