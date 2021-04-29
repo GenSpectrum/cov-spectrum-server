@@ -3,7 +3,7 @@ import numpy as np
 
 
 @dataclass(frozen=True)
-class Input:
+class WithPredictionRequest:
     alpha: float
     generation_time: float
     reproduction_number_wildtype: float
@@ -14,6 +14,16 @@ class Input:
     plot_end_t: int
     initial_wildtype: int
     initial_variant: int
+
+
+@dataclass(frozen=True)
+class WithoutPredictionRequest:
+    alpha: float
+    generation_time: float
+    reproduction_number_wildtype: float
+    data_t: np.ndarray
+    data_n: np.ndarray
+    data_k: np.ndarray
 
 
 @dataclass(frozen=True)
@@ -62,7 +72,7 @@ class PointData:
 
 
 @dataclass()
-class Result:
+class WithPredictionResult:
     params: GrowthNumbers
     plot_absolute_numbers: PlotAbsoluteNumbers
     plot_proportion: PlotProportion

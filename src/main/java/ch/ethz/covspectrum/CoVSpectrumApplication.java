@@ -1,12 +1,13 @@
 package ch.ethz.covspectrum;
 
 import ch.ethz.covspectrum.fiv.FindInterestingVariants;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import ch.ethz.covspectrum.fiv.PreComputePangolinLineages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
 
@@ -15,7 +16,7 @@ public class CoVSpectrumApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(CoVSpectrumApplication.class);
 
-    public static void main(String[] args) throws SQLException, JsonProcessingException {
+    public static void main(String[] args) throws SQLException, IOException {
         System.getProperties().setProperty("org.jooq.no-logo", "true");
 
         if (args.length > 0) {
@@ -49,6 +50,12 @@ public class CoVSpectrumApplication {
                 long timeElapsed = (finish - start) / 1000;
                 logger.info("Finished after " + timeElapsed + " seconds.");
                 System.exit(0);
+                return;
+            }
+
+            if ("--pre-compute-pangolin-lineages-fitness".equals(args[0])) {
+                PreComputePangolinLineages program = new PreComputePangolinLineages();
+                program.process("Europe", "Switzerland");
                 return;
             }
         }

@@ -39,6 +39,10 @@ public class Response {
             this.ci_upper = ci_upper;
             return this;
         }
+
+        public ch.ethz.covspectrum.entity.api.ValueWithCI<Float> toGeneralValueWithCI(double confidenceLevel) {
+            return new ch.ethz.covspectrum.entity.api.ValueWithCI<>(value, ci_lower, ci_upper, confidenceLevel);
+        }
     }
 
     public static class Daily {

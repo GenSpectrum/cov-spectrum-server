@@ -1,7 +1,10 @@
 package ch.ethz.covspectrum.fiv;
 
+import ch.ethz.covspectrum.entity.model.chen2021fitness.Response;
+import ch.ethz.covspectrum.entity.model.chen2021fitness.WithoutPredictionRequest;
 import ch.ethz.covspectrum.service.DatabaseService;
 import ch.ethz.covspectrum.util.Counter;
+import ch.ethz.covspectrum.util.Utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -10,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.threeten.extra.Days;
 
+import java.io.IOException;
 import java.sql.Date;
 import java.sql.*;
 import java.time.LocalDate;
@@ -24,12 +28,9 @@ public class FindInterestingVariants {
 
     private final DatabaseService databaseService;
 
-    private final SimplexLogisticCurveOptimizer logisticCurveOptimizer;
-
 
     public FindInterestingVariants() {
         this.databaseService = new DatabaseService(new ObjectMapper());
-        this.logisticCurveOptimizer = new SimplexLogisticCurveOptimizer();
     }
 
 
@@ -290,11 +291,14 @@ public class FindInterestingVariants {
                     .map(m -> new ResultMutation(m, finalNumberSamples * 1.0 / mutationToNumberOccurrences.get(m)))
                     .collect(Collectors.toList());
             try {
-                double a = logisticCurveOptimizer.fit(t, k, n);
+                Response.Params growthParams = estimateGrowth(new WithoutPredictionRequest(
+                        new WithoutPredictionRequest.InnerData(t, n, k),
+                        0.95f, 4.8f, 1
+                ));
                 resultVariants.add(new ResultVariant(
                         mutations,
-                        a,
-                        fromAToFd(a, GENERATION_TIME),
+                        growthParams.getA().toGeneralValueWithCI(0.95),
+                        growthParams.getFd().toGeneralValueWithCI(0.95),
                         numberSamples,
                         numberSamples * 1.0 / totalNumberSamples
                 ));
@@ -304,12 +308,12 @@ public class FindInterestingVariants {
                 total++;
             }
         }
-        logger.info("Simplex failed for " + failed + " out of " + total + ".");
+        logger.info("Fitness advantage estimation failed for " + failed + " out of " + total + ".");
 
         // We will only keep variants with f >= 0.05 and at most maxNumberOfVariants variants.
         resultVariants = resultVariants.stream()
-                .filter(v -> v.getF() >= MIN_F)
-                .sorted(Comparator.comparingDouble(ResultVariant::getF).reversed())
+                .filter(v -> v.getF().getCiLower() >= MIN_F)
+                .sorted(Comparator.comparingDouble((ResultVariant v) -> v.getF().getValue()).reversed())
                 .limit(maxNumberOfVariants)
                 .collect(Collectors.toUnmodifiableList());
 
@@ -341,13 +345,11 @@ public class FindInterestingVariants {
     }
 
 
-    /**
-     * Calculates the fitness advantage in a discrete setting (f_d).
-     * @param a The logistic growth rate
-     * @param generationTime
-     */
-    private double fromAToFd(double a, double generationTime) {
-        return Math.exp(a * generationTime) - 1;
+    private Response.Params estimateGrowth(WithoutPredictionRequest request) throws IOException {
+        String ENDPOINT = "http://localhost:7070/without-prediction";
+        String json = new ObjectMapper().writeValueAsString(request);
+        String responseString = Utils.postRequest(ENDPOINT, json);
+        return new ObjectMapper().readValue(responseString, Response.Params.class);
     }
 
 }

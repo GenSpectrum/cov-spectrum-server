@@ -6,7 +6,7 @@ import ch.ethz.covspectrum.entity.core.AAMutation;
 import ch.ethz.covspectrum.entity.core.DataType;
 import ch.ethz.covspectrum.entity.core.Variant;
 import ch.ethz.covspectrum.entity.model.chen2021fitness.ApiResponse;
-import ch.ethz.covspectrum.entity.model.chen2021fitness.Request;
+import ch.ethz.covspectrum.entity.model.chen2021fitness.WithPredictionRequest;
 import ch.ethz.covspectrum.entity.model.chen2021fitness.Response;
 import ch.ethz.covspectrum.service.DatabaseService;
 import ch.ethz.covspectrum.util.Utils;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/computed/model/chen2021Fitness")
 public class Chen2021FitnessController {
 
-    public final String ENDPOINT = "http://cov-spectrum-model-chen2021Fitness:7070";
+    public final String ENDPOINT = "http://cov-spectrum-model-chen2021Fitness:7070/with-prediction";
 
     private final DatabaseService databaseService;
 
@@ -97,8 +97,8 @@ public class Chen2021FitnessController {
         }
 
         // Build request JSON to the model
-        Request request = new Request(
-                new Request.InnerData(t, n, k),
+        WithPredictionRequest request = new WithPredictionRequest(
+                new WithPredictionRequest.InnerData(t, n, k),
                 alpha,
                 generationTime,
                 reproductionNumberWildtype,

@@ -2,7 +2,8 @@ package ch.ethz.covspectrum.entity.model.chen2021fitness;
 
 import java.util.List;
 
-public class Request {
+
+public class WithoutPredictionRequest {
 
     public static class InnerData {
         private final List<Integer> t;
@@ -37,33 +38,18 @@ public class Request {
 
     private final float reproductionNumberWildtype;
 
-    private final int plotStartT;
-
-    private final int plotEndT;
-
-    private final int initialWildtype;
-
-    private final int initialVariant;
 
 
-    public Request(
+    public WithoutPredictionRequest(
             InnerData data,
             float alpha,
             float generationTime,
-            float reproductionNumberWildtype,
-            int plotStartT,
-            int plotEndT,
-            int initialWildtype,
-            int initialVariant
+            float reproductionNumberWildtype
     ) {
         this.data = data;
         this.alpha = alpha;
         this.generationTime = generationTime;
         this.reproductionNumberWildtype = reproductionNumberWildtype;
-        this.plotStartT = plotStartT;
-        this.plotEndT = plotEndT;
-        this.initialWildtype = initialWildtype;
-        this.initialVariant = initialVariant;
     }
 
 
@@ -83,25 +69,5 @@ public class Request {
 
     public float getReproductionNumberWildtype() {
         return reproductionNumberWildtype;
-    }
-
-
-    public int getPlotStartT() {
-        return plotStartT;
-    }
-
-
-    public int getPlotEndT() {
-        return plotEndT;
-    }
-
-
-    public int getInitialWildtype() {
-        return initialWildtype;
-    }
-
-
-    public int getInitialVariant() {
-        return initialVariant;
     }
 }

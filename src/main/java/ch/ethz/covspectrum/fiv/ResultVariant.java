@@ -1,15 +1,17 @@
 package ch.ethz.covspectrum.fiv;
 
 
+import ch.ethz.covspectrum.entity.api.ValueWithCI;
+
 import java.util.List;
 
 public class ResultVariant {
 
     private final List<ResultMutation> mutations;
 
-    private final double a;
+    private final ValueWithCI<Float> a;
 
-    private final double f;
+    private final ValueWithCI<Float> f;
 
     private final int absoluteNumberSamplesInPastThreeMonths;
 
@@ -18,8 +20,8 @@ public class ResultVariant {
 
     public ResultVariant(
             List<ResultMutation> mutations,
-            double a,
-            double f,
+            ValueWithCI<Float> a,
+            ValueWithCI<Float> f,
             int absoluteNumberSamplesInPastThreeMonths,
             double relativeNumberSamplesInPastThreeMonths
     ) {
@@ -36,12 +38,12 @@ public class ResultVariant {
     }
 
 
-    public double getA() {
+    public ValueWithCI<Float> getA() {
         return a;
     }
 
 
-    public double getF() {
+    public ValueWithCI<Float> getF() {
         return f;
     }
 
