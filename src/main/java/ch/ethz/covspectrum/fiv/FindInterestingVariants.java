@@ -1,9 +1,5 @@
 package ch.ethz.covspectrum.fiv;
 
-import ch.ethz.covspectrum.entity.core.AAMutation;
-import ch.ethz.covspectrum.entity.core.SampleSelection;
-import ch.ethz.covspectrum.entity.core.WeightedSample;
-import ch.ethz.covspectrum.entity.core.WeightedSampleResultSet;
 import ch.ethz.covspectrum.entity.model.chen2021fitness.Response;
 import ch.ethz.covspectrum.entity.model.chen2021fitness.WithoutPredictionRequest;
 import ch.ethz.covspectrum.service.DatabaseService;
@@ -13,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.javatuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.threeten.extra.Days;
@@ -275,6 +272,32 @@ public class FindInterestingVariants {
             mutationToNumberOccurrences.put(mutationAndSamples.getKey(), mutationAndSamples.getValue().size());
         }
 
+        // Fetch the pangolin lineages of the samples (will be used later)
+        Map<String, String> sampleToLineage = new HashMap<>();
+        String fetchPangolinLineageOfSamplesSql = """
+                select m.sequence_name, m.pangolin_lineage
+                from spectrum_sequence_public_meta m
+                where
+                  date between ? and ?
+                  and country = ?
+                  and pangolin_lineage is not null;
+            """;
+        try (Connection conn = databaseService.getDatabaseConnection()) {
+            try (PreparedStatement statement = conn.prepareStatement(fetchPangolinLineageOfSamplesSql)) {
+                statement.setDate(1, Date.valueOf(startDate));
+                statement.setDate(2, Date.valueOf(endDate));
+                statement.setString(3, country);
+                try (ResultSet rs = statement.executeQuery()) {
+                    while (rs.next()) {
+                        sampleToLineage.put(
+                                rs.getString("sequence_name"),
+                                rs.getString("pangolin_lineage")
+                        );
+                    }
+                }
+            }
+        }
+
         // Loop through the selected samples and compute the logistic growth rate
         int failed = 0;
         int total = 0;
@@ -290,10 +313,17 @@ public class FindInterestingVariants {
             for (int i = 0; i < Days.between(startDate, endDate).getAmount() + 1; i++) {
                 k.add(0);
             }
+            Counter<String> pangolinLineages = new Counter<>();
             for (String sample : samples) {
                 int _t = sampleToT.get(sample);
                 k.set(_t, k.get(_t) + 1);
                 numberSamples++;
+                String lineage = sampleToLineage.get(sample);
+                if (lineage == null) {
+                    logger.info("No pangolin lineage found for " + sample);
+                } else {
+                    pangolinLineages.add(lineage);
+                }
             }
             final int finalNumberSamples = numberSamples;
             List<ResultMutation> mutations = variant.getMutations().stream()
@@ -309,7 +339,8 @@ public class FindInterestingVariants {
                         growthParams.getA().toGeneralValueWithCI(0.95),
                         growthParams.getFd().toGeneralValueWithCI(0.95),
                         numberSamples,
-                        numberSamples * 1.0 / totalNumberSamples
+                        numberSamples * 1.0 / totalNumberSamples,
+                        pangolinLineages
                 ));
             } catch (Exception e) {
                 failed++;
@@ -370,36 +401,19 @@ public class FindInterestingVariants {
             if (j++ % 200 == 0) {
                 logger.info("...variant " + j + " of " + resultVariants.size());
             }
-            // TODO This is not efficient. We are already loading all relevant samples earlier and the pangolin
-            //    lineages can be loaded at the same time.
-            WeightedSampleResultSet lineages = databaseService.getSamples2(
-                    new SampleSelection()
-                            .setCountry(country)
-                            .setDateFrom(startDate)
-                            .setDateTo(endDate)
-                            .setMatchPercentage(1)
-                            .setVariant(new ch.ethz.covspectrum.entity.core.Variant(
-                                    variant.getMutations().stream()
-                                            .map(m -> new AAMutation(m.getMutation()))
-                                            .collect(Collectors.toSet())
-                            )),
-                    Collections.singletonList("pangolinLineage")
-            );
 
             // Step 4a: If the majority of the sequences of the variant belong to the same pangolin lineage,
             //          the variant shall be compared against that lineage. The variant will only be kept if
             //          it has a significant higher transmission advantage than the known pangolin lineage.
             //          We consider the f of the variant as "significant higher" if the lower bound of the CI
             //          of the f of the variant is larger than the point estimate of the f of the pangolin lineage.
-            int totalSamples = lineages.getWeightedSamples().stream()
-                    .mapToInt(WeightedSample::getCount)
-                    .sum();
+            int totalSamples = variant.getPangolinLineages().getTotalCount();
+            List<Pair<String, Integer>> lineages = variant.getPangolinLineages().getSorted();
             int majorityThreshold = (int) Math.floor(totalSamples * 0.9);
-            Optional<WeightedSample> mainLineageOpt = lineages.getWeightedSamples().stream()
-                    .filter(l -> l.getCount() >= majorityThreshold)
-                    .findAny();
-            if (mainLineageOpt.isPresent()) {
-                String mainLineage = mainLineageOpt.get().getPangolinLineage();
+            if (lineages.isEmpty()) {
+                resultVariants2.add(variant);
+            } else if (lineages.get(0).getValue1() >= majorityThreshold) {
+                String mainLineage = lineages.get(0).getValue0();
                 float minF = pangolinLineageFitnessAdvantages.getOrDefault(mainLineage, 0.05f);
                 if (variant.getF().getCiLower() > minF) {
                     resultVariants2.add(variant);
@@ -411,9 +425,9 @@ public class FindInterestingVariants {
             //          that contain at least 5% of the sequences of the variant.
             else {
                 int fivePercentThreshold = (int) Math.floor(totalSamples * 0.05);
-                List<String> relatedLineages = lineages.getWeightedSamples().stream()
-                        .filter(l -> l.getCount() >= fivePercentThreshold)
-                        .map(WeightedSample::getPangolinLineage)
+                List<String> relatedLineages = lineages.stream()
+                        .filter(l -> l.getValue1() >= fivePercentThreshold)
+                        .map(Pair::getValue0)
                         .collect(Collectors.toList());
                 double minF = relatedLineages.stream()
                         .mapToDouble(l -> pangolinLineageFitnessAdvantages.getOrDefault(l, 0.05f))

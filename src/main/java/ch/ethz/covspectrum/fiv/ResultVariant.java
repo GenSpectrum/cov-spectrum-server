@@ -2,6 +2,8 @@ package ch.ethz.covspectrum.fiv;
 
 
 import ch.ethz.covspectrum.entity.api.ValueWithCI;
+import ch.ethz.covspectrum.util.Counter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 
@@ -17,19 +19,24 @@ public class ResultVariant {
 
     private final double relativeNumberSamplesInPastThreeMonths;
 
+    @JsonIgnore
+    private final Counter<String> pangolinLineages;
+
 
     public ResultVariant(
             List<ResultMutation> mutations,
             ValueWithCI<Float> a,
             ValueWithCI<Float> f,
             int absoluteNumberSamplesInPastThreeMonths,
-            double relativeNumberSamplesInPastThreeMonths
+            double relativeNumberSamplesInPastThreeMonths,
+            Counter<String> pangolinLineages
     ) {
         this.mutations = mutations;
         this.a = a;
         this.f = f;
         this.absoluteNumberSamplesInPastThreeMonths = absoluteNumberSamplesInPastThreeMonths;
         this.relativeNumberSamplesInPastThreeMonths = relativeNumberSamplesInPastThreeMonths;
+        this.pangolinLineages = pangolinLineages;
     }
 
 
@@ -55,5 +62,10 @@ public class ResultVariant {
 
     public double getRelativeNumberSamplesInPastThreeMonths() {
         return relativeNumberSamplesInPastThreeMonths;
+    }
+
+
+    public Counter<String> getPangolinLineages() {
+        return pangolinLineages;
     }
 }

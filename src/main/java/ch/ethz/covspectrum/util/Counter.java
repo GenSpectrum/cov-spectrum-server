@@ -51,4 +51,9 @@ public class Counter<T> {
                 .collect(Collectors.toList());
         return result.subList(0, Math.min(k, result.size()));
     }
+
+
+    public int getTotalCount() {
+        return counts.values().stream().mapToInt(Integer::intValue).sum();
+    }
 }
