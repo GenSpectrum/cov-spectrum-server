@@ -2,6 +2,7 @@ package ch.ethz.covspectrum.fiv;
 
 import ch.ethz.covspectrum.entity.core.AAMutation;
 import ch.ethz.covspectrum.entity.core.SampleSelection;
+import ch.ethz.covspectrum.entity.core.WeightedSample;
 import ch.ethz.covspectrum.entity.core.WeightedSampleResultSet;
 import ch.ethz.covspectrum.entity.model.chen2021fitness.Response;
 import ch.ethz.covspectrum.entity.model.chen2021fitness.WithoutPredictionRequest;
@@ -279,6 +280,9 @@ public class FindInterestingVariants {
         int total = 0;
         List<ResultVariant> resultVariants = new ArrayList<>();
         for (Map.Entry<Variant, SampleSet> entry : variantToSamples.entrySet()) {
+            if (total % 200 == 0) {
+                logger.info("...variant " + total + " of " + variantToSamples.size());
+            }
             Variant variant = entry.getKey();
             SampleSet samples = entry.getValue();
             int numberSamples = 0;
@@ -320,18 +324,57 @@ public class FindInterestingVariants {
                 .filter(v -> v.getF().getCiLower() >= MIN_F)
                 .collect(Collectors.toUnmodifiableList());
 
-        // TODO WIP
 
         // Step 4:  Compare the fitness advantage of the found variants with those of "known" variants. We use
         //          pangolin lineages as reference variants.
+        logger.info("Start comparing the fitness advantage of " + resultVariants.size() +
+                " variants with known pangolin lineages...");
 
-        // Fetch the pre-computed fitness advantage values of all pangolin lineages.
-
+        // Fetch the pre-computed fitness advantage values of pangolin lineages that show an increased transmissibility.
+        Map<String, Float> pangolinLineageFitnessAdvantages = new HashMap<>();
+        String fetchFitnessAdvantageOfLineagesSql = """
+            select
+              plm.pangolin_lineage,
+              plm.fitness_advantage
+            from
+              (
+                select
+                  row_number() over (partition by plm.pangolin_lineage order by insertion_timestamp desc) as priority_idx,
+                  *
+                from spectrum_pangolin_lineage_recent_metrics plm
+                where
+                  country = ?
+              ) plm
+            where
+              plm.priority_idx = 1
+              and plm.fitness_advantage_lower >= 0.05;
+        """;
+        try (Connection conn = this.databaseService.getDatabaseConnection()) {
+            try (PreparedStatement statement = conn.prepareStatement(fetchFitnessAdvantageOfLineagesSql)) {
+                statement.setString(1, country);
+                try (ResultSet rs = statement.executeQuery()) {
+                    while (rs.next()) {
+                        pangolinLineageFitnessAdvantages.put(
+                                rs.getString("pangolin_lineage"),
+                                rs.getFloat("fitness_advantage")
+                        );
+                    }
+                }
+            }
+        }
 
         // Find out the pangolin lineages of the variants
+        List<ResultVariant> resultVariants2 = new ArrayList<>();
+        int j = 0;
         for (ResultVariant variant : resultVariants) {
+            if (j++ % 200 == 0) {
+                logger.info("...variant " + j + " of " + resultVariants.size());
+            }
+            // TODO This is not efficient. We are already loading all relevant samples earlier and the pangolin
+            //    lineages can be loaded at the same time.
             WeightedSampleResultSet lineages = databaseService.getSamples2(
                     new SampleSelection()
+                            .setCountry(country)
                             .setDateFrom(startDate)
                             .setDateTo(endDate)
                             .setMatchPercentage(1)
@@ -348,19 +391,42 @@ public class FindInterestingVariants {
             //          it has a significant higher transmission advantage than the known pangolin lineage.
             //          We consider the f of the variant as "significant higher" if the lower bound of the CI
             //          of the f of the variant is larger than the point estimate of the f of the pangolin lineage.
-
-
+            int totalSamples = lineages.getWeightedSamples().stream()
+                    .mapToInt(WeightedSample::getCount)
+                    .sum();
+            int majorityThreshold = (int) Math.floor(totalSamples * 0.9);
+            Optional<WeightedSample> mainLineageOpt = lineages.getWeightedSamples().stream()
+                    .filter(l -> l.getCount() >= majorityThreshold)
+                    .findAny();
+            if (mainLineageOpt.isPresent()) {
+                String mainLineage = mainLineageOpt.get().getPangolinLineage();
+                float minF = pangolinLineageFitnessAdvantages.getOrDefault(mainLineage, 0.05f);
+                if (variant.getF().getCiLower() > minF) {
+                    resultVariants2.add(variant);
+                }
+            }
 
             // Step 4b: If the variant cannot be matched to a single pangolin lineage, we compare the f of
             //          the variant with the unweighted mean of the fitness advantage values of all lineages
             //          that contain at least 5% of the sequences of the variant.
-
-
-
+            else {
+                int fivePercentThreshold = (int) Math.floor(totalSamples * 0.05);
+                List<String> relatedLineages = lineages.getWeightedSamples().stream()
+                        .filter(l -> l.getCount() >= fivePercentThreshold)
+                        .map(WeightedSample::getPangolinLineage)
+                        .collect(Collectors.toList());
+                double minF = relatedLineages.stream()
+                        .mapToDouble(l -> pangolinLineageFitnessAdvantages.getOrDefault(l, 0.05f))
+                        .average()
+                        .orElse(0.05);
+                if (variant.getF().getCiLower() > minF) {
+                    resultVariants2.add(variant);
+                }
+            }
         }
 
         // We will only keep the top maxNumberOfVariants variants.
-        resultVariants = resultVariants.stream()
+        resultVariants2 = resultVariants2.stream()
                 .sorted(Comparator.comparingDouble((ResultVariant v) -> v.getF().getValue()).reversed())
                 .limit(maxNumberOfVariants)
                 .collect(Collectors.toUnmodifiableList());
@@ -368,7 +434,7 @@ public class FindInterestingVariants {
 
         // Step 5: Save to database
         // Create the final result object
-        Result result = new Result(LocalDate.now(), resultVariants);
+        Result result = new Result(LocalDate.now(), resultVariants2);
 
         // Format results as JSON
         ObjectMapper objectMapper = new ObjectMapper();
@@ -377,7 +443,7 @@ public class FindInterestingVariants {
         String json = objectMapper.writeValueAsString(result);
 
         // Write..
-        logger.info("Start writing the results (" + resultVariants.size() + " variants) into the database.");
+        logger.info("Start writing the results (" + resultVariants2.size() + " variants) into the database.");
         Timestamp currentTimestamp = Timestamp.valueOf(LocalDateTime.now());
         try (Connection conn = this.databaseService.getDatabaseConnection()) {
             String sql = """
