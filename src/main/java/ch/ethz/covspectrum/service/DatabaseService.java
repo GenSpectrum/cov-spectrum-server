@@ -471,16 +471,10 @@ public class DatabaseService {
         if (pangolinLineage != null) {
             pangolinLineage = pangolinLineage.toUpperCase();
             if (pangolinLineage.endsWith("*")) {
-                // Prefix search: Return the lineage and all sub-lineages. I.e., for both "B.1.*" and "B.1*", B.1 and
-                // all lineages starting with "B.1." should be returned. "B.11" should not be returned.
-                String rootLineage = pangolinLineage.substring(0, pangolinLineage.length() - 1);
-                if (rootLineage.endsWith(".")) {
-                    rootLineage = rootLineage.substring(0, rootLineage.length() - 1);
-                }
-                String subLineages = rootLineage + ".%";
+                Pair<String, String> parsedPrefixSearch = parsePangolinLineagePrefixSearch(pangolinLineage);
                 conditions.add(
-                        MyDSL.fPangolinLineage(metaTbl).eq(rootLineage).or(
-                                MyDSL.fPangolinLineage(metaTbl).like(subLineages)
+                        MyDSL.fPangolinLineage(metaTbl).eq(parsedPrefixSearch.getValue0()).or(
+                                MyDSL.fPangolinLineage(metaTbl).like(parsedPrefixSearch.getValue1())
                         )
                 );
             } else {
@@ -660,9 +654,19 @@ public class DatabaseService {
             LocalDate dateFrom,
             LocalDate dateTo
     ) throws SQLException {
-        String sqlConditions1 = "m.pangolin_lineage = ?";
-        String sqlConditions2 = "plm.pangolin_lineage = ?";
-        int preparedStatementArgumentPairs = 1;
+        // TODO Rewrite with jooq
+        String sqlConditions1;
+        String sqlConditions2;
+        int preparedStatementArgumentPairs;
+        if (name.endsWith("*")) {
+            sqlConditions1 = "(m.pangolin_lineage = ? or m.pangolin_lineage like ?)";
+            sqlConditions2 = "(plm.pangolin_lineage = ? or plm.pangolin_lineage like ?)";
+            preparedStatementArgumentPairs = 2;
+        } else {
+            sqlConditions1 = "m.pangolin_lineage = ?";
+            sqlConditions2 = "plm.pangolin_lineage = ?";
+            preparedStatementArgumentPairs = 1;
+        }
         if (region != null) {
             sqlConditions1 += " and m.region = ?";
             sqlConditions2 += " and plm.region = ?";
@@ -709,9 +713,19 @@ public class DatabaseService {
                 """;
         try (Connection conn = getDatabaseConnection()) {
             try (PreparedStatement statement = conn.prepareStatement(sql)) {
-                statement.setString(1, name);
-                statement.setString(1 + preparedStatementArgumentPairs, name);
-                int i = 2;
+                int i = 1;
+                if (name.endsWith("*")) {
+                    Pair<String, String> parsedPrefixSearch = parsePangolinLineagePrefixSearch(name);
+                    statement.setString(1, parsedPrefixSearch.getValue0());
+                    statement.setString(2, parsedPrefixSearch.getValue1());
+                    statement.setString(1 + preparedStatementArgumentPairs, parsedPrefixSearch.getValue0());
+                    statement.setString(2 + preparedStatementArgumentPairs, parsedPrefixSearch.getValue1());
+                    i += 2;
+                } else {
+                    statement.setString(1, name);
+                    statement.setString(1 + preparedStatementArgumentPairs, name);
+                    i += 1;
+                }
                 if (region != null) {
                     statement.setString(i, region);
                     statement.setString(i + preparedStatementArgumentPairs, region);
@@ -744,5 +758,20 @@ public class DatabaseService {
                 }
             }
         }
+    }
+
+
+    private Pair<String, String> parsePangolinLineagePrefixSearch(String query) {
+        // Prefix search: Return the lineage and all sub-lineages. I.e., for both "B.1.*" and "B.1*", B.1 and
+        // all lineages starting with "B.1." should be returned. "B.11" should not be returned.
+        if (!query.endsWith("*")) {
+            throw new RuntimeException("This is not a prefix search.");
+        }
+        String rootLineage = query.substring(0, query.length() - 1);
+        if (rootLineage.endsWith(".")) {
+            rootLineage = rootLineage.substring(0, rootLineage.length() - 1);
+        }
+        String subLineages = rootLineage + ".%";
+        return new Pair<>(rootLineage, subLineages);
     }
 }
