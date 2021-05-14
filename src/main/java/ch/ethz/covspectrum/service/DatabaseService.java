@@ -3,6 +3,7 @@ package ch.ethz.covspectrum.service;
 import ch.ethz.covspectrum.entity.api.CasesAndSequences;
 import ch.ethz.covspectrum.entity.api.CountAndProportionWithCI;
 import ch.ethz.covspectrum.entity.api.Distribution;
+import ch.ethz.covspectrum.entity.api.RxivArticle;
 import ch.ethz.covspectrum.entity.core.DataType;
 import ch.ethz.covspectrum.entity.core.*;
 import ch.ethz.covspectrum.jooq.MyDSL;
@@ -773,5 +774,60 @@ public class DatabaseService {
         }
         String subLineages = rootLineage + ".%";
         return new Pair<>(rootLineage, subLineages);
+    }
+
+
+    public List<RxivArticle> getPangolinLineageArticles(String pangolinLineage) throws SQLException {
+        String condition;
+        if (pangolinLineage.endsWith("*")) {
+            condition = " plrar.pangolin_lineage = ? or plrar.pangolin_lineage like ?";
+        } else {
+            condition = " plrar.pangolin_lineage = ?";
+        }
+
+        List<RxivArticle> articles = new ArrayList<>();
+        String sql = """
+            select
+              rar.doi,
+              rar.title,
+              string_agg(rau.name, '|' order by rara.position) as authors,
+              rar.date,
+              rar.category,
+              rar.published,
+              rar.server
+            from
+              pangolin_lineage__rxiv_article plrar
+              join rxiv_article rar on plrar.doi = rar.doi
+              left join rxiv_article__rxiv_author rara on rar.doi = rara.doi
+              join rxiv_author rau on rara.author_id = rau.id
+            where""" + condition + """
+            group by rar.doi, rar.date
+            order by rar.date desc;
+        """;
+        try (Connection conn = getDatabaseConnection()) {
+            try (PreparedStatement statement = conn.prepareStatement(sql)) {
+                if (pangolinLineage.endsWith("*")) {
+                    Pair<String, String> parsed = parsePangolinLineagePrefixSearch(pangolinLineage);
+                    statement.setString(1, parsed.getValue0());
+                    statement.setString(2, parsed.getValue1());
+                } else {
+                    statement.setString(1, pangolinLineage);
+                }
+                try (ResultSet rs = statement.executeQuery()) {
+                    while (rs.next()) {
+                        RxivArticle article = new RxivArticle()
+                                .setDoi(rs.getString("doi"))
+                                .setTitle(rs.getString("title"))
+                                .setAuthors(Arrays.asList(rs.getString("authors").split("\\|")))
+                                .setDate(rs.getDate("date").toLocalDate())
+                                .setCategory(rs.getString("category"))
+                                .setPublished(rs.getString("published"))
+                                .setServer(rs.getString("server"));
+                        articles.add(article);
+                    }
+                }
+            }
+        }
+        return articles;
     }
 }
