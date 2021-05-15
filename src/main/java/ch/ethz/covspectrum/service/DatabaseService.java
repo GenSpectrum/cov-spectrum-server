@@ -794,7 +794,8 @@ public class DatabaseService {
               rar.date,
               rar.category,
               rar.published,
-              rar.server
+              rar.server,
+              rar.abstract
             from
               pangolin_lineage__rxiv_article plrar
               join rxiv_article rar on plrar.doi = rar.doi
@@ -822,7 +823,8 @@ public class DatabaseService {
                                 .setDate(rs.getDate("date").toLocalDate())
                                 .setCategory(rs.getString("category"))
                                 .setPublished(rs.getString("published"))
-                                .setServer(rs.getString("server"));
+                                .setServer(rs.getString("server"))
+                                .setAbstractText(rs.getString("abstract"));
                         articles.add(article);
                     }
                 }

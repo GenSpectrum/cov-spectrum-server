@@ -1,5 +1,7 @@
 package ch.ethz.covspectrum.entity.api;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -13,6 +15,7 @@ public class RxivArticle {
     private String category;
     private String published;
     private String server;
+    private String abstractText;
 
     public String getDoi() {
         return doi;
@@ -74,6 +77,16 @@ public class RxivArticle {
 
     public RxivArticle setServer(String server) {
         this.server = server;
+        return this;
+    }
+
+    @JsonProperty("abstract")
+    public String getAbstractText() {
+        return abstractText;
+    }
+
+    public RxivArticle setAbstractText(String abstractText) {
+        this.abstractText = abstractText;
         return this;
     }
 }
