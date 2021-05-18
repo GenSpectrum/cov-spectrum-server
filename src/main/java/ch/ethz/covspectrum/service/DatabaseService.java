@@ -320,7 +320,7 @@ public class DatabaseService {
             select
               gs.gisaid_epi_isl as sample_name,
               gs.original_seq as sequence
-            from gisaid_sequence gs
+            from gisaid_api_sequence gs
             where gisaid_epi_isl = any(?::text[]);
         """;
         } else {
@@ -334,10 +334,10 @@ public class DatabaseService {
             select
               gs.gisaid_epi_isl as sample_name,
               gs.original_seq as sequence
-            from gisaid_sequence gs
+            from gisaid_api_sequence gs
             where
                 gisaid_epi_isl = any(?::text[])
-                and submitting_lab = 'Department of Biosystems Science and Engineering, ETH Zürich';
+                and strain like '%-ETHZ-%';
         """;
         }
         try (Connection conn = getDatabaseConnection();
