@@ -1,9 +1,6 @@
 package ch.ethz.covspectrum.service;
 
-import ch.ethz.covspectrum.entity.api.CasesAndSequences;
-import ch.ethz.covspectrum.entity.api.CountAndProportionWithCI;
-import ch.ethz.covspectrum.entity.api.Distribution;
-import ch.ethz.covspectrum.entity.api.RxivArticle;
+import ch.ethz.covspectrum.entity.api.*;
 import ch.ethz.covspectrum.entity.core.DataType;
 import ch.ethz.covspectrum.entity.core.*;
 import ch.ethz.covspectrum.jooq.MyDSL;
@@ -20,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.beans.PropertyVetoException;
 import java.sql.Date;
 import java.sql.*;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -831,5 +829,22 @@ public class DatabaseService {
             }
         }
         return articles;
+    }
+
+
+    public DataStatus getDataStatus() throws SQLException {
+        String sql = """
+            select state::timestamp as timestamp
+            from automation_state
+            where program_name = 'refresh_all_mv()';
+        """;
+        try (Connection conn = getDatabaseConnection()) {
+            try (Statement statement = conn.createStatement()) {
+                try (ResultSet rs = statement.executeQuery(sql)) {
+                    rs.next();
+                    return new DataStatus(rs.getTimestamp("timestamp").toLocalDateTime());
+                }
+            }
+        }
     }
 }
