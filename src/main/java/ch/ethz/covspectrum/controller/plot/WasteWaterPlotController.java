@@ -26,10 +26,9 @@ public class WasteWaterPlotController {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String getWasteWaterResults(
-            @RequestParam String country,
-            @RequestParam String variantName
+            @RequestParam String country
     ) throws SQLException {
-        return databaseService.getWasteWaterResults(country, variantName);
+        return databaseService.getWasteWaterResults(country);
     }
 
 }
