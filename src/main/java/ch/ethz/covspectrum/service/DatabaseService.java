@@ -638,7 +638,7 @@ public class DatabaseService {
                     'data', ww.data
                   ))
                 ) as data
-            from x_spectrum_waste_water_result ww;
+            from spectrum_waste_water_result ww;
         """;
         try (Connection conn = getDatabaseConnection()) {
             try (Statement statement = conn.createStatement()) {
