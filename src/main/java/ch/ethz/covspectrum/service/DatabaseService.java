@@ -837,6 +837,69 @@ public class DatabaseService {
     }
 
 
+    public List<CaseCounts> getSwissCaseCounts(LocalDate dateFrom, LocalDate dateTo) throws SQLException {
+        String conditionSql = " true";
+        if (dateFrom != null) {
+            conditionSql += " and date >= ?";
+        }
+        if (dateTo != null) {
+            conditionSql += " and date <= ?";
+        }
+        String sql = """
+            select
+              division,
+              age_group,
+              sex,
+              sum(count) as count
+            from
+              (
+                select
+                  division,
+                  (case
+                    when age < 10 then '0-9'
+                    when age between 10 and 19 then '10-19'
+                    when age between 20 and 29 then '20-29'
+                    when age between 30 and 39 then '30-39'
+                    when age between 40 and 49 then '40-49'
+                    when age between 50 and 59 then '50-59'
+                    when age between 60 and 69 then '60-69'
+                    when age between 70 and 79 then '70-79'
+                    when age >= 80 then '80+'
+                  end) as age_group,
+                  sex,
+                  count
+                from spectrum_swiss_cases
+                where""" + conditionSql + """
+              ) x
+            group by division, age_group, sex
+            order by division, age_group, sex;
+        """;
+        List<CaseCounts> result = new ArrayList<>();
+        try (Connection conn = getDatabaseConnection()) {
+            try (PreparedStatement statement = conn.prepareStatement(sql)) {
+                int paramIndex = 1;
+                if (dateFrom != null) {
+                    statement.setDate(paramIndex++, Date.valueOf(dateFrom));
+                }
+                if (dateTo != null) {
+                    statement.setDate(paramIndex++, Date.valueOf(dateTo));
+                }
+                try (ResultSet rs = statement.executeQuery()) {
+                    while (rs.next()) {
+                        CaseCounts caseCounts = new CaseCounts()
+                                .setDivision(rs.getString("division"))
+                                .setAgeGroup(rs.getString("age_group"))
+                                .setSex(rs.getString("sex"))
+                                .setCount(rs.getInt("count"));
+                        result.add(caseCounts);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+
     public DataStatus getDataStatus() throws SQLException {
         String sql = """
             select state::timestamp as timestamp
