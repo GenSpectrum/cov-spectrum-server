@@ -6,6 +6,8 @@ public class CaseCounts {
     private String division;
     private String ageGroup;
     private String sex;
+    private boolean hospitalized;
+    private boolean deceased;
     private int count;
 
     public String getDivision() {
@@ -32,6 +34,24 @@ public class CaseCounts {
 
     public CaseCounts setSex(String sex) {
         this.sex = sex;
+        return this;
+    }
+
+    public boolean isHospitalized() {
+        return hospitalized;
+    }
+
+    public CaseCounts setHospitalized(boolean hospitalized) {
+        this.hospitalized = hospitalized;
+        return this;
+    }
+
+    public boolean isDeceased() {
+        return deceased;
+    }
+
+    public CaseCounts setDeceased(boolean deceased) {
+        this.deceased = deceased;
         return this;
     }
 

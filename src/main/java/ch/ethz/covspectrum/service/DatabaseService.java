@@ -850,6 +850,8 @@ public class DatabaseService {
               division,
               age_group,
               sex,
+              hospitalized,
+              deceased,
               sum(count) as count
             from
               (
@@ -867,12 +869,14 @@ public class DatabaseService {
                     when age >= 80 then '80+'
                   end) as age_group,
                   sex,
+                  hospitalized,
+                  deceased,
                   count
                 from spectrum_swiss_cases
                 where""" + conditionSql + """
               ) x
-            group by division, age_group, sex
-            order by division, age_group, sex;
+            group by division, age_group, sex, hospitalized, deceased
+            order by division, age_group, sex, hospitalized, deceased;
         """;
         List<CaseCounts> result = new ArrayList<>();
         try (Connection conn = getDatabaseConnection()) {
@@ -890,6 +894,8 @@ public class DatabaseService {
                                 .setDivision(rs.getString("division"))
                                 .setAgeGroup(rs.getString("age_group"))
                                 .setSex(rs.getString("sex"))
+                                .setHospitalized(rs.getBoolean("hospitalized"))
+                                .setDeceased(rs.getBoolean("deceased"))
                                 .setCount(rs.getInt("count"));
                         result.add(caseCounts);
                     }
