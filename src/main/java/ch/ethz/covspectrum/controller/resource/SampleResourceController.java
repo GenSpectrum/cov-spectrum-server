@@ -193,4 +193,9 @@ public class SampleResourceController {
         return databaseService.getPangolinLineageInformation(name, region, country, dateFrom, dateTo);
     }
 
+    @GetMapping("/pangolin-lineage-alias")
+    public List<PangolinLineageAlias> getPangolinLineageAliases() throws SQLException {
+        return databaseService.getPangolinLineageAliases();
+    }
+
 }
