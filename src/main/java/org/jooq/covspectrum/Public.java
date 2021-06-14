@@ -11,6 +11,7 @@ import org.jooq.Catalog;
 import org.jooq.Sequence;
 import org.jooq.Table;
 import org.jooq.covspectrum.tables.ConsensusSequence;
+import org.jooq.covspectrum.tables.GisaidApiSequence;
 import org.jooq.covspectrum.tables.GisaidSequence;
 import org.jooq.covspectrum.tables.SpectrumAccount;
 import org.jooq.covspectrum.tables.SpectrumApiCacheSample;
@@ -23,7 +24,9 @@ import org.jooq.covspectrum.tables.SpectrumSequenceIntensity;
 import org.jooq.covspectrum.tables.SpectrumSequencePrivateMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMutationAa;
+import org.jooq.covspectrum.tables.SpectrumSwissCases;
 import org.jooq.covspectrum.tables.SpectrumWasteWaterResult;
+import org.jooq.covspectrum.tables.SpectrumWasteWaterResultOld;
 import org.jooq.covspectrum.tables.VariantMutationAa;
 import org.jooq.covspectrum.tables.VariantMutationNucleotide;
 import org.jooq.impl.SchemaImpl;
@@ -46,6 +49,11 @@ public class Public extends SchemaImpl {
      * The table <code>public.consensus_sequence</code>.
      */
     public final ConsensusSequence CONSENSUS_SEQUENCE = ConsensusSequence.CONSENSUS_SEQUENCE;
+
+    /**
+     * The table <code>public.gisaid_api_sequence</code>.
+     */
+    public final GisaidApiSequence GISAID_API_SEQUENCE = GisaidApiSequence.GISAID_API_SEQUENCE;
 
     /**
      * The table <code>public.gisaid_sequence</code>.
@@ -108,9 +116,19 @@ public class Public extends SchemaImpl {
     public final SpectrumSequencePublicMutationAa SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA = SpectrumSequencePublicMutationAa.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA;
 
     /**
+     * The table <code>public.spectrum_swiss_cases</code>.
+     */
+    public final SpectrumSwissCases SPECTRUM_SWISS_CASES = SpectrumSwissCases.SPECTRUM_SWISS_CASES;
+
+    /**
      * The table <code>public.spectrum_waste_water_result</code>.
      */
     public final SpectrumWasteWaterResult SPECTRUM_WASTE_WATER_RESULT = SpectrumWasteWaterResult.SPECTRUM_WASTE_WATER_RESULT;
+
+    /**
+     * The table <code>public.spectrum_waste_water_result_old</code>.
+     */
+    public final SpectrumWasteWaterResultOld SPECTRUM_WASTE_WATER_RESULT_OLD = SpectrumWasteWaterResultOld.SPECTRUM_WASTE_WATER_RESULT_OLD;
 
     /**
      * The table <code>public.variant_mutation_aa</code>.
@@ -148,6 +166,7 @@ public class Public extends SchemaImpl {
     public final List<Table<?>> getTables() {
         return Arrays.<Table<?>>asList(
             ConsensusSequence.CONSENSUS_SEQUENCE,
+            GisaidApiSequence.GISAID_API_SEQUENCE,
             GisaidSequence.GISAID_SEQUENCE,
             SpectrumAccount.SPECTRUM_ACCOUNT,
             SpectrumApiCacheSample.SPECTRUM_API_CACHE_SAMPLE,
@@ -160,7 +179,9 @@ public class Public extends SchemaImpl {
             SpectrumSequencePrivateMeta.SPECTRUM_SEQUENCE_PRIVATE_META,
             SpectrumSequencePublicMeta.SPECTRUM_SEQUENCE_PUBLIC_META,
             SpectrumSequencePublicMutationAa.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA,
+            SpectrumSwissCases.SPECTRUM_SWISS_CASES,
             SpectrumWasteWaterResult.SPECTRUM_WASTE_WATER_RESULT,
+            SpectrumWasteWaterResultOld.SPECTRUM_WASTE_WATER_RESULT_OLD,
             VariantMutationAa.VARIANT_MUTATION_AA,
             VariantMutationNucleotide.VARIANT_MUTATION_NUCLEOTIDE);
     }

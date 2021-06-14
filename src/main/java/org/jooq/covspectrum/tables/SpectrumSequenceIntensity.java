@@ -118,7 +118,7 @@ public class SpectrumSequenceIntensity extends TableImpl<SpectrumSequenceIntensi
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.SPECTRUM_SEQUENCE_INTENSITY_COUNTRY_IDX, Indexes.SPECTRUM_SEQUENCE_INTENSITY_REGION_IDX);
+        return Arrays.<Index>asList(Indexes.SPECTRUM_SEQUENCE_INTENSITY_COUNTRY_IDX, Indexes.SPECTRUM_SEQUENCE_INTENSITY_DATE_REGION_COUNTRY_IDX, Indexes.SPECTRUM_SEQUENCE_INTENSITY_REGION_IDX);
     }
 
     @Override

@@ -5,6 +5,7 @@ package org.jooq.covspectrum;
 
 
 import org.jooq.covspectrum.tables.ConsensusSequence;
+import org.jooq.covspectrum.tables.GisaidApiSequence;
 import org.jooq.covspectrum.tables.GisaidSequence;
 import org.jooq.covspectrum.tables.SpectrumAccount;
 import org.jooq.covspectrum.tables.SpectrumApiCacheSample;
@@ -17,7 +18,9 @@ import org.jooq.covspectrum.tables.SpectrumSequenceIntensity;
 import org.jooq.covspectrum.tables.SpectrumSequencePrivateMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMeta;
 import org.jooq.covspectrum.tables.SpectrumSequencePublicMutationAa;
+import org.jooq.covspectrum.tables.SpectrumSwissCases;
 import org.jooq.covspectrum.tables.SpectrumWasteWaterResult;
+import org.jooq.covspectrum.tables.SpectrumWasteWaterResultOld;
 import org.jooq.covspectrum.tables.VariantMutationAa;
 import org.jooq.covspectrum.tables.VariantMutationNucleotide;
 
@@ -32,6 +35,11 @@ public class Tables {
      * The table <code>public.consensus_sequence</code>.
      */
     public static final ConsensusSequence CONSENSUS_SEQUENCE = ConsensusSequence.CONSENSUS_SEQUENCE;
+
+    /**
+     * The table <code>public.gisaid_api_sequence</code>.
+     */
+    public static final GisaidApiSequence GISAID_API_SEQUENCE = GisaidApiSequence.GISAID_API_SEQUENCE;
 
     /**
      * The table <code>public.gisaid_sequence</code>.
@@ -94,9 +102,19 @@ public class Tables {
     public static final SpectrumSequencePublicMutationAa SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA = SpectrumSequencePublicMutationAa.SPECTRUM_SEQUENCE_PUBLIC_MUTATION_AA;
 
     /**
+     * The table <code>public.spectrum_swiss_cases</code>.
+     */
+    public static final SpectrumSwissCases SPECTRUM_SWISS_CASES = SpectrumSwissCases.SPECTRUM_SWISS_CASES;
+
+    /**
      * The table <code>public.spectrum_waste_water_result</code>.
      */
     public static final SpectrumWasteWaterResult SPECTRUM_WASTE_WATER_RESULT = SpectrumWasteWaterResult.SPECTRUM_WASTE_WATER_RESULT;
+
+    /**
+     * The table <code>public.spectrum_waste_water_result_old</code>.
+     */
+    public static final SpectrumWasteWaterResultOld SPECTRUM_WASTE_WATER_RESULT_OLD = SpectrumWasteWaterResultOld.SPECTRUM_WASTE_WATER_RESULT_OLD;
 
     /**
      * The table <code>public.variant_mutation_aa</code>.

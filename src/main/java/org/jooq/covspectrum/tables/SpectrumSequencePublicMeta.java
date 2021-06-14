@@ -110,12 +110,12 @@ public class SpectrumSequencePublicMeta extends TableImpl<SpectrumSequencePublic
     /**
      * The column <code>public.spectrum_sequence_public_meta.hospitalized</code>.
      */
-    public final TableField<SpectrumSequencePublicMetaRecord, String> HOSPITALIZED = createField(DSL.name("hospitalized"), SQLDataType.CLOB, this, "");
+    public final TableField<SpectrumSequencePublicMetaRecord, Boolean> HOSPITALIZED = createField(DSL.name("hospitalized"), SQLDataType.BOOLEAN, this, "");
 
     /**
      * The column <code>public.spectrum_sequence_public_meta.deceased</code>.
      */
-    public final TableField<SpectrumSequencePublicMetaRecord, String> DECEASED = createField(DSL.name("deceased"), SQLDataType.CLOB, this, "");
+    public final TableField<SpectrumSequencePublicMetaRecord, Boolean> DECEASED = createField(DSL.name("deceased"), SQLDataType.BOOLEAN, this, "");
 
     /**
      * The column <code>public.spectrum_sequence_public_meta.pangolin_lineage</code>.
@@ -196,7 +196,7 @@ public class SpectrumSequencePublicMeta extends TableImpl<SpectrumSequencePublic
     // -------------------------------------------------------------------------
 
     @Override
-    public Row15<String, LocalDate, String, String, String, String, String, String, Integer, String, String, String, String, String, String> fieldsRow() {
+    public Row15<String, LocalDate, String, String, String, String, String, String, Integer, String, String, String, Boolean, Boolean, String> fieldsRow() {
         return (Row15) super.fieldsRow();
     }
 }

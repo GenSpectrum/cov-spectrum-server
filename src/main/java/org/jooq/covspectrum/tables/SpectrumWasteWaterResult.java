@@ -12,7 +12,7 @@ import org.jooq.ForeignKey;
 import org.jooq.JSONB;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row2;
+import org.jooq.Row3;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -51,6 +51,11 @@ public class SpectrumWasteWaterResult extends TableImpl<SpectrumWasteWaterResult
      * The column <code>public.spectrum_waste_water_result.variant_name</code>.
      */
     public final TableField<SpectrumWasteWaterResultRecord, String> VARIANT_NAME = createField(DSL.name("variant_name"), SQLDataType.CLOB.nullable(false), this, "");
+
+    /**
+     * The column <code>public.spectrum_waste_water_result.location</code>.
+     */
+    public final TableField<SpectrumWasteWaterResultRecord, String> LOCATION = createField(DSL.name("location"), SQLDataType.CLOB.nullable(false), this, "");
 
     /**
      * The column <code>public.spectrum_waste_water_result.data</code>.
@@ -97,12 +102,12 @@ public class SpectrumWasteWaterResult extends TableImpl<SpectrumWasteWaterResult
 
     @Override
     public UniqueKey<SpectrumWasteWaterResultRecord> getPrimaryKey() {
-        return Keys.SPECTRUM_WASTE_WATER_RESULTS_PKEY;
+        return Keys.X_SPECTRUM_WASTE_WATER_RESULT_PKEY;
     }
 
     @Override
     public List<UniqueKey<SpectrumWasteWaterResultRecord>> getKeys() {
-        return Arrays.<UniqueKey<SpectrumWasteWaterResultRecord>>asList(Keys.SPECTRUM_WASTE_WATER_RESULTS_PKEY);
+        return Arrays.<UniqueKey<SpectrumWasteWaterResultRecord>>asList(Keys.X_SPECTRUM_WASTE_WATER_RESULT_PKEY);
     }
 
     @Override
@@ -132,11 +137,11 @@ public class SpectrumWasteWaterResult extends TableImpl<SpectrumWasteWaterResult
     }
 
     // -------------------------------------------------------------------------
-    // Row2 type methods
+    // Row3 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row2<String, JSONB> fieldsRow() {
-        return (Row2) super.fieldsRow();
+    public Row3<String, String, JSONB> fieldsRow() {
+        return (Row3) super.fieldsRow();
     }
 }
