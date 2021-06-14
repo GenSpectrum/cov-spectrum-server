@@ -5,6 +5,7 @@ import ch.ethz.covspectrum.entity.core.DataType;
 import ch.ethz.covspectrum.entity.core.*;
 import ch.ethz.covspectrum.jooq.MyDSL;
 import ch.ethz.covspectrum.jooq.SpectrumMetadataTable;
+import ch.ethz.covspectrum.util.PangolinLineageAliasResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.javatuples.Pair;
@@ -44,9 +45,17 @@ public class DatabaseService {
 
     private final ObjectMapper objectMapper;
 
+    private final PangolinLineageAliasResolver pangolinLineageAliasResolver;
 
     public DatabaseService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+        try {
+            // TODO This will be only loaded once and will not reload when the aliases change. The aliases should not
+            //   change too often so it is not a very big issue but it could potentially cause unexpected results.
+            this.pangolinLineageAliasResolver = new PangolinLineageAliasResolver(getPangolinLineageAliases());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -70,6 +79,30 @@ public class DatabaseService {
                     .orderBy(MyDSL.fCountry(metaTbl));
             return statement.fetch()
                     .map(Record1::value1);
+        }
+    }
+
+
+    public List<PangolinLineageAlias> getPangolinLineageAliases() throws SQLException {
+        String sql = """
+                select
+                  alias,
+                  full_name
+                from pangolin_lineage_alias;
+        """;
+        try (Connection conn = getDatabaseConnection()) {
+            try (Statement statement = conn.createStatement()) {
+                try (ResultSet rs = statement.executeQuery(sql)) {
+                    List<PangolinLineageAlias> aliases = new ArrayList<>();
+                    while (rs.next()) {
+                        aliases.add(new PangolinLineageAlias(
+                                rs.getString("alias"),
+                                rs.getString("full_name")
+                        ));
+                    }
+                    return aliases;
+                }
+            }
         }
     }
 
@@ -754,21 +787,31 @@ public class DatabaseService {
      * Example: "B.1.2*" will return [B.1.2, B.1.2.%].
      */
     private String[] parsePangolinLineageQuery(String query) {
-        query = query.toUpperCase();
+        String finalQuery = query.toUpperCase();
+
+        // Resolve aliases
+        List<String> resolvedQueries = new ArrayList<>() {{
+            add(finalQuery);
+        }};
+        resolvedQueries.addAll(pangolinLineageAliasResolver.findAlias(query));
+
+        // Handle prefix search
         List<String> result = new ArrayList<>();
-        if (query.contains("%")) {
-            // Nope, I don't want to allow undocumented features.
-        } else if (!query.endsWith("*")) {
-            result.add(query);
-        } else {
-            // Prefix search
-            String rootLineage = query.substring(0, query.length() - 1);
-            if (rootLineage.endsWith(".")) {
-                rootLineage = rootLineage.substring(0, rootLineage.length() - 1);
+        for (String resolvedQuery : resolvedQueries) {
+            if (resolvedQuery.contains("%")) {
+                // Nope, I don't want to allow undocumented features.
+            } else if (!resolvedQuery.endsWith("*")) {
+                result.add(resolvedQuery);
+            } else {
+                // Prefix search
+                String rootLineage = resolvedQuery.substring(0, resolvedQuery.length() - 1);
+                if (rootLineage.endsWith(".")) {
+                    rootLineage = rootLineage.substring(0, rootLineage.length() - 1);
+                }
+                String subLineages = rootLineage + ".%";
+                result.add(rootLineage);
+                result.add(subLineages);
             }
-            String subLineages = rootLineage + ".%";
-            result.add(rootLineage);
-            result.add(subLineages);
         }
         return result.toArray(new String[0]);
     }
