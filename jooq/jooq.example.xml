@@ -1,0 +1,36 @@
+<configuration xmlns="http://www.jooq.org/xsd/jooq-codegen-3.14.0.xsd">
+    <!-- Configure the database connection here -->
+    <jdbc>
+        <driver>org.postgresql.Driver</driver>
+        <url>jdbc:postgresql://[missing]</url>
+        <user>[missing]</user>
+        <password>[missing]</password>
+    </jdbc>
+
+    <generator>
+        <database>
+            <name>org.jooq.meta.postgres.PostgresDatabase</name>
+
+            <!-- All elements that are generated from your schema (A Java regular expression.
+                 Use the pipe to separate several expressions) Watch out for
+                 case-sensitivity. Depending on your database, this might be
+                 important!
+
+                 You can create case-insensitive regular expressions using this syntax: (?i:expr)
+
+                 Whitespace is ignored and comments are possible.
+                 -->
+            <includes>(spectrum_|consensus_|gisaid_|variant_|pangolin_).*</includes>
+            <excludes>(.*)staging</excludes>
+            <inputSchema>public</inputSchema>
+        </database>
+
+        <!-- Generation flags: See advanced configuration properties -->
+        <generate/>
+
+        <target>
+            <packageName>org.jooq.covspectrum</packageName>
+            <directory>../src/main/java</directory>
+        </target>
+    </generator>
+</configuration>

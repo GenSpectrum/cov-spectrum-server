@@ -37,4 +37,5 @@ out/
 .vscode/
 
 docker-compose.override.yml
-/jooq/
+/jooq/*.jar
+/jooq/jooq.xml
