@@ -7,6 +7,8 @@ package org.jooq.covspectrum;
 import org.jooq.covspectrum.tables.ConsensusSequence;
 import org.jooq.covspectrum.tables.GisaidApiSequence;
 import org.jooq.covspectrum.tables.GisaidSequence;
+import org.jooq.covspectrum.tables.PangolinLineage_PubmedArticle;
+import org.jooq.covspectrum.tables.PangolinLineage_RxivArticle;
 import org.jooq.covspectrum.tables.SpectrumAccount;
 import org.jooq.covspectrum.tables.SpectrumApiCacheSample;
 import org.jooq.covspectrum.tables.SpectrumApiUsageSample;
@@ -45,6 +47,16 @@ public class Tables {
      * The table <code>public.gisaid_sequence</code>.
      */
     public static final GisaidSequence GISAID_SEQUENCE = GisaidSequence.GISAID_SEQUENCE;
+
+    /**
+     * The table <code>public.pangolin_lineage__pubmed_article</code>.
+     */
+    public static final PangolinLineage_PubmedArticle PANGOLIN_LINEAGE__PUBMED_ARTICLE = PangolinLineage_PubmedArticle.PANGOLIN_LINEAGE__PUBMED_ARTICLE;
+
+    /**
+     * The table <code>public.pangolin_lineage__rxiv_article</code>.
+     */
+    public static final PangolinLineage_RxivArticle PANGOLIN_LINEAGE__RXIV_ARTICLE = PangolinLineage_RxivArticle.PANGOLIN_LINEAGE__RXIV_ARTICLE;
 
     /**
      * The table <code>public.spectrum_account</code>.
