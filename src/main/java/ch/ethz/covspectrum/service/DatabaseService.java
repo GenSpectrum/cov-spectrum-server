@@ -468,17 +468,8 @@ public class DatabaseService {
         }
         String pangolinLineage = selection.getPangolinLineage();
         if (pangolinLineage != null) {
-            pangolinLineage = pangolinLineage.toUpperCase();
-            if (pangolinLineage.endsWith("*")) {
-                Pair<String, String> parsedPrefixSearch = parsePangolinLineagePrefixSearch(pangolinLineage);
-                conditions.add(
-                        MyDSL.fPangolinLineage(metaTbl).eq(parsedPrefixSearch.getValue0()).or(
-                                MyDSL.fPangolinLineage(metaTbl).like(parsedPrefixSearch.getValue1())
-                        )
-                );
-            } else {
-                conditions.add(MyDSL.fPangolinLineage(metaTbl).eq(pangolinLineage));
-            }
+            String[] pangolinLineageLikeStatements = parsePangolinLineageQuery(pangolinLineage);
+            conditions.add(MyDSL.fPangolinLineage(metaTbl).like(DSL.any(pangolinLineageLikeStatements)));
         }
         if (selection.getRegion() != null) {
             conditions.add(MyDSL.fRegion(metaTbl).eq(selection.getRegion()));
@@ -661,16 +652,10 @@ public class DatabaseService {
         // TODO Rewrite with jooq
         String sqlConditions1;
         String sqlConditions2;
-        int preparedStatementArgumentPairs;
-        if (name.endsWith("*")) {
-            sqlConditions1 = "(m.pangolin_lineage = ? or m.pangolin_lineage like ?)";
-            sqlConditions2 = "(plm.pangolin_lineage = ? or plm.pangolin_lineage like ?)";
-            preparedStatementArgumentPairs = 2;
-        } else {
-            sqlConditions1 = "m.pangolin_lineage = ?";
-            sqlConditions2 = "plm.pangolin_lineage = ?";
-            preparedStatementArgumentPairs = 1;
-        }
+        int preparedStatementArgumentPairs = 0;
+        sqlConditions1 = "m.pangolin_lineage like any(?)";
+        sqlConditions2 = "plm.pangolin_lineage like any(?)";
+        preparedStatementArgumentPairs++;
         if (region != null) {
             sqlConditions1 += " and m.region = ?";
             sqlConditions2 += " and plm.region = ?";
@@ -718,18 +703,10 @@ public class DatabaseService {
         try (Connection conn = getDatabaseConnection()) {
             try (PreparedStatement statement = conn.prepareStatement(sql)) {
                 int i = 1;
-                if (name.endsWith("*")) {
-                    Pair<String, String> parsedPrefixSearch = parsePangolinLineagePrefixSearch(name);
-                    statement.setString(1, parsedPrefixSearch.getValue0());
-                    statement.setString(2, parsedPrefixSearch.getValue1());
-                    statement.setString(1 + preparedStatementArgumentPairs, parsedPrefixSearch.getValue0());
-                    statement.setString(2 + preparedStatementArgumentPairs, parsedPrefixSearch.getValue1());
-                    i += 2;
-                } else {
-                    statement.setString(1, name);
-                    statement.setString(1 + preparedStatementArgumentPairs, name);
-                    i += 1;
-                }
+                String[] parsedPL = parsePangolinLineageQuery(name);
+                statement.setArray(1, conn.createArrayOf("text", parsedPL));
+                statement.setArray(1 + preparedStatementArgumentPairs, conn.createArrayOf("text", parsedPL));
+                i++;
                 if (region != null) {
                     statement.setString(i, region);
                     statement.setString(i + preparedStatementArgumentPairs, region);
@@ -765,29 +742,39 @@ public class DatabaseService {
     }
 
 
-    private Pair<String, String> parsePangolinLineagePrefixSearch(String query) {
-        // Prefix search: Return the lineage and all sub-lineages. I.e., for both "B.1.*" and "B.1*", B.1 and
-        // all lineages starting with "B.1." should be returned. "B.11" should not be returned.
-        if (!query.endsWith("*")) {
-            throw new RuntimeException("This is not a prefix search.");
+    /**
+     * This function translates a pangolin lineage query to an array of SQL like-statements. A sequence matches the
+     * query if any like-statements are fulfilled. The like-statements are designed to be passed into the following
+     * SQL statement:
+     *   where pangolin_lineage like any(?)
+     *
+     * Prefix search: Return the lineage and all sub-lineages. I.e., for both "B.1.*" and "B.1*", B.1 and
+     * all lineages starting with "B.1." should be returned. "B.11" should not be returned.
+     *
+     * Example: "B.1.2*" will return [B.1.2, B.1.2.%].
+     */
+    private String[] parsePangolinLineageQuery(String query) {
+        query = query.toUpperCase();
+        List<String> result = new ArrayList<>();
+        if (query.contains("%")) {
+            // Nope, I don't want to allow undocumented features.
+        } else if (!query.endsWith("*")) {
+            result.add(query);
+        } else {
+            // Prefix search
+            String rootLineage = query.substring(0, query.length() - 1);
+            if (rootLineage.endsWith(".")) {
+                rootLineage = rootLineage.substring(0, rootLineage.length() - 1);
+            }
+            String subLineages = rootLineage + ".%";
+            result.add(rootLineage);
+            result.add(subLineages);
         }
-        String rootLineage = query.substring(0, query.length() - 1);
-        if (rootLineage.endsWith(".")) {
-            rootLineage = rootLineage.substring(0, rootLineage.length() - 1);
-        }
-        String subLineages = rootLineage + ".%";
-        return new Pair<>(rootLineage, subLineages);
+        return result.toArray(new String[0]);
     }
 
 
     public List<RxivArticle> getPangolinLineageArticles(String pangolinLineage) throws SQLException {
-        String condition;
-        if (pangolinLineage.endsWith("*")) {
-            condition = " plrar.pangolin_lineage = ? or plrar.pangolin_lineage like ?";
-        } else {
-            condition = " plrar.pangolin_lineage = ?";
-        }
-
         List<RxivArticle> articles = new ArrayList<>();
         String sql = """
             select
@@ -804,19 +791,14 @@ public class DatabaseService {
               join rxiv_article rar on plrar.doi = rar.doi
               left join rxiv_article__rxiv_author rara on rar.doi = rara.doi
               join rxiv_author rau on rara.author_id = rau.id
-            where""" + condition + """
+            where plrar.pangolin_lineage like any(?)
             group by rar.doi, rar.date
             order by rar.date desc;
         """;
         try (Connection conn = getDatabaseConnection()) {
             try (PreparedStatement statement = conn.prepareStatement(sql)) {
-                if (pangolinLineage.endsWith("*")) {
-                    Pair<String, String> parsed = parsePangolinLineagePrefixSearch(pangolinLineage);
-                    statement.setString(1, parsed.getValue0());
-                    statement.setString(2, parsed.getValue1());
-                } else {
-                    statement.setString(1, pangolinLineage);
-                }
+                String[] parsedPL = parsePangolinLineageQuery(pangolinLineage);
+                statement.setArray(1, conn.createArrayOf("text", parsedPL));
                 try (ResultSet rs = statement.executeQuery()) {
                     while (rs.next()) {
                         RxivArticle article = new RxivArticle()
