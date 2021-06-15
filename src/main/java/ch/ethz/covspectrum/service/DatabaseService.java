@@ -350,7 +350,7 @@ public class DatabaseService {
             union all
             select
               gs.gisaid_epi_isl as sample_name,
-              gs.original_seq as sequence
+              gs.seq_original as sequence
             from gisaid_api_sequence gs
             where gisaid_epi_isl = any(?::text[]);
         """;
@@ -364,7 +364,7 @@ public class DatabaseService {
             union all
             select
               gs.gisaid_epi_isl as sample_name,
-              gs.original_seq as sequence
+              gs.seq_original as sequence
             from gisaid_api_sequence gs
             where
                 gisaid_epi_isl = any(?::text[])
