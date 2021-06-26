@@ -682,36 +682,39 @@ public class DatabaseService {
             LocalDate dateFrom,
             LocalDate dateTo
     ) throws SQLException {
-        // TODO Rewrite with jooq
-        String sqlConditions1;
-        String sqlConditions2;
-        int preparedStatementArgumentPairs = 0;
-        sqlConditions1 = "m.pangolin_lineage like any(?)";
-        sqlConditions2 = "plm.pangolin_lineage like any(?)";
-        preparedStatementArgumentPairs++;
-        if (region != null) {
-            sqlConditions1 += " and m.region = ?";
-            sqlConditions2 += " and plm.region = ?";
+        String[] mutationTypes = new String[]{"aa", "nuc"};
+        PangolinLineageResponse pangolinLineageResponse = new PangolinLineageResponse();
+        for (String mutationType : mutationTypes) {
+            // TODO Rewrite with jooq
+            String sqlConditions1;
+            String sqlConditions2;
+            int preparedStatementArgumentPairs = 0;
+            sqlConditions1 = "m.pangolin_lineage like any(?)";
+            sqlConditions2 = "plm.pangolin_lineage like any(?)";
             preparedStatementArgumentPairs++;
-        }
-        if (country != null) {
-            sqlConditions1 += " and m.country = ?";
-            sqlConditions2 += " and plm.country = ?";
-            preparedStatementArgumentPairs++;
-        }
-        if (dateFrom != null) {
-            sqlConditions1 += " and m.date >= ?";
-            sqlConditions2 += " and plm.date >= ?";
-            preparedStatementArgumentPairs++;
-        }
-        if (dateTo != null) {
-            sqlConditions1 += " and m.date <= ?";
-            sqlConditions2 += " and plm.date <= ?";
-            preparedStatementArgumentPairs++;
-        }
-        String sql = """
+            if (region != null) {
+                sqlConditions1 += " and m.region = ?";
+                sqlConditions2 += " and plm.region = ?";
+                preparedStatementArgumentPairs++;
+            }
+            if (country != null) {
+                sqlConditions1 += " and m.country = ?";
+                sqlConditions2 += " and plm.country = ?";
+                preparedStatementArgumentPairs++;
+            }
+            if (dateFrom != null) {
+                sqlConditions1 += " and m.date >= ?";
+                sqlConditions2 += " and plm.date >= ?";
+                preparedStatementArgumentPairs++;
+            }
+            if (dateTo != null) {
+                sqlConditions1 += " and m.date <= ?";
+                sqlConditions2 += " and plm.date <= ?";
+                preparedStatementArgumentPairs++;
+            }
+            String sql = """
                 select
-                  x.aa_mutation,
+                  x.aa_mutation as mutation,
                   x.count,
                   x.proportion
                 from
@@ -723,55 +726,66 @@ public class DatabaseService {
                         select count(*)
                         from spectrum_sequence_public_meta m
                         where
-                          """ + sqlConditions1 + """
-                  ) as proportion
-                from spectrum_pangolin_lineage_mutation plm
-                where
-                  """ + sqlConditions2 + """
+                        """ + sqlConditions1 + """
+                      ) as proportion
+                    from spectrum_pangolin_lineage_mutation plm
+                    where
+                      """ + sqlConditions2 + """
                         group by plm.aa_mutation
-                      ) x
-                    where x.proportion >= 0.2
-                    order by x.proportion desc;
-                """;
-        try (Connection conn = getDatabaseConnection()) {
-            try (PreparedStatement statement = conn.prepareStatement(sql)) {
-                int i = 1;
-                String[] parsedPL = parsePangolinLineageQuery(name);
-                statement.setArray(1, conn.createArrayOf("text", parsedPL));
-                statement.setArray(1 + preparedStatementArgumentPairs, conn.createArrayOf("text", parsedPL));
-                i++;
-                if (region != null) {
-                    statement.setString(i, region);
-                    statement.setString(i + preparedStatementArgumentPairs, region);
+                  ) x
+                where x.proportion >= 0.2
+                order by x.proportion desc;
+            """;
+            if (mutationType.equals("nuc")) {
+                sql = sql
+                        .replaceAll("spectrum_pangolin_lineage_mutation", "spectrum_pangolin_lineage_mutation_nucleotide")
+                        .replaceAll("aa_mutation", "nuc_mutation");
+            }
+            try (Connection conn = getDatabaseConnection()) {
+                try (PreparedStatement statement = conn.prepareStatement(sql)) {
+                    int i = 1;
+                    String[] parsedPL = parsePangolinLineageQuery(name);
+                    statement.setArray(1, conn.createArrayOf("text", parsedPL));
+                    statement.setArray(1 + preparedStatementArgumentPairs, conn.createArrayOf("text", parsedPL));
                     i++;
-                }
-                if (country != null) {
-                    statement.setString(i, country);
-                    statement.setString(i + preparedStatementArgumentPairs, country);
-                    i++;
-                }
-                if (dateFrom != null) {
-                    statement.setDate(i, Date.valueOf(dateFrom));
-                    statement.setDate(i + preparedStatementArgumentPairs, Date.valueOf(dateFrom));
-                    i++;
-                }
-                if (dateTo != null) {
-                    statement.setDate(i, Date.valueOf(dateTo));
-                    statement.setDate(i + preparedStatementArgumentPairs, Date.valueOf(dateTo));
-                    i++;
-                }
-                try (ResultSet rs = statement.executeQuery()) {
-                    List<MutationCount> mutationCounts = new ArrayList<>();
-                    while (rs.next()) {
-                        mutationCounts.add(new MutationCount()
-                                .setMutation(rs.getString("aa_mutation"))
-                                .setCount(rs.getInt("count"))
-                                .setProportion(rs.getFloat("proportion")));
+                    if (region != null) {
+                        statement.setString(i, region);
+                        statement.setString(i + preparedStatementArgumentPairs, region);
+                        i++;
                     }
-                    return new PangolinLineageResponse().setCommonMutations(mutationCounts);
+                    if (country != null) {
+                        statement.setString(i, country);
+                        statement.setString(i + preparedStatementArgumentPairs, country);
+                        i++;
+                    }
+                    if (dateFrom != null) {
+                        statement.setDate(i, Date.valueOf(dateFrom));
+                        statement.setDate(i + preparedStatementArgumentPairs, Date.valueOf(dateFrom));
+                        i++;
+                    }
+                    if (dateTo != null) {
+                        statement.setDate(i, Date.valueOf(dateTo));
+                        statement.setDate(i + preparedStatementArgumentPairs, Date.valueOf(dateTo));
+                        i++;
+                    }
+                    try (ResultSet rs = statement.executeQuery()) {
+                        List<MutationCount> mutationCounts = new ArrayList<>();
+                        while (rs.next()) {
+                            mutationCounts.add(new MutationCount()
+                                    .setMutation(rs.getString("mutation"))
+                                    .setCount(rs.getInt("count"))
+                                    .setProportion(rs.getFloat("proportion")));
+                        }
+                        if (mutationType.equals("aa")) {
+                            pangolinLineageResponse.setCommonMutations(mutationCounts);
+                        } else {
+                            pangolinLineageResponse.setCommonNucMutations(mutationCounts);
+                        }
+                    }
                 }
             }
         }
+        return pangolinLineageResponse;
     }
 
 
