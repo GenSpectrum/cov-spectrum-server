@@ -876,7 +876,8 @@ public class DatabaseService {
     }
 
 
-    public List<CaseCounts> getSwissCaseCounts(LocalDate dateFrom, LocalDate dateTo) throws SQLException {
+    public List<CaseCounts> getSwissCaseCounts(LocalDate dateFrom, LocalDate dateTo, boolean includeDate)
+            throws SQLException {
         String conditionSql = " true";
         if (dateFrom != null) {
             conditionSql += " and date >= ?";
@@ -890,7 +891,7 @@ public class DatabaseService {
               age_group,
               sex,
               hospitalized,
-              deceased,
+              deceased,""" + (includeDate ? " date," : "") + """
               sum(count) as count
             from
               (
@@ -910,12 +911,14 @@ public class DatabaseService {
                   sex,
                   hospitalized,
                   deceased,
+                  date,
                   count
                 from spectrum_swiss_cases
                 where""" + conditionSql + """
               ) x
-            group by division, age_group, sex, hospitalized, deceased
-            order by division, age_group, sex, hospitalized, deceased;
+            group by division, age_group, sex, hospitalized, deceased""" + (includeDate ? ", date " : " ") + """
+            order by division, age_group, sex, hospitalized, deceased""" + (includeDate ? ", date " : " ") +  """
+        ;
         """;
         List<CaseCounts> result = new ArrayList<>();
         try (Connection conn = getDatabaseConnection()) {
@@ -936,6 +939,9 @@ public class DatabaseService {
                                 .setHospitalized(rs.getBoolean("hospitalized"))
                                 .setDeceased(rs.getBoolean("deceased"))
                                 .setCount(rs.getInt("count"));
+                        if (includeDate) {
+                            caseCounts.setDate(rs.getDate("date").toLocalDate());
+                        }
                         result.add(caseCounts);
                     }
                 }

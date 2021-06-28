@@ -1,14 +1,26 @@
 package ch.ethz.covspectrum.entity.core;
 
 
+import java.time.LocalDate;
+
 public class CaseCounts {
 
+    private LocalDate date;
     private String division;
     private String ageGroup;
     private String sex;
     private boolean hospitalized;
     private boolean deceased;
     private int count;
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public CaseCounts setDate(LocalDate date) {
+        this.date = date;
+        return this;
+    }
 
     public String getDivision() {
         return division;

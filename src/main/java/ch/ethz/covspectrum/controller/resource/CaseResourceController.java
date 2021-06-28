@@ -29,14 +29,17 @@ public class CaseResourceController {
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String country,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(required = false, defaultValue = "false") boolean includeDate
     ) throws SQLException {
         // We only have detailed case data for Switzerland.
         if (!"Switzerland".equals(country) || (region != null && !"Europe".equals(region))) {
             return null;
         }
 
-        return databaseService.getSwissCaseCounts(dateFrom, dateTo);
+        System.out.println(includeDate);
+
+        return databaseService.getSwissCaseCounts(dateFrom, dateTo, includeDate);
     }
 
 }
