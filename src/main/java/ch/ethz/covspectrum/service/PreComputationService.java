@@ -19,7 +19,7 @@ import java.util.List;
 @Service
 public class PreComputationService {
 
-    private final int MAX_CACHE_ENTRIES = 2000;
+    private final int MAX_CACHE_ENTRIES = 4000;
 
     private final Logger logger = LoggerFactory.getLogger(PreComputationService.class);
 
