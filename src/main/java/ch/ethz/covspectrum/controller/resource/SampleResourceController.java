@@ -119,6 +119,7 @@ public class SampleResourceController {
             add("hospitalized");
             add("deceased");
             add("pangolinLineage");
+            add("submittingLab");
         }};
         Set<String> fieldsParsed;
         if (fields != null) {

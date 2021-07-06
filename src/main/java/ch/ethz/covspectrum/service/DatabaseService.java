@@ -258,6 +258,7 @@ public class DatabaseService {
             put("hospitalized", new Pair<>("hospitalized", Boolean.class));
             put("deceased", new Pair<>("deceased", Boolean.class));
             put("pangolinLineage", new Pair<>("pangolin_lineage", String.class));
+            put("submittingLab", new Pair<>("submitting_lab", String.class));
         }};
         try (Connection conn = getDatabaseConnection()) {
             DSLContext ctx = getDSLCtx(conn);
@@ -283,6 +284,7 @@ public class DatabaseService {
                         Boolean _hospitalized = null;
                         Boolean _deceased = null;
                         String _pangolinLineage = null;
+                        String _submittingLab = null;
                         int count = r.get("count", Integer.class);
                         if (fields.contains("date")) {
                             _date = r.get("date", LocalDate.class);
@@ -314,8 +316,11 @@ public class DatabaseService {
                         if (fields.contains("pangolinLineage")) {
                             _pangolinLineage = r.get("pangolin_lineage", String.class);
                         }
+                        if (fields.contains("submittingLab")) {
+                            _submittingLab = r.get("submitting_lab", String.class);
+                        }
                         return new WeightedSample(_date, _region, _country, _division, _zipCode, _ageGroup, _sex,
-                                _hospitalized, _deceased, _pangolinLineage, count);
+                                _hospitalized, _deceased, _pangolinLineage, _submittingLab, count);
                     });
             return new WeightedSampleResultSet(new ArrayList<>(fields), results);
         }

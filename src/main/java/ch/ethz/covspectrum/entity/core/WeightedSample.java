@@ -25,6 +25,8 @@ public class WeightedSample {
 
     private final String pangolinLineage;
 
+    private final String submittingLab;
+
     private final int count;
 
     public WeightedSample(
@@ -38,6 +40,7 @@ public class WeightedSample {
             Boolean hospitalized,
             Boolean deceased,
             String pangolinLineage,
+            String submittingLab,
             int count
     ) {
         this.date = date;
@@ -50,6 +53,7 @@ public class WeightedSample {
         this.hospitalized = hospitalized;
         this.deceased = deceased;
         this.pangolinLineage = pangolinLineage;
+        this.submittingLab = submittingLab;
         this.count = count;
     }
 
@@ -91,6 +95,10 @@ public class WeightedSample {
 
     public String getPangolinLineage() {
         return pangolinLineage;
+    }
+
+    public String getSubmittingLab() {
+        return submittingLab;
     }
 
     public int getCount() {
