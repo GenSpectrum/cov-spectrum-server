@@ -8,6 +8,7 @@
     </jdbc>
 
     <generator>
+        <name>org.jooq.codegen.KotlinGenerator</name>
         <database>
             <name>org.jooq.meta.postgres.PostgresDatabase</name>
 
@@ -20,8 +21,7 @@
 
                  Whitespace is ignored and comments are possible.
                  -->
-            <includes>(spectrum_|consensus_|gisaid_|variant_|pangolin_).*</includes>
-            <excludes>(.*)staging</excludes>
+            <includes>ext_owid_global_cases</includes>
             <inputSchema>public</inputSchema>
         </database>
 
@@ -30,7 +30,7 @@
 
         <target>
             <packageName>org.jooq.covspectrum</packageName>
-            <directory>../src/main/java</directory>
+            <directory>../src/main/kotlin</directory>
         </target>
     </generator>
 </configuration>
