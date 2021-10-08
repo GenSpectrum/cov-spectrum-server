@@ -1,7 +1,7 @@
 package ch.ethz.covspectrum.controller
 
-import ch.ethz.covspectrum.entity.req.CaseDailyRequest
-import ch.ethz.covspectrum.entity.res.CaseDailyResponseEntry
+import ch.ethz.covspectrum.entity.req.CaseAggregationRequest
+import ch.ethz.covspectrum.entity.res.CaseAggregationResponse
 import ch.ethz.covspectrum.entity.res.CountryMappingResponseEntry
 import ch.ethz.covspectrum.entity.res.RxivArticleResponseEntry
 import ch.ethz.covspectrum.service.DatabaseService
@@ -17,9 +17,9 @@ class VariousController(
         return databaseService.getCountryMapping();
     }
 
-    @GetMapping("/resource/case/daily")
-    fun getDailyCases(req: CaseDailyRequest): List<CaseDailyResponseEntry> {
-        return databaseService.getDailyCases(req)
+    @GetMapping("/resource/case")
+    fun getCases(req: CaseAggregationRequest): CaseAggregationResponse {
+        return databaseService.getCases(req)
     }
 
     @GetMapping("/resource/article")

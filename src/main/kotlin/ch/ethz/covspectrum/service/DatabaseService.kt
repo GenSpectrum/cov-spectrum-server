@@ -1,15 +1,14 @@
 package ch.ethz.covspectrum.service
 
-import ch.ethz.covspectrum.entity.req.CaseDailyRequest
-import ch.ethz.covspectrum.entity.res.CaseDailyResponseEntry
-import ch.ethz.covspectrum.entity.res.CountryMappingResponseEntry
-import ch.ethz.covspectrum.entity.res.Gene
-import ch.ethz.covspectrum.entity.res.RxivArticleResponseEntry
+import ch.ethz.covspectrum.entity.req.CaseAggregationField
+import ch.ethz.covspectrum.entity.req.CaseAggregationRequest
+import ch.ethz.covspectrum.entity.res.*
 import ch.ethz.covspectrum.util.JooqHelper
 import ch.ethz.covspectrum.util.PangoLineageAlias
 import ch.ethz.covspectrum.util.PangoLineageQueryToSqlLikesConverter
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import org.jooq.Condition
+import org.jooq.Field
 import org.jooq.covspectrum.tables.SpectrumOwidGlobalCases
 import org.jooq.impl.DSL
 import org.springframework.stereotype.Service
@@ -93,29 +92,42 @@ class DatabaseService {
     }
 
 
-    fun getDailyCases(req: CaseDailyRequest): List<CaseDailyResponseEntry> {
+    fun getCases(req: CaseAggregationRequest): CaseAggregationResponse {
         getConnection().use { conn ->
             val ctx = JooqHelper.getDSLCtx(conn)
             val tbl = SpectrumOwidGlobalCases.SPECTRUM_OWID_GLOBAL_CASES
+
+            val fields = req.fields ?: emptyList()
+            val groupByFields = fields.map {
+                when (it) {
+                    CaseAggregationField.REGION -> tbl.REGION
+                    CaseAggregationField.COUNTRY -> tbl.COUNTRY
+                    CaseAggregationField.DATE -> tbl.DATE
+                }
+            }
+            val selectFields: MutableList<Field<*>> = groupByFields.toMutableList()
+            selectFields.add(DSL.sum(tbl.NEW_CASES).`as`("new_cases"))
+            selectFields.add(DSL.sum(tbl.NEW_DEATHS).`as`("new_deaths"))
             val conditions: List<Condition> = listOfNotNull(
                 req.region?.let { tbl.REGION.eq(it) },
                 req.country?.let { tbl.COUNTRY.eq(it) }
             )
             val statement = ctx
-                .select(tbl.DATE, DSL.sum(tbl.NEW_CASES), DSL.sum(tbl.NEW_DEATHS))
+                .select(selectFields)
                 .from(tbl)
                 .where(conditions)
-                .groupBy(tbl.DATE)
-                .orderBy(tbl.DATE)
-            println(statement)
+                .groupBy(groupByFields)
             val records = statement.fetch()
-            return records.map {
-                CaseDailyResponseEntry(
-                    it.get(tbl.DATE),
-                    it.get(it.field2()).toInt(),
-                    it.get(it.field3()).toInt()
+            val entries = records.map {
+                CaseAggregationResponseEntry(
+                    if (fields.contains(CaseAggregationField.REGION)) it.get(tbl.REGION) else null,
+                    if (fields.contains(CaseAggregationField.COUNTRY)) it.get(tbl.COUNTRY) else null,
+                    if (fields.contains(CaseAggregationField.DATE)) it.get(tbl.DATE) else null,
+                    it.get("new_cases", Int::class.java),
+                    it.get("new_deaths", Int::class.java)
                 )
             }
+            return CaseAggregationResponse(fields, entries)
         }
     }
 

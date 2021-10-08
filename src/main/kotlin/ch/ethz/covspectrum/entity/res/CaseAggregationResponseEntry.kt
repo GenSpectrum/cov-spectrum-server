@@ -2,7 +2,9 @@ package ch.ethz.covspectrum.entity.res
 
 import java.time.LocalDate
 
-data class CaseDailyResponseEntry(
+data class CaseAggregationResponseEntry(
+    var region: String?,
+    var country: String?,
     var date: LocalDate?,
     var newCases: Int?,
     var newDeaths: Int?
