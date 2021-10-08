@@ -8,7 +8,7 @@ import kotlin.collections.List
 
 import org.jooq.Catalog
 import org.jooq.Table
-import org.jooq.covspectrum.tables.ExtOwidGlobalCases
+import org.jooq.covspectrum.tables.SpectrumOwidGlobalCases
 import org.jooq.impl.SchemaImpl
 
 
@@ -17,22 +17,22 @@ import org.jooq.impl.SchemaImpl
  */
 @Suppress("UNCHECKED_CAST")
 open class Public : SchemaImpl("public", DefaultCatalog.DEFAULT_CATALOG) {
-    companion object {
+    public companion object {
 
         /**
          * The reference instance of <code>public</code>
          */
-        val PUBLIC = Public()
+        val PUBLIC: Public = Public()
     }
 
     /**
-     * The table <code>public.ext_owid_global_cases</code>.
+     * The table <code>public.spectrum_owid_global_cases</code>.
      */
-    val EXT_OWID_GLOBAL_CASES get() = ExtOwidGlobalCases.EXT_OWID_GLOBAL_CASES
+    val SPECTRUM_OWID_GLOBAL_CASES: SpectrumOwidGlobalCases get() = SpectrumOwidGlobalCases.SPECTRUM_OWID_GLOBAL_CASES
 
     override fun getCatalog(): Catalog = DefaultCatalog.DEFAULT_CATALOG
 
     override fun getTables(): List<Table<*>> = listOf(
-        ExtOwidGlobalCases.EXT_OWID_GLOBAL_CASES
+        SpectrumOwidGlobalCases.SPECTRUM_OWID_GLOBAL_CASES
     )
 }
