@@ -21,7 +21,7 @@
 
                  Whitespace is ignored and comments are possible.
                  -->
-            <includes>spectrum_owid_global_cases</includes>
+            <includes>spectrum_cases</includes>
             <inputSchema>public</inputSchema>
         </database>
 

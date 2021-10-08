@@ -9,7 +9,7 @@ import ch.ethz.covspectrum.util.PangoLineageQueryToSqlLikesConverter
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import org.jooq.Condition
 import org.jooq.Field
-import org.jooq.covspectrum.tables.SpectrumOwidGlobalCases
+import org.jooq.covspectrum.tables.SpectrumCases
 import org.jooq.impl.DSL
 import org.springframework.stereotype.Service
 import java.sql.Connection
@@ -95,13 +95,14 @@ class DatabaseService {
     fun getCases(req: CaseAggregationRequest): CaseAggregationResponse {
         getConnection().use { conn ->
             val ctx = JooqHelper.getDSLCtx(conn)
-            val tbl = SpectrumOwidGlobalCases.SPECTRUM_OWID_GLOBAL_CASES
+            val tbl = SpectrumCases.SPECTRUM_CASES
 
             val fields = req.fields ?: emptyList()
             val groupByFields = fields.map {
                 when (it) {
                     CaseAggregationField.REGION -> tbl.REGION
                     CaseAggregationField.COUNTRY -> tbl.COUNTRY
+                    CaseAggregationField.DIVISION -> tbl.DIVISION
                     CaseAggregationField.DATE -> tbl.DATE
                 }
             }
@@ -110,7 +111,8 @@ class DatabaseService {
             selectFields.add(DSL.sum(tbl.NEW_DEATHS).`as`("new_deaths"))
             val conditions: List<Condition> = listOfNotNull(
                 req.region?.let { tbl.REGION.eq(it) },
-                req.country?.let { tbl.COUNTRY.eq(it) }
+                req.country?.let { tbl.COUNTRY.eq(it) },
+                req.division?.let { tbl.DIVISION.eq(it) }
             )
             val statement = ctx
                 .select(selectFields)
@@ -122,6 +124,7 @@ class DatabaseService {
                 CaseAggregationResponseEntry(
                     if (fields.contains(CaseAggregationField.REGION)) it.get(tbl.REGION) else null,
                     if (fields.contains(CaseAggregationField.COUNTRY)) it.get(tbl.COUNTRY) else null,
+                    if (fields.contains(CaseAggregationField.DIVISION)) it.get(tbl.DIVISION) else null,
                     if (fields.contains(CaseAggregationField.DATE)) it.get(tbl.DATE) else null,
                     it.get("new_cases", Int::class.java),
                     it.get("new_deaths", Int::class.java)

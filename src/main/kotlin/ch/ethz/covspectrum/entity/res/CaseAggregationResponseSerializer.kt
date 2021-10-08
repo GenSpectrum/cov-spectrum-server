@@ -22,6 +22,7 @@ class CaseAggregationResponseSerializer : JsonSerializer<CaseAggregationResponse
                 when (field) {
                     CaseAggregationField.REGION -> gen.writeStringField("region", entry.region)
                     CaseAggregationField.COUNTRY -> gen.writeStringField("country", entry.country)
+                    CaseAggregationField.DIVISION -> gen.writeStringField("division", entry.division)
                     CaseAggregationField.DATE -> gen.writeObjectField("date", entry.date)
                 }
             }
