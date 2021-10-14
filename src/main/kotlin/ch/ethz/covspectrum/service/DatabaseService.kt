@@ -210,7 +210,7 @@ class DatabaseService {
                             RxivArticleResponseEntry(
                                 rs.getString("doi"),
                                 rs.getString("title"),
-                                rs.getString("authors").split("\\|"),
+                                rs.getString("authors").split("|"),
                                 rs.getDate("date").toLocalDate(),
                                 rs.getString("category"),
                                 rs.getString("published"),
