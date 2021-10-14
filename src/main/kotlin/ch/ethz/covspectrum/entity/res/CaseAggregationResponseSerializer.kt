@@ -24,6 +24,10 @@ class CaseAggregationResponseSerializer : JsonSerializer<CaseAggregationResponse
                     CaseAggregationField.COUNTRY -> gen.writeStringField("country", entry.country)
                     CaseAggregationField.DIVISION -> gen.writeStringField("division", entry.division)
                     CaseAggregationField.DATE -> gen.writeObjectField("date", entry.date)
+                    CaseAggregationField.AGE -> gen.writeObjectField("age", entry.age)
+                    CaseAggregationField.SEX -> gen.writeStringField("sex", entry.sex)
+                    CaseAggregationField.HOSPITALIZED -> gen.writeObjectField("hospitalized", entry.hospitalized)
+                    CaseAggregationField.DIED -> gen.writeObjectField("died", entry.died)
                 }
             }
             gen.writeNumberField("newCases", entry.newCases ?: 0)

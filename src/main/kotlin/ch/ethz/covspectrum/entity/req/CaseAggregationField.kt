@@ -4,5 +4,9 @@ enum class CaseAggregationField {
     REGION,
     COUNTRY,
     DIVISION,
-    DATE
+    DATE,
+    AGE,
+    SEX,
+    HOSPITALIZED,
+    DIED
 }

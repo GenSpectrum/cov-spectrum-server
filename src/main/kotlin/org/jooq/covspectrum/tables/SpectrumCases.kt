@@ -10,7 +10,7 @@ import org.jooq.Field
 import org.jooq.ForeignKey
 import org.jooq.Name
 import org.jooq.Record
-import org.jooq.Row6
+import org.jooq.Row10
 import org.jooq.Schema
 import org.jooq.Table
 import org.jooq.TableField
@@ -77,6 +77,26 @@ open class SpectrumCases(
     val DATE: TableField<SpectrumCasesRecord, LocalDate?> = createField(DSL.name("date"), SQLDataType.LOCALDATE, this, "")
 
     /**
+     * The column <code>public.spectrum_cases.age</code>.
+     */
+    val AGE: TableField<SpectrumCasesRecord, Int?> = createField(DSL.name("age"), SQLDataType.INTEGER, this, "")
+
+    /**
+     * The column <code>public.spectrum_cases.sex</code>.
+     */
+    val SEX: TableField<SpectrumCasesRecord, String?> = createField(DSL.name("sex"), SQLDataType.CLOB, this, "")
+
+    /**
+     * The column <code>public.spectrum_cases.hospitalized</code>.
+     */
+    val HOSPITALIZED: TableField<SpectrumCasesRecord, Boolean?> = createField(DSL.name("hospitalized"), SQLDataType.BOOLEAN, this, "")
+
+    /**
+     * The column <code>public.spectrum_cases.died</code>.
+     */
+    val DIED: TableField<SpectrumCasesRecord, Boolean?> = createField(DSL.name("died"), SQLDataType.BOOLEAN, this, "")
+
+    /**
      * The column <code>public.spectrum_cases.new_cases</code>.
      */
     val NEW_CASES: TableField<SpectrumCasesRecord, Long?> = createField(DSL.name("new_cases"), SQLDataType.BIGINT, this, "")
@@ -120,7 +140,7 @@ open class SpectrumCases(
     override fun rename(name: Name): SpectrumCases = SpectrumCases(name, null)
 
     // -------------------------------------------------------------------------
-    // Row6 type methods
+    // Row10 type methods
     // -------------------------------------------------------------------------
-    override fun fieldsRow(): Row6<String?, String?, String?, LocalDate?, Long?, Int?> = super.fieldsRow() as Row6<String?, String?, String?, LocalDate?, Long?, Int?>
+    override fun fieldsRow(): Row10<String?, String?, String?, LocalDate?, Int?, String?, Boolean?, Boolean?, Long?, Int?> = super.fieldsRow() as Row10<String?, String?, String?, LocalDate?, Int?, String?, Boolean?, Boolean?, Long?, Int?>
 }

@@ -104,6 +104,10 @@ class DatabaseService {
                     CaseAggregationField.COUNTRY -> tbl.COUNTRY
                     CaseAggregationField.DIVISION -> tbl.DIVISION
                     CaseAggregationField.DATE -> tbl.DATE
+                    CaseAggregationField.AGE -> tbl.AGE
+                    CaseAggregationField.SEX -> tbl.SEX
+                    CaseAggregationField.HOSPITALIZED -> tbl.HOSPITALIZED
+                    CaseAggregationField.DIED -> tbl.DIED
                 }
             }
             val selectFields: MutableList<Field<*>> = groupByFields.toMutableList()
@@ -126,6 +130,10 @@ class DatabaseService {
                     if (fields.contains(CaseAggregationField.COUNTRY)) it.get(tbl.COUNTRY) else null,
                     if (fields.contains(CaseAggregationField.DIVISION)) it.get(tbl.DIVISION) else null,
                     if (fields.contains(CaseAggregationField.DATE)) it.get(tbl.DATE) else null,
+                    if (fields.contains(CaseAggregationField.AGE)) it.get(tbl.AGE) else null,
+                    if (fields.contains(CaseAggregationField.SEX)) it.get(tbl.SEX) else null,
+                    if (fields.contains(CaseAggregationField.HOSPITALIZED)) it.get(tbl.HOSPITALIZED) else null,
+                    if (fields.contains(CaseAggregationField.DIED)) it.get(tbl.DIED) else null,
                     it.get("new_cases", Int::class.java),
                     it.get("new_deaths", Int::class.java)
                 )

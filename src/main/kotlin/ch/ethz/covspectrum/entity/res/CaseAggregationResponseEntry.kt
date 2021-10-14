@@ -7,6 +7,10 @@ data class CaseAggregationResponseEntry(
     var country: String?,
     var division: String?,
     var date: LocalDate?,
+    var age: Int?,
+    var sex: String?,
+    var hospitalized: Boolean?,
+    var died: Boolean?,
     var newCases: Int?,
     var newDeaths: Int?
 )
