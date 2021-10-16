@@ -5,6 +5,7 @@ import ch.ethz.covspectrum.entity.res.CaseAggregationResponse
 import ch.ethz.covspectrum.entity.res.CountryMappingResponseEntry
 import ch.ethz.covspectrum.entity.res.RxivArticleResponseEntry
 import ch.ethz.covspectrum.service.DatabaseService
+import ch.ethz.covspectrum.util.PangoLineageAlias
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -25,5 +26,10 @@ class VariousController(
     @GetMapping("/resource/article")
     fun getPangoLineageArticles(pangoLineage: String): List<RxivArticleResponseEntry> {
         return databaseService.getPangoLineageArticles(pangoLineage)
+    }
+
+    @GetMapping("/resource/pango-lineage-alias")
+    fun getPangoLineageAliases(): List<PangoLineageAlias> {
+        return databaseService.getPangolinLineageAliases();
     }
 }
