@@ -63,8 +63,7 @@ class DatabaseService {
             select
               cov_spectrum_country,
               cov_spectrum_region,
-              gisaid_country,
-              owid_country
+              gisaid_country
             from spectrum_country_mapping
             where
               cov_spectrum_country is not null
@@ -80,7 +79,6 @@ class DatabaseService {
                             CountryMappingResponseEntry(
                                 rs.getString("cov_spectrum_country"),
                                 rs.getString("gisaid_country"),
-                                rs.getString("owid_country"),
                                 rs.getString("cov_spectrum_region")
                             )
                         )
