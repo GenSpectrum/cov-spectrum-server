@@ -6,6 +6,7 @@ import ch.ethz.covspectrum.entity.res.CountryMappingResponseEntry
 import ch.ethz.covspectrum.entity.res.RxivArticleResponseEntry
 import ch.ethz.covspectrum.service.DatabaseService
 import ch.ethz.covspectrum.util.PangoLineageAlias
+import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -15,7 +16,7 @@ class VariousController(
 ) {
     @GetMapping("/resource/country")
     fun getCountryMapping(): List<CountryMappingResponseEntry> {
-        return databaseService.getCountryMapping();
+        return databaseService.getCountryMapping()
     }
 
     @GetMapping("/resource/case")
@@ -30,6 +31,11 @@ class VariousController(
 
     @GetMapping("/resource/pango-lineage-alias")
     fun getPangoLineageAliases(): List<PangoLineageAlias> {
-        return databaseService.getPangolinLineageAliases();
+        return databaseService.getPangolinLineageAliases()
+    }
+
+    @GetMapping(value = ["/resource/wastewater"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getWastewaterResults(region: String?, country: String?, division: String?): String {
+        return databaseService.getWastewaterResults(region, country, division)
     }
 }

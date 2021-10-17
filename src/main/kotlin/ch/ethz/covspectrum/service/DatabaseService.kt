@@ -231,4 +231,30 @@ class DatabaseService {
         }
     }
 
+    fun getWastewaterResults(region: String?, country: String?, division: String?): String {
+        if (!(region == null || region == "Europe") || country != "Switzerland" || division != null) {
+            return "null"
+        }
+        val sql = """
+            select
+              jsonb_build_object(
+                'data', json_agg(
+                  json_build_object(
+                    'variantName', ww.variant_name,
+                    'location', ww.location,
+                    'data', ww.data
+                  ))
+                ) as data
+            from spectrum_waste_water_result ww;
+        """.trimIndent()
+        getConnection().use { conn ->
+            conn.createStatement().use { statement ->
+                statement.executeQuery(sql).use { rs ->
+                    rs.next()
+                    return rs.getString("data")
+                }
+            }
+        }
+    }
+
 }
