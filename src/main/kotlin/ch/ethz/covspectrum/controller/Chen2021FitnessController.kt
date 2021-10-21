@@ -23,7 +23,7 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 
-const val LAPIS_ENDPOINT = "https://cov-spectrum.ethz.ch/gisaid/api/v0/sample/aggregated";
+const val LAPIS_ENDPOINT = "https://cov-spectrum.ethz.ch/gisaid/api/v1/sample/aggregated";
 const val MODEL_ENDPOINT = "http://cov-spectrum-model-chen2021Fitness:7070/with-prediction";
 //const val MODEL_ENDPOINT = "http://localhost:7070/with-prediction";
 
@@ -62,13 +62,13 @@ class Chen2021FitnessController(
         // We need a mapping from calendar days to t. plotStartDate shall be t=0.
         val t0 = req.plotStartDate
         val variantCountByDate = mutableMapOf<LocalDate, Int>()
-        for (e in variantDataset.payload) {
+        for (e in variantDataset.data) {
             e.date?.let { variantCountByDate.put(it, e.count) }
         }
         val t = mutableListOf<Int>()
         val n = mutableListOf<Int>()
         val k = mutableListOf<Int>()
-        for (e in wholeDataset.payload) {
+        for (e in wholeDataset.data) {
             if (e.date == null) continue
             t.add(ChronoUnit.DAYS.between(t0, e.date).toInt())
             n.add(e.count)
