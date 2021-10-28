@@ -6,9 +6,14 @@ import ch.ethz.covspectrum.entity.res.CountryMappingResponseEntry
 import ch.ethz.covspectrum.entity.res.RxivArticleResponseEntry
 import ch.ethz.covspectrum.service.DatabaseService
 import ch.ethz.covspectrum.util.PangoLineageAlias
+import org.springframework.http.CacheControl
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
+import java.util.concurrent.TimeUnit
+
+val defaultCacheControl = CacheControl.maxAge(12, TimeUnit.HOURS).cachePublic()
 
 @RestController
 class VariousController(
@@ -20,13 +25,19 @@ class VariousController(
     }
 
     @GetMapping("/resource/case")
-    fun getCases(req: CaseAggregationRequest): CaseAggregationResponse {
-        return databaseService.getCases(req)
+    fun getCases(req: CaseAggregationRequest): ResponseEntity<CaseAggregationResponse> {
+        val body = databaseService.getCases(req)
+        return ResponseEntity.ok()
+            .cacheControl(defaultCacheControl)
+            .body(body);
     }
 
     @GetMapping("/resource/article")
-    fun getPangoLineageArticles(pangoLineage: String): List<RxivArticleResponseEntry> {
-        return databaseService.getPangoLineageArticles(pangoLineage)
+    fun getPangoLineageArticles(pangoLineage: String): ResponseEntity<List<RxivArticleResponseEntry>> {
+        val body = databaseService.getPangoLineageArticles(pangoLineage)
+        return ResponseEntity.ok()
+            .cacheControl(defaultCacheControl)
+            .body(body);
     }
 
     @GetMapping("/resource/pango-lineage-alias")
