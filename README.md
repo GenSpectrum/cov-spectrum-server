@@ -1,14 +1,10 @@
 # CoV-Spectrum - Server
 
+This is the server part of [CoV-Spectrum](https://cov-spectrum.ethz.ch). Please use the [repository for the website/frontend](https://github.com/cevo-public/cov-spectrum-website) to report issues with CoV-Spectrum and to see general information about the project.
 
-### Configuration
 
-Set the following environment variables:
+## Developer information
 
-- COV_SPECTRUM_JWT_SECRET: The secret used to sign the JWT tokens.
-- COV_SPECTRUM_JWT_TOKEN_LIFETIME_SECONDS
-- COV_SPECTRUM_HOST
-- COV_SPECTRUM_PORT
-- COV_SPECTRUM_NAME
-- COV_SPECTRUM_USERNAME
-- COV_SPECTRUM_PASSWORD
+The server application is written in Kotlin and uses the Spring Boot framework. It provides a REST-API. The API is documented in [./docs/api.md](./docs/api.md).
+
+Detailed documentation is in the [./docs](./docs) folder. 
