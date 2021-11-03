@@ -1,1 +1,4 @@
-java -cp jooq-3.14.8.jar;jooq-meta-3.14.8.jar;jooq-codegen-3.14.8.jar;reactive-streams-1.0.2.jar;postgresql-42.2.19.jar;jaxb-api-2.4.0-b180830.0359.jar org.jooq.codegen.GenerationTool jooq.xml
+java -cp "jooq-3.15.3.jar;jooq-meta-3.15.3.jar;jooq-codegen-3.15.3.jar;reactive-streams-1.0.3.jar;postgresql-42.2.24.jar;r2dbc-spi-0.9.0.M1.jar;jaxb-api-2.3.1.jar" org.jooq.codegen.GenerationTool jooq.xml
+
+export CLASSPATH=$CLASSPATH:jooq-3.15.3.jar:jooq-meta-3.15.3.jar:jooq-codegen-3.15.3.jar:reactive-streams-1.0.3.jar:postgresql-42.2.24.jar:r2dbc-spi-0.9.0.M1.jar:jaxb-api-2.3.1.jar
+java org.jooq.codegen.GenerationTool jooq.xml
