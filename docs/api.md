@@ -262,6 +262,28 @@ Request params:
 ```
 
 
+## Internal
+
+### User's country
+
+Returns the region and country of the user based on the IP-address.
+
+**Request:**
+
+```
+GET /internal/my-country
+```
+
+**Response:**
+
+```
+{
+  region?: string,
+  country?: string
+}
+```
+
+
 ## Authentication
 
 It is possible to maintain a private area on CoV-Spectrum in which certain data are only provided to authorized users. This is currently not being used, i.e., every feature is public. We implemented the authentication procedure because we had Swiss-only data that were considered as confidential, and we are keeping the authentication in case that we are working with confidential data again.
