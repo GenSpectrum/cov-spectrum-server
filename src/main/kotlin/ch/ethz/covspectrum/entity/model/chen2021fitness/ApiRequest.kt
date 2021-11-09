@@ -5,6 +5,7 @@ import java.time.LocalDate
 data class ApiRequest(
     var region: String?,
     var country: String?,
+    var division: String?,
     var pangoLineage: String?,
     var gisaidClade: String?,
     var nextstrainClade: String?,
