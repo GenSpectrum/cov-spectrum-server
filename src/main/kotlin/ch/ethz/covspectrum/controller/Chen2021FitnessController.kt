@@ -51,6 +51,7 @@ class Chen2021FitnessController(
         req.nextstrainClade?.let { builder = builder.queryParam("nextstrainClade", it) }
         req.aaMutations?.let { builder = builder.queryParam("aaMutations", it) }
         req.nucMutations?.let { builder = builder.queryParam("nucMutations", it) }
+        req.variantQuery?.let { builder = builder.queryParam("variantQuery", it) }
         val variantDatasetUrl = builder.build().toUri()
         val wholeDataset: LapisResponse = restTemplate.getForObject(wholeDatasetUrl)
         val variantDataset: LapisResponse = restTemplate.getForObject(variantDatasetUrl)

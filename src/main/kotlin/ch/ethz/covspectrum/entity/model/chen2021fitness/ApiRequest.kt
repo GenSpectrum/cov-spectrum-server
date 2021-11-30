@@ -11,6 +11,7 @@ data class ApiRequest(
     var nextstrainClade: String?,
     var aaMutations: String?,
     var nucMutations: String?,
+    var variantQuery: String?,
     var alpha: Double = 0.95,
     var generationTime: Double = 4.8,
     var reproductionNumberWildtype: Double = 1.0,
