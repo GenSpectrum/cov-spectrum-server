@@ -45,14 +45,14 @@ class Chen2021FitnessController(
         req.region?.let { builder = builder.queryParam("region", it) }
         req.country?.let { builder = builder.queryParam("country", it) }
         req.division?.let { builder = builder.queryParam("division", it) }
-        val wholeDatasetUrl = builder.build().toUri();
+        val wholeDatasetUrl = builder.build().encode().toUri();
         req.pangoLineage?.let { builder = builder.queryParam("pangoLineage", it) }
         req.gisaidClade?.let { builder = builder.queryParam("gisaidClade", it) }
         req.nextstrainClade?.let { builder = builder.queryParam("nextstrainClade", it) }
         req.aaMutations?.let { builder = builder.queryParam("aaMutations", it) }
         req.nucMutations?.let { builder = builder.queryParam("nucMutations", it) }
         req.variantQuery?.let { builder = builder.queryParam("variantQuery", it) }
-        val variantDatasetUrl = builder.build().toUri()
+        val variantDatasetUrl = builder.build().encode().toUri()
         val wholeDataset: LapisResponse = restTemplate.getForObject(wholeDatasetUrl)
         val variantDataset: LapisResponse = restTemplate.getForObject(variantDatasetUrl)
         check(wholeDataset.errors.isEmpty() && variantDataset.errors.isEmpty())
