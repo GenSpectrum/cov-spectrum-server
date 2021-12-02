@@ -69,6 +69,7 @@ This table stores in the mapping of country names used in different datasets.
 | cov_spectrum_region | text |  | North America |
 | gisaid_country | text | The country name used by GISAID dataset | USA |
 | owid_country | text | The country name used by the OWID cases dataset | United States |
+| iso_alpha_2 | text | The ISO 3166-1 alpha-2 code | US |
 
 #### spectrum_waste_water_result
 
