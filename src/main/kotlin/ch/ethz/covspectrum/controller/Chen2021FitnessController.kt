@@ -23,7 +23,7 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 
-const val LAPIS_ENDPOINT = "https://cov-spectrum.ethz.ch/gisaid/api/v1/sample/aggregated";
+const val LAPIS_ENDPOINT = "https://lapis.cov-spectrum.org/gisaid/v1/sample/aggregated";
 const val MODEL_ENDPOINT = "http://cov-spectrum-model-chen2021Fitness:7070/with-prediction";
 //const val MODEL_ENDPOINT = "http://localhost:7070/with-prediction";
 
