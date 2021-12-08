@@ -45,6 +45,7 @@ class Chen2021FitnessController(
         req.region?.let { builder = builder.queryParam("region", it) }
         req.country?.let { builder = builder.queryParam("country", it) }
         req.division?.let { builder = builder.queryParam("division", it) }
+        req.samplingStrategy?.let { builder = builder.queryParam("samplingStrategy", it) }
         val wholeDatasetUrl = builder.build().encode().toUri();
         req.pangoLineage?.let { builder = builder.queryParam("pangoLineage", it) }
         req.gisaidClade?.let { builder = builder.queryParam("gisaidClade", it) }
