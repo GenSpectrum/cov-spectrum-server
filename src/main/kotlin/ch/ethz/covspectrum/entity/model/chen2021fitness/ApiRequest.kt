@@ -19,5 +19,6 @@ data class ApiRequest(
     var plotStartDate: LocalDate,
     var plotEndDate: LocalDate,
     var initialWildtypeCases: Int = 1000,
-    var initialVariantCases: Int = 100
+    var initialVariantCases: Int = 100,
+    var changePoints: String?
 )

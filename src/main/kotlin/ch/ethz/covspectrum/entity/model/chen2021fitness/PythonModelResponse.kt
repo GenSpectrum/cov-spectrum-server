@@ -7,7 +7,7 @@ data class PythonModelResponse (
     var plot_proportion: PlotProportion
 )
 
-data class ValueWithCI (
+data class PythonValueWithCI (
     var value: Double,
     var ci_lower: Double,
     var ci_upper: Double
@@ -21,10 +21,10 @@ data class Daily (
 )
 
 data class Params (
-    var a: ValueWithCI,
-    var t0: ValueWithCI,
-    var fc: ValueWithCI,
-    var fd: ValueWithCI
+    var a: PythonValueWithCI,
+    var t0: PythonValueWithCI,
+    var fc: PythonValueWithCI,
+    var fd: PythonValueWithCI
 )
 
 data class PlotAbsoluteNumbers (

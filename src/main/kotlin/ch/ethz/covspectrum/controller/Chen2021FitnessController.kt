@@ -20,6 +20,7 @@ import org.springframework.web.client.getForObject
 import org.springframework.web.util.UriComponentsBuilder
 import java.net.URI
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 
@@ -94,6 +95,26 @@ class Chen2021FitnessController(
         val modelRes = restTemplate.postForObject(MODEL_ENDPOINT, modelHttpReq, PythonModelResponse::class.java)
         check(modelRes != null)
 
+        // Calculate the fitness advantage and reproduction numbers for the change points, if requested
+        var changePointResults: List<ChangePointResult>? = null;
+        if (req.changePoints != null) {
+            changePointResults = mutableListOf()
+            req.changePoints!!.split(",").map {
+                val (dateString, r) = it.split(":");
+                modelReq.reproductionNumberWildtype = r.toDouble()
+                val modelReqJson2 = ObjectMapper().writeValueAsString(modelReq)
+                val modelHttpReq2 = HttpEntity(modelReqJson2, headers)
+                val modelRes2 = restTemplate.postForObject(MODEL_ENDPOINT, modelHttpReq2, PythonModelResponse::class.java)
+                check(modelRes2 != null)
+                changePointResults.add(
+                    ChangePointResult(
+                        LocalDate.parse(dateString, DateTimeFormatter.ISO_DATE),
+                        ValueWithCI(modelRes2.params.fc.value, modelRes2.params.fc.ci_lower, modelRes2.params.fc.ci_upper)
+                    )
+                )
+            }
+        }
+
         // Map to the final response object
         return ApiResponse(
             Daily(
@@ -118,7 +139,8 @@ class Chen2021FitnessController(
                 modelRes.plot_proportion.proportion,
                 modelRes.plot_proportion.ci_lower,
                 modelRes.plot_proportion.ci_upper
-            )
+            ),
+            changePointResults
         )
     }
 

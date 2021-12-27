@@ -1,10 +1,12 @@
+import ch.ethz.covspectrum.entity.model.chen2021fitness.ChangePointResult
 import java.time.LocalDate
 
 data class ApiResponse(
     var daily: Daily,
     var params: Params,
     var plotAbsoluteNumbers: PlotAbsoluteNumbers,
-    var plotProportion: PlotProportion
+    var plotProportion: PlotProportion,
+    var changePoints: List<ChangePointResult>?
 )
 
 data class ValueWithCI (
