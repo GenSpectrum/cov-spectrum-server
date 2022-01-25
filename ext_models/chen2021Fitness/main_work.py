@@ -1,23 +1,55 @@
-from typing import Dict
 import dataclasses
 from typing import Dict
 import numpy as np
 from statsmodels.stats.proportion import proportion_confint
-from base_classes import WithPredictionRequest, WithoutPredictionRequest, WithPredictionResult, PlotProportion, PointData
+from base_classes import WithPredictionRequest, WithPredictionResult, PlotProportion, PointData
 import model
 
-def process_with_prediction(request_object: Dict) -> Dict:
+
+def result_to_serializable_dict(result: WithPredictionResult) -> Dict:
+    d = dataclasses.asdict(result)
+    result = {
+        "params": {
+            "a": value_with_ci_to_json_dict(d["params"]["a"]),
+            "t0": value_with_ci_to_json_dict(d["params"]["t0"]),
+            "fc": value_with_ci_to_json_dict(d["params"]["fc"]),
+            "fd": value_with_ci_to_json_dict(d["params"]["fd"])
+        },
+        "estimatedAbsoluteNumbers": {
+            "t": d["plot_absolute_numbers"]["t"].tolist(),
+            "wildtypeCases": d["plot_absolute_numbers"]["wildtype_cases"].tolist(),
+            "variantCases": d["plot_absolute_numbers"]["variant_cases"].tolist()
+        },
+        "estimatedProportions": {
+            "t": d["plot_proportion"]["t"].tolist(),
+            "proportion": d["plot_proportion"]["proportion"].tolist(),
+            "ciLower": d["plot_proportion"]["ci_lower"].tolist(),
+            "ciUpper": d["plot_proportion"]["ci_upper"].tolist()
+        }
+    }
+    return result
+
+
+def value_with_ci_to_json_dict(valueWithCi):
+    return {
+        "value": valueWithCi["value"],
+        "ciLower": valueWithCi["ci_lower"],
+        "ciUpper": valueWithCi["ci_upper"]
+    }
+
+
+def process(request_object: Dict) -> Dict:
     input = WithPredictionRequest(
-        alpha=request_object["alpha"],
-        generation_time=request_object["generationTime"],
-        reproduction_number_wildtype=request_object["reproductionNumberWildtype"],
+        alpha=request_object["config"]["alpha"],
+        generation_time=request_object["config"]["generationTime"],
+        reproduction_number_wildtype=request_object["config"]["reproductionNumberWildtype"],
         data_t=np.array(request_object["data"]["t"]),
         data_n=np.array(request_object["data"]["n"]),
         data_k=np.array(request_object["data"]["k"]),
-        plot_start_t=request_object["plotStartT"],
-        plot_end_t=request_object["plotEndT"],
-        initial_wildtype=request_object["initialWildtype"],
-        initial_variant=request_object["initialVariant"]
+        plot_start_t=request_object["config"]["tStart"],
+        plot_end_t=request_object["config"]["tEnd"],
+        initial_wildtype=request_object["config"]["initialCasesWildtype"],
+        initial_variant=request_object["config"]["initialCasesVariant"]
     )
     growth, fitted_model = model.fit(input.alpha, input.data_t, input.data_k, input.data_n,
                                      input.generation_time, input.reproduction_number_wildtype)
@@ -44,36 +76,3 @@ def process_with_prediction(request_object: Dict) -> Dict:
         )
     )
     return result_to_serializable_dict(result)
-
-
-def process_without_prediction(request_object: Dict) -> Dict:
-    input = WithoutPredictionRequest(
-        alpha=request_object["alpha"],
-        generation_time=request_object["generationTime"],
-        reproduction_number_wildtype=request_object["reproductionNumberWildtype"],
-        data_t=np.array(request_object["data"]["t"]),
-        data_n=np.array(request_object["data"]["n"]),
-        data_k=np.array(request_object["data"]["k"])
-    )
-    growth, fitted_model = model.fit(input.alpha, input.data_t, input.data_k, input.data_n,
-                                     input.generation_time, input.reproduction_number_wildtype)
-    return dataclasses.asdict(growth)
-
-
-def result_to_serializable_dict(result: WithPredictionResult) -> Dict:
-    d = dataclasses.asdict(result)
-    d["plot_absolute_numbers"]["t"] = d["plot_absolute_numbers"]["t"].tolist()
-    d["plot_absolute_numbers"]["wildtype_cases"] = d["plot_absolute_numbers"]["wildtype_cases"].tolist()
-    d["plot_absolute_numbers"]["variant_cases"] = d["plot_absolute_numbers"]["variant_cases"].tolist()
-
-    d["plot_proportion"]["t"] = d["plot_proportion"]["t"].tolist()
-    d["plot_proportion"]["proportion"] = d["plot_proportion"]["proportion"].tolist()
-    d["plot_proportion"]["ci_lower"] = d["plot_proportion"]["ci_lower"].tolist()
-    d["plot_proportion"]["ci_upper"] = d["plot_proportion"]["ci_upper"].tolist()
-
-    d["daily"]["t"] = d["daily"]["t"].tolist()
-    d["daily"]["proportion"] = d["daily"]["proportion"].tolist()
-    d["daily"]["ci_lower"] = d["daily"]["ci_lower"].tolist()
-    d["daily"]["ci_upper"] = d["daily"]["ci_upper"].tolist()
-    return d
-
