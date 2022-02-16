@@ -114,7 +114,9 @@ class DatabaseService {
             val conditions: List<Condition> = listOfNotNull(
                 req.region?.let { tbl.REGION.eq(it) },
                 req.country?.let { tbl.COUNTRY.eq(it) },
-                req.division?.let { tbl.DIVISION.eq(it) }
+                req.division?.let { tbl.DIVISION.eq(it) },
+                req.dateFrom?.let { tbl.DATE.ge(it) },
+                req.dateTo?.let { tbl.DATE.le(it) }
             )
             val statement = ctx
                 .select(selectFields)
