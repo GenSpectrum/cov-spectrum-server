@@ -13,6 +13,9 @@ services:
       - COV_SPECTRUM_NAME=
       - COV_SPECTRUM_USERNAME=
       - COV_SPECTRUM_PASSWORD=
+      - COV_SPECTRUM_GEO_LITE2_DB_PATH=/app/GeoLite2-City.mmdb
+    volumes:
+      - ./GeoLite2-City.mmdb:/app/GeoLite2-City.mmdb
 
   website:
     image: ghcr.io/cevo-public/cov-spectrum-website:public
@@ -20,11 +23,12 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: registry.ethz.ch/sars_cov_2/third-party-containers:nginx
+    image: nginx:stable
     container_name: cov-spectrum-nginx
     depends_on:
       - server
       - website
+      - model-huisman_scire2021re
     restart: unless-stopped
     ports:
       - "8080:80"
@@ -34,6 +38,15 @@ services:
   # External models
 
   model-chen2021Fitness:
-    image: ghcr.io/cevo-public/cov-spectrum-server:model-chen2021Fitness-public
-    container_name: cov-spectrum-model-chen2021Fitness
+    image: ghcr.io/cevo-public/cov-spectrum-chen2021fitness:public
+    container_name: cov-spectrum-chen2021fitness
     restart: unless-stopped
+    ports:
+      - "7070:7070"
+
+  model-huisman_scire2021re:
+    image: ghcr.io/cevo-public/cov-spectrum-huisman_scire2021re:public
+    restart: unless-stopped
+    deploy:
+      mode: replicated
+      replicas: 4

@@ -1,6 +1,8 @@
 # Database
 
-The CoV-Spectrum server retrieves its data from a PostgreSQL database (version 12+). It only reads from the database and does not write. In following, we show the *logical tables* that the server requires. The *logical tables* can be implemented as actual tables, or as views or materialized views. In [./our-data-sources.md](./our-data-sources.md), you can find the data sources that we use to populate the database. It is however possible to populate the database in another way as long as the data has the correct format.
+The CoV-Spectrum server retrieves its data from a PostgreSQL database (version 12+). It mostly reads from the database. In following, we show the *logical tables* that the server requires. The *logical tables* can be implemented as actual tables, or as views or materialized views. In [./our-data-sources.md](./our-data-sources.md), you can find the data sources that we use to populate the database. It is however possible to populate the database in another way as long as the data has the correct format.
+
+The only exception is the table "spectrum_huisman_scire_2021_re". The server needs to write to that table.
 
 ## Tables
 
@@ -70,6 +72,20 @@ This table stores in the mapping of country names used in different datasets.
 | gisaid_country | text | The country name used by GISAID dataset | USA |
 | owid_country | text | The country name used by the OWID cases dataset | United States |
 | iso_alpha_2 | text | The ISO 3166-1 alpha-2 code | US |
+
+#### spectrum_huisman_scire_2021_re
+
+This table stores the Re results calculated by the huismanScire2021Re model.
+
+| Column name      | Type      | Description                                        | Example value                                                    |
+|------------------|-----------|----------------------------------------------------|------------------------------------------------------------------|
+| key              | text      | The (SHA-256) hash of the request                  | BEA43BB0C1D53686CAA40473F2E857676FCAAFCDD9D102BA4CAB75C2ED15BDA8 |
+| calculation_date | timestamp | The date/time when the result was calculated       |                                                                  |
+| request          | text      | The request body (JSON) as needed by the model API |                                                                  |
+| success          | boolean   | Whether the calculation was successful             |                                                                  |
+| result           | text      | The result (JSON) as returned by the model API     |                                                                  |
+
+"key" should be the primary key. The server needs write-access for the table.
 
 #### spectrum_waste_water_result
 
