@@ -233,6 +233,7 @@ class DatabaseService {
         }
     }
 
+
     fun getWastewaterResults(region: String?, country: String?, division: String?): String {
         if (!(region == null || region == "Europe") || country != "Switzerland" || division != null) {
             return "null"
@@ -255,6 +256,46 @@ class DatabaseService {
                     rs.next()
                     return rs.getString("data")
                 }
+            }
+        }
+    }
+
+
+    fun getHuismanScire2021ReResult(key: String): Pair<Boolean, String?>? {
+        val sql = """
+            select r.success, r.result
+            from spectrum_huisman_scire_2021_re r
+            where r.key = ?;
+        """.trimIndent()
+        getConnection().use { conn ->
+            conn.prepareStatement(sql).use { statement ->
+                statement.setString(1, key)
+                statement.executeQuery().use { rs ->
+                    if (rs.next()) {
+                        return Pair(
+                            rs.getBoolean("success"),
+                            rs.getString("result")
+                        )
+                    }
+                    return null
+                }
+            }
+        }
+    }
+
+
+    fun insertHuismanScire2021ReResult(key: String, request: String, success: Boolean, result: String?) {
+        val sql = """
+            insert into spectrum_huisman_scire_2021_re (key, calculation_date, request, success, result)
+            values (?, now(), ?, ?, ?);
+        """.trimIndent()
+        getConnection().use { conn ->
+            conn.prepareStatement(sql).use { statement ->
+                statement.setString(1, key)
+                statement.setString(2, request)
+                statement.setBoolean(3, success)
+                statement.setString(4, result)
+                statement.execute()
             }
         }
     }
