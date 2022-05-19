@@ -77,13 +77,14 @@ This table stores in the mapping of country names used in different datasets.
 
 This table stores the Re results calculated by the huismanScire2021Re model.
 
-| Column name      | Type      | Description                                        | Example value                                                    |
-|------------------|-----------|----------------------------------------------------|------------------------------------------------------------------|
+| Column name      | Type      | Description                                        | Example value                                                   |
+|------------------|-----------|----------------------------------------------------|-----------------------------------------------------------------|
 | key              | text      | The (SHA-256) hash of the request                  | BEA43BB0C1D53686CAA40473F2E857676FCAAFCDD9D102BA4CAB75C2ED15BDA8 |
-| calculation_date | timestamp | The date/time when the result was calculated       |                                                                  |
-| request          | text      | The request body (JSON) as needed by the model API |                                                                  |
-| success          | boolean   | Whether the calculation was successful             |                                                                  |
-| result           | text      | The result (JSON) as returned by the model API     |                                                                  |
+| calculation_date | timestamp | The date/time when the result was calculated       |                                                                 |
+| calculation_duration_seconds  | integer   | The duration of the calculation       |                                                                 |
+| request          | text      | The request body (JSON) as needed by the model API |                                                                 |
+| success          | boolean   | Whether the calculation was successful             |                                                                 |
+| result           | text      | The result (JSON) as returned by the model API     |                                                                 |
 
 "key" should be the primary key. The server needs write-access for the table.
 
