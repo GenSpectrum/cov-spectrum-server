@@ -28,6 +28,7 @@ services:
     depends_on:
       - server
       - website
+      - model-huisman_scire2021re
     restart: unless-stopped
     ports:
       - "8080:80"
@@ -42,3 +43,10 @@ services:
     restart: unless-stopped
     ports:
       - "7070:7070"
+
+  model-huisman_scire2021re:
+    image: ghcr.io/cevo-public/cov-spectrum-huisman_scire2021re:public
+    restart: unless-stopped
+    deploy:
+      mode: replicated
+      replicas: 4
