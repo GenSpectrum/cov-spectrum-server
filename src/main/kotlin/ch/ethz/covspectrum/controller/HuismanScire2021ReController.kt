@@ -18,7 +18,7 @@ import kotlin.concurrent.thread
 
 val currentCalculations = ConcurrentHashMap<String, Boolean>() // We store the hash in the key and ignore the value
 const val MAX_PARALLEL_CALCULATIONS = 8
-const val URL = "http://localhost:8080/model-huisman_scire2021re/get-re"
+const val URL = "http://cov-spectrum-nginx:80/model-huisman_scire2021re/get-re"
 
 @RestController
 @RequestMapping("/computed/model/huismanScire2021Re")
