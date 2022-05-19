@@ -64,6 +64,7 @@ class HuismanScire2021ReController(
         // Otherwise, initiate calculation
         currentCalculations[hash] = true
         thread {
+            val startTime = System.currentTimeMillis();
             try {
                 val headers = HttpHeaders()
                 headers.contentType = MediaType.APPLICATION_JSON;
@@ -71,9 +72,11 @@ class HuismanScire2021ReController(
                 val result = restTemplate.postForObject(URL, modelHttpReq, String::class.java)
 
                 // Store the calculated result
-                databaseService.insertHuismanScire2021ReResult(hash, body, true, result)
+                val duration = (System.currentTimeMillis() - startTime).toInt() / 1000
+                databaseService.insertHuismanScire2021ReResult(hash, duration, body, true, result)
             } catch (e: Exception) {
-                databaseService.insertHuismanScire2021ReResult(hash, body, false, null)
+                val duration = (System.currentTimeMillis() - startTime).toInt() / 1000
+                databaseService.insertHuismanScire2021ReResult(hash, duration, body, false, null)
             } finally {
                 currentCalculations.remove(hash)
             }

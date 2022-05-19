@@ -284,17 +284,24 @@ class DatabaseService {
     }
 
 
-    fun insertHuismanScire2021ReResult(key: String, request: String, success: Boolean, result: String?) {
+    fun insertHuismanScire2021ReResult(
+        key: String,
+        calculationDurationSeconds: Int,
+        request: String,
+        success: Boolean,
+        result: String?
+    ) {
         val sql = """
-            insert into spectrum_huisman_scire_2021_re (key, calculation_date, request, success, result)
-            values (?, now(), ?, ?, ?);
+            insert into spectrum_huisman_scire_2021_re (key, calculation_date, calculation_duration_seconds, request, success, result)
+            values (?, now(), ?, ?, ?, ?);
         """.trimIndent()
         getConnection().use { conn ->
             conn.prepareStatement(sql).use { statement ->
                 statement.setString(1, key)
-                statement.setString(2, request)
-                statement.setBoolean(3, success)
-                statement.setString(4, result)
+                statement.setInt(2, calculationDurationSeconds)
+                statement.setString(3, request)
+                statement.setBoolean(4, success)
+                statement.setString(5, result)
                 statement.execute()
             }
         }
