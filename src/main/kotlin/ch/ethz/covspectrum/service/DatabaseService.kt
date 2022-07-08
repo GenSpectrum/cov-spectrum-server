@@ -1,5 +1,7 @@
 package ch.ethz.covspectrum.service
 
+import ch.ethz.covspectrum.entity.SpectrumCollection
+import ch.ethz.covspectrum.entity.SpectrumCollectionVariant
 import ch.ethz.covspectrum.entity.req.CaseAggregationField
 import ch.ethz.covspectrum.entity.req.CaseAggregationRequest
 import ch.ethz.covspectrum.entity.res.*
@@ -28,7 +30,7 @@ private val pool: ComboPooledDataSource = ComboPooledDataSource().apply {
 class DatabaseService {
 
     private val pangoLineageQueryToSqlLikesConverter = PangoLineageQueryToSqlLikesConverter(getPangolinLineageAliases())
-
+    private val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 
     fun getConnection(): Connection {
         return pool.connection
@@ -307,4 +309,156 @@ class DatabaseService {
         }
     }
 
+
+    fun getCollections(): List<SpectrumCollection> {
+        val sql1 = """
+            select id, title, description, maintainers, email
+            from spectrum_collection;
+        """.trimIndent()
+        val sql2 = """
+            select collection_id, query, name, description
+            from spectrum_collection_variant;
+        """.trimIndent()
+        val collections = HashMap<Int, SpectrumCollection>();
+        getConnection().use { conn ->
+            conn.createStatement().use { statement ->
+                statement.executeQuery(sql1).use { rs ->
+                    while (rs.next()) {
+                        collections[rs.getInt("id")] = SpectrumCollection(
+                            rs.getInt("id"),
+                            rs.getString("title"),
+                            rs.getString("description"),
+                            rs.getString("maintainers"),
+                            rs.getString("email"),
+                            mutableListOf()
+                        )
+                    }
+                }
+            }
+            conn.createStatement().use { statement ->
+                statement.executeQuery(sql2).use { rs ->
+                    while (rs.next()) {
+                        collections[rs.getInt("collection_id")]!!.variants.add(
+                            SpectrumCollectionVariant(
+                                rs.getString("query"),
+                                rs.getString("name"),
+                                rs.getString("description")
+                            )
+                        )
+                    }
+                }
+            }
+        }
+        return collections.values.toList();
+    }
+
+
+    fun validateCollectionAdminKey(id: Int, adminKey: String): Boolean? {
+        val sql = """
+            select admin_key
+            from spectrum_collection
+            where id = ?;
+        """.trimIndent()
+        getConnection().use { conn ->
+            conn.prepareStatement(sql).use { statement ->
+                statement.setInt(1, id)
+                statement.executeQuery().use { rs ->
+                    if (!rs.next()) {
+                        return null
+                    }
+                    return rs.getString("admin_key") == adminKey
+                }
+            }
+        }
+    }
+
+
+    fun insertCollection(collection: SpectrumCollection): Pair<Int, String> {
+        val sql1 = """
+            insert into spectrum_collection (title, description, maintainers, email, admin_key)
+            values (?, ?, ?, ?, ?)
+            returning id;
+        """.trimIndent()
+        val sql2 = """
+            insert into spectrum_collection_variant (collection_id, query, name, description)
+            values (?, ?, ?, ?);
+        """.trimIndent()
+        // Not the safest random generator but should be good enough for our use case
+        val adminKey = (1..21)
+            .map { i -> kotlin.random.Random.nextInt(0, charPool.size) }
+            .map(charPool::get)
+            .joinToString("")
+        var id: Int
+        getConnection().use { conn ->
+            conn.autoCommit = false
+            conn.prepareStatement(sql1).use { statement ->
+                statement.setString(1, collection.title)
+                statement.setString(2, collection.description)
+                statement.setString(3, collection.maintainers)
+                statement.setString(4, collection.email)
+                statement.setString(5, adminKey)
+                statement.executeQuery().use { rs ->
+                    rs.next()
+                    id = rs.getInt(1)
+                }
+            }
+            conn.prepareStatement(sql2).use { statement ->
+                for (variant in collection.variants) {
+                    statement.setInt(1, id)
+                    statement.setString(2, variant.query)
+                    statement.setString(3, variant.name)
+                    statement.setString(4, variant.description)
+                    statement.execute()
+                }
+            }
+            conn.commit()
+            conn.autoCommit = true
+        }
+        return Pair(id, adminKey)
+    }
+
+
+    fun updateCollection(collection: SpectrumCollection, adminKey: String) {
+        val id = collection.id
+        check(id != null)
+        val sql0 = """
+            delete from spectrum_collection
+            where id = ?;
+        """.trimIndent()
+        val sql1 = """
+            insert into spectrum_collection (id, title, description, maintainers, email, admin_key)
+            values (?, ?, ?, ?, ?, ?);
+        """.trimIndent()
+        val sql2 = """
+            insert into spectrum_collection_variant (collection_id, query, name, description)
+            values (?, ?, ?, ?);
+        """.trimIndent()
+        getConnection().use { conn ->
+            conn.autoCommit = false
+            conn.prepareStatement(sql0).use { statement ->
+                statement.setInt(1, id)
+                statement.execute()
+            }
+            conn.prepareStatement(sql1).use { statement ->
+                statement.setInt(1, id)
+                statement.setString(2, collection.title)
+                statement.setString(3, collection.description)
+                statement.setString(4, collection.maintainers)
+                statement.setString(5, collection.email)
+                statement.setString(6, adminKey)
+                statement.execute()
+            }
+            conn.prepareStatement(sql2).use { statement ->
+                for (variant in collection.variants) {
+                    statement.setInt(1, id)
+                    statement.setString(2, variant.query)
+                    statement.setString(3, variant.name)
+                    statement.setString(4, variant.description)
+                    statement.execute()
+                }
+            }
+            conn.commit()
+            conn.autoCommit = true
+        }
+    }
 }
