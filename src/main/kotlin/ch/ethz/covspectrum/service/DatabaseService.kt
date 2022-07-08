@@ -146,7 +146,7 @@ class DatabaseService {
     fun getReferenceGenome(): String {
         val sql = """
             select seq
-            from consensus_sequence
+            from backup_220530_consensus_sequence
             where sample_name = 'REFERENCE_GENOME';
         """.trimIndent()
         getConnection().use { conn ->
