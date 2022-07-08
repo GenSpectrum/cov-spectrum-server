@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/collection")
+@RequestMapping("/resource/collection")
 class CollectionController(
     private val databaseService: DatabaseService
 ) {
