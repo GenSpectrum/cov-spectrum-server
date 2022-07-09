@@ -45,4 +45,38 @@ class CollectionController(
         databaseService.updateCollection(collection, adminKey)
         return ResponseEntity(HttpStatus.OK)
     }
+
+    @DeleteMapping("/{id}")
+    fun deleteCollection(
+        @PathVariable id: Int,
+        adminKey: String?
+    ): ResponseEntity<Void> {
+        if (adminKey == null) {
+            return ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+        val keyValid = databaseService.validateCollectionAdminKey(id, adminKey)
+        if (keyValid == null) {
+            return ResponseEntity(HttpStatus.NOT_FOUND)
+        } else if (!keyValid) {
+            return ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+
+        databaseService.deleteCollection(id)
+        return ResponseEntity(HttpStatus.OK)
+    }
+
+    @PostMapping("/{id}/validate-admin-key")
+    fun validateAdminKey(
+        @PathVariable id: Int,
+        @RequestBody adminKey: String?
+    ): ResponseEntity<Boolean> {
+        if (adminKey == null) {
+            return ResponseEntity.ok().body(false)
+        }
+        val keyValid = databaseService.validateCollectionAdminKey(id, adminKey)
+        if (keyValid == null) {
+            return ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+        return ResponseEntity.ok().body(keyValid)
+    }
 }

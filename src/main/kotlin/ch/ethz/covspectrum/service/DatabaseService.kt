@@ -15,6 +15,7 @@ import org.jooq.covspectrum.tables.SpectrumCases
 import org.jooq.impl.DSL
 import org.springframework.stereotype.Service
 import java.sql.Connection
+import java.sql.Timestamp
 
 
 private val pool: ComboPooledDataSource = ComboPooledDataSource().apply {
@@ -375,8 +376,16 @@ class DatabaseService {
 
     fun insertCollection(collection: SpectrumCollection): Pair<Int, String> {
         val sql1 = """
-            insert into spectrum_collection (title, description, maintainers, email, admin_key)
-            values (?, ?, ?, ?, ?)
+            insert into spectrum_collection (
+              creation_date,
+              last_update_date,
+              title,
+              description,
+              maintainers,
+              email,
+              admin_key
+            )
+            values (now(), now(), ?, ?, ?, ?, ?)
             returning id;
         """.trimIndent()
         val sql2 = """
@@ -423,29 +432,44 @@ class DatabaseService {
         check(id != null)
         val sql0 = """
             delete from spectrum_collection
-            where id = ?;
+            where id = ?
+            returning creation_date;
         """.trimIndent()
         val sql1 = """
-            insert into spectrum_collection (id, title, description, maintainers, email, admin_key)
-            values (?, ?, ?, ?, ?, ?);
+            insert into spectrum_collection (
+              id,
+              creation_date,
+              last_update_date,
+              title,
+              description,
+              maintainers,
+              email,
+              admin_key
+            )
+            values (?, ?, now(), ?, ?, ?, ?, ?);
         """.trimIndent()
         val sql2 = """
             insert into spectrum_collection_variant (collection_id, query, name, description)
             values (?, ?, ?, ?);
         """.trimIndent()
+        var creationDate: Timestamp
         getConnection().use { conn ->
             conn.autoCommit = false
             conn.prepareStatement(sql0).use { statement ->
                 statement.setInt(1, id)
-                statement.execute()
+                statement.executeQuery().use { rs ->
+                    check(rs.next())
+                    creationDate = rs.getTimestamp(1)
+                }
             }
             conn.prepareStatement(sql1).use { statement ->
                 statement.setInt(1, id)
-                statement.setString(2, collection.title)
-                statement.setString(3, collection.description)
-                statement.setString(4, collection.maintainers)
-                statement.setString(5, collection.email)
-                statement.setString(6, adminKey)
+                statement.setTimestamp(2, creationDate)
+                statement.setString(3, collection.title)
+                statement.setString(4, collection.description)
+                statement.setString(5, collection.maintainers)
+                statement.setString(6, collection.email)
+                statement.setString(7, adminKey)
                 statement.execute()
             }
             conn.prepareStatement(sql2).use { statement ->
@@ -459,6 +483,19 @@ class DatabaseService {
             }
             conn.commit()
             conn.autoCommit = true
+        }
+    }
+
+    fun deleteCollection(id: Int) {
+        val sql0 = """
+            delete from spectrum_collection
+            where id = ?;
+        """.trimIndent()
+        getConnection().use { conn ->
+            conn.prepareStatement(sql0).use { statement ->
+                statement.setInt(1, id)
+                statement.execute()
+            }
         }
     }
 }
