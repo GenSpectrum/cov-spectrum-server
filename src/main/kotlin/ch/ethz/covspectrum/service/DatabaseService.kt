@@ -317,7 +317,7 @@ class DatabaseService {
             from spectrum_collection;
         """.trimIndent()
         val sql2 = """
-            select collection_id, query, name, description
+            select collection_id, query, name, description, highlighted
             from spectrum_collection_variant;
         """.trimIndent()
         val collections = HashMap<Int, SpectrumCollection>();
@@ -343,7 +343,8 @@ class DatabaseService {
                             SpectrumCollectionVariant(
                                 rs.getString("query"),
                                 rs.getString("name"),
-                                rs.getString("description")
+                                rs.getString("description"),
+                                rs.getBoolean("highlighted")
                             )
                         )
                     }
@@ -389,8 +390,8 @@ class DatabaseService {
             returning id;
         """.trimIndent()
         val sql2 = """
-            insert into spectrum_collection_variant (collection_id, query, name, description)
-            values (?, ?, ?, ?);
+            insert into spectrum_collection_variant (collection_id, query, name, description, highlighted)
+            values (?, ?, ?, ?, ?);
         """.trimIndent()
         // Not the safest random generator but should be good enough for our use case
         val adminKey = (1..21)
@@ -417,6 +418,7 @@ class DatabaseService {
                     statement.setString(2, variant.query)
                     statement.setString(3, variant.name)
                     statement.setString(4, variant.description)
+                    statement.setBoolean(5, variant.highlighted)
                     statement.execute()
                 }
             }
@@ -449,8 +451,8 @@ class DatabaseService {
             values (?, ?, now(), ?, ?, ?, ?, ?);
         """.trimIndent()
         val sql2 = """
-            insert into spectrum_collection_variant (collection_id, query, name, description)
-            values (?, ?, ?, ?);
+            insert into spectrum_collection_variant (collection_id, query, name, description, highlighted)
+            values (?, ?, ?, ?, ?);
         """.trimIndent()
         var creationDate: Timestamp
         getConnection().use { conn ->
@@ -478,6 +480,7 @@ class DatabaseService {
                     statement.setString(2, variant.query)
                     statement.setString(3, variant.name)
                     statement.setString(4, variant.description)
+                    statement.setBoolean(5, variant.highlighted)
                     statement.execute()
                 }
             }
