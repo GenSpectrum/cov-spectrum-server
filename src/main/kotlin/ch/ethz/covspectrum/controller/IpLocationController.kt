@@ -52,7 +52,7 @@ class IpLocationController(
               iso_alpha_2,
               cov_spectrum_country,
               cov_spectrum_region
-            from spectrum_country_mapping
+            from country_mapping
             where cov_spectrum_country is not null and iso_alpha_2 is not null;
         """.trimIndent()
         databaseService.getConnection().use { conn ->

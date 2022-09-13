@@ -59,7 +59,7 @@ class DatabaseService {
             select
               alias,
               full_name
-            from pangolin_lineage_alias;
+            from pango_lineage_alias;
         """.trimIndent()
         getConnection().use { conn ->
             conn.createStatement().use { statement ->
@@ -83,7 +83,7 @@ class DatabaseService {
               cov_spectrum_country,
               cov_spectrum_region,
               gisaid_country
-            from spectrum_country_mapping
+            from country_mapping
             where
               cov_spectrum_country is not null
               and cov_spectrum_region is not null
@@ -161,8 +161,8 @@ class DatabaseService {
     fun getReferenceGenome(): String {
         val sql = """
             select seq
-            from backup_220530_consensus_sequence
-            where sample_name = 'REFERENCE_GENOME';
+            from reference_genome
+            where name = 'REFERENCE_GENOME';
         """.trimIndent()
         getConnection().use { conn ->
             conn.createStatement().use { statement ->
@@ -216,7 +216,7 @@ class DatabaseService {
                     'data', ww.data
                   ))
                 ) as data
-            from spectrum_waste_water_result ww;
+            from wastewater_result ww;
         """.trimIndent()
         getConnection().use { conn ->
             conn.createStatement().use { statement ->
@@ -232,7 +232,7 @@ class DatabaseService {
     fun getHuismanScire2021ReResult(key: String): Pair<Boolean, String?>? {
         val sql = """
             select r.success, r.result
-            from spectrum_huisman_scire_2021_re r
+            from model_huisman_scire_2021_re r
             where r.key = ?;
         """.trimIndent()
         getConnection().use { conn ->
@@ -260,7 +260,7 @@ class DatabaseService {
         result: String?
     ) {
         val sql = """
-            insert into spectrum_huisman_scire_2021_re (key, calculation_date, calculation_duration_seconds, request, success, result)
+            insert into model_huisman_scire_2021_re (key, calculation_date, calculation_duration_seconds, request, success, result)
             values (?, now(), ?, ?, ?, ?);
         """.trimIndent()
         getConnection().use { conn ->
@@ -279,11 +279,11 @@ class DatabaseService {
     fun getCollections(): List<SpectrumCollection> {
         val sql1 = """
             select id, title, description, maintainers, email
-            from spectrum_collection;
+            from collection;
         """.trimIndent()
         val sql2 = """
             select collection_id, query, name, description, highlighted
-            from spectrum_collection_variant;
+            from collection_variant;
         """.trimIndent()
         val collections = HashMap<Int, SpectrumCollection>();
         getConnection().use { conn ->
@@ -323,7 +323,7 @@ class DatabaseService {
     fun validateCollectionAdminKey(id: Int, adminKey: String): Boolean? {
         val sql = """
             select admin_key
-            from spectrum_collection
+            from collection
             where id = ?;
         """.trimIndent()
         getConnection().use { conn ->
@@ -342,7 +342,7 @@ class DatabaseService {
 
     fun insertCollection(collection: SpectrumCollection): Pair<Int, String> {
         val sql1 = """
-            insert into spectrum_collection (
+            insert into collection (
               creation_date,
               last_update_date,
               title,
@@ -355,7 +355,7 @@ class DatabaseService {
             returning id;
         """.trimIndent()
         val sql2 = """
-            insert into spectrum_collection_variant (collection_id, query, name, description, highlighted)
+            insert into collection_variant (collection_id, query, name, description, highlighted)
             values (?, ?, ?, ?, ?);
         """.trimIndent()
         // Not the safest random generator but should be good enough for our use case
@@ -398,12 +398,12 @@ class DatabaseService {
         val id = collection.id
         check(id != null)
         val sql0 = """
-            delete from spectrum_collection
+            delete from collection
             where id = ?
             returning creation_date;
         """.trimIndent()
         val sql1 = """
-            insert into spectrum_collection (
+            insert into collection (
               id,
               creation_date,
               last_update_date,
@@ -416,7 +416,7 @@ class DatabaseService {
             values (?, ?, now(), ?, ?, ?, ?, ?);
         """.trimIndent()
         val sql2 = """
-            insert into spectrum_collection_variant (collection_id, query, name, description, highlighted)
+            insert into collection_variant (collection_id, query, name, description, highlighted)
             values (?, ?, ?, ?, ?);
         """.trimIndent()
         var creationDate: Timestamp
@@ -456,7 +456,7 @@ class DatabaseService {
 
     fun deleteCollection(id: Int) {
         val sql0 = """
-            delete from spectrum_collection
+            delete from collection
             where id = ?;
         """.trimIndent()
         getConnection().use { conn ->
