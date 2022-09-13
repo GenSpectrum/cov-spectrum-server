@@ -20,12 +20,25 @@ import java.sql.Connection
 import java.sql.Timestamp
 
 
+fun getDbJdbcUrl(): String {
+    return "jdbc:postgresql://" + System.getenv("COV_SPECTRUM_DB_HOST") + ":" +
+        System.getenv("COV_SPECTRUM_DB_PORT") + "/" + System.getenv("COV_SPECTRUM_DB_NAME")
+}
+
+fun getDbUser(): String {
+    return System.getenv("COV_SPECTRUM_DB_USERNAME")
+}
+
+fun getDbPassword(): String {
+    return System.getenv("COV_SPECTRUM_DB_PASSWORD")
+}
+
+
 private val pool: ComboPooledDataSource = ComboPooledDataSource().apply {
     driverClass = "org.postgresql.Driver"
-    jdbcUrl = "jdbc:postgresql://" + System.getenv("COV_SPECTRUM_DB_HOST") + ":" +
-        System.getenv("COV_SPECTRUM_DB_PORT") + "/" + System.getenv("COV_SPECTRUM_DB_NAME")
-    user = System.getenv("COV_SPECTRUM_DB_USERNAME")
-    password = System.getenv("COV_SPECTRUM_DB_PASSWORD")
+    jdbcUrl = getDbJdbcUrl()
+    user = getDbUser()
+    password = getDbPassword()
 }
 
 

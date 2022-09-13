@@ -25,7 +25,8 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-    implementation("org.postgresql:postgresql:42.2.24")
+    implementation("org.postgresql:postgresql:42.5.0")
+    implementation("org.flywaydb:flyway-core:9.3.0")
     implementation("com.mchange:c3p0:0.9.5.5")
     implementation("org.jooq:jooq:3.15.3")
     implementation("com.maxmind.geoip2:geoip2:2.15.0")
