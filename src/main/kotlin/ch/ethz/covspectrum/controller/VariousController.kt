@@ -3,7 +3,6 @@ package ch.ethz.covspectrum.controller
 import ch.ethz.covspectrum.entity.req.CaseAggregationRequest
 import ch.ethz.covspectrum.entity.res.CaseAggregationResponse
 import ch.ethz.covspectrum.entity.res.CountryMappingResponseEntry
-import ch.ethz.covspectrum.entity.res.RxivArticleResponseEntry
 import ch.ethz.covspectrum.service.DatabaseService
 import ch.ethz.covspectrum.util.PangoLineageAlias
 import org.springframework.http.CacheControl
@@ -27,14 +26,6 @@ class VariousController(
     @GetMapping("/resource/case")
     fun getCases(req: CaseAggregationRequest): ResponseEntity<CaseAggregationResponse> {
         val body = databaseService.getCases(req)
-        return ResponseEntity.ok()
-            .cacheControl(defaultCacheControl)
-            .body(body);
-    }
-
-    @GetMapping("/resource/article")
-    fun getPangoLineageArticles(pangoLineage: String): ResponseEntity<List<RxivArticleResponseEntry>> {
-        val body = databaseService.getPangoLineageArticles(pangoLineage)
         return ResponseEntity.ok()
             .cacheControl(defaultCacheControl)
             .body(body);

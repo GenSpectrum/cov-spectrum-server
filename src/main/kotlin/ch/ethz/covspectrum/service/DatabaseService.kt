@@ -4,10 +4,12 @@ import ch.ethz.covspectrum.entity.SpectrumCollection
 import ch.ethz.covspectrum.entity.SpectrumCollectionVariant
 import ch.ethz.covspectrum.entity.req.CaseAggregationField
 import ch.ethz.covspectrum.entity.req.CaseAggregationRequest
-import ch.ethz.covspectrum.entity.res.*
+import ch.ethz.covspectrum.entity.res.CaseAggregationResponse
+import ch.ethz.covspectrum.entity.res.CaseAggregationResponseEntry
+import ch.ethz.covspectrum.entity.res.CountryMappingResponseEntry
+import ch.ethz.covspectrum.entity.res.Gene
 import ch.ethz.covspectrum.util.JooqHelper
 import ch.ethz.covspectrum.util.PangoLineageAlias
-import ch.ethz.covspectrum.util.PangoLineageQueryToSqlLikesConverter
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import org.jooq.Condition
 import org.jooq.Field
@@ -30,7 +32,6 @@ private val pool: ComboPooledDataSource = ComboPooledDataSource().apply {
 @Service
 class DatabaseService {
 
-    private val pangoLineageQueryToSqlLikesConverter = PangoLineageQueryToSqlLikesConverter(getPangolinLineageAliases())
     private val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 
     fun getConnection(): Connection {
@@ -184,53 +185,6 @@ class DatabaseService {
                         )
                     }
                     return genes;
-                }
-            }
-        }
-    }
-
-
-    fun getPangoLineageArticles(pangoLineageQuery: String): List<RxivArticleResponseEntry> {
-        val sql = """
-            select
-              rar.doi,
-              rar.title,
-              string_agg(rau.name, '|' order by rara.position) as authors,
-              rar.date,
-              rar.category,
-              rar.published,
-              rar.server,
-              rar.abstract
-            from
-              pangolin_lineage__rxiv_article plrar
-              join rxiv_article rar on plrar.doi = rar.doi
-              left join rxiv_article__rxiv_author rara on rar.doi = rara.doi
-              join rxiv_author rau on rara.author_id = rau.id
-            where plrar.pangolin_lineage like any(?)
-            group by rar.doi, rar.date
-            order by rar.date desc;
-        """.trimIndent()
-        getConnection().use { conn ->
-            conn.prepareStatement(sql).use { statement ->
-                val pangoLineageSqlLikes = pangoLineageQueryToSqlLikesConverter.convert(pangoLineageQuery)
-                statement.setArray(1, conn.createArrayOf("text", pangoLineageSqlLikes.toTypedArray()))
-                statement.executeQuery().use { rs ->
-                    val articles: MutableList<RxivArticleResponseEntry> = mutableListOf()
-                    while (rs.next()) {
-                        articles.add(
-                            RxivArticleResponseEntry(
-                                rs.getString("doi"),
-                                rs.getString("title"),
-                                rs.getString("authors").split("|"),
-                                rs.getDate("date").toLocalDate(),
-                                rs.getString("category"),
-                                rs.getString("published"),
-                                rs.getString("server"),
-                                rs.getString("abstract")
-                            )
-                        )
-                    }
-                    return articles
                 }
             }
         }
