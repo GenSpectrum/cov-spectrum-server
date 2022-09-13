@@ -13,7 +13,9 @@ import ch.ethz.covspectrum.util.PangoLineageAlias
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import org.jooq.Condition
 import org.jooq.Field
-import org.jooq.covspectrum.tables.SpectrumCases
+import org.jooq.TableField
+import org.jooq.covspectrum.tables.Cases
+import org.jooq.covspectrum.tables.records.CasesRecord
 import org.jooq.impl.DSL
 import org.springframework.stereotype.Service
 import java.sql.Connection
@@ -110,20 +112,16 @@ class DatabaseService {
     fun getCases(req: CaseAggregationRequest): CaseAggregationResponse {
         getConnection().use { conn ->
             val ctx = JooqHelper.getDSLCtx(conn)
-            val tbl = SpectrumCases.SPECTRUM_CASES
+            val tbl = Cases.CASES
 
             val fields = req.fields ?: emptyList()
-            val groupByFields = fields.map {
-                when (it) {
-                    CaseAggregationField.REGION -> tbl.REGION
-                    CaseAggregationField.COUNTRY -> tbl.COUNTRY
-                    CaseAggregationField.DIVISION -> tbl.DIVISION
-                    CaseAggregationField.DATE -> tbl.DATE
-                    CaseAggregationField.AGE -> tbl.AGE
-                    CaseAggregationField.SEX -> tbl.SEX
-                    CaseAggregationField.HOSPITALIZED -> tbl.HOSPITALIZED
-                    CaseAggregationField.DIED -> tbl.DIED
-                }
+            val groupByFields = mutableListOf<TableField<CasesRecord, *>>()
+            for (field in fields) {
+                if (field == CaseAggregationField.REGION) groupByFields.add(tbl.REGION)
+                if (field == CaseAggregationField.COUNTRY) groupByFields.add(tbl.COUNTRY)
+                if (field == CaseAggregationField.DIVISION) groupByFields.add(tbl.DIVISION)
+                if (field == CaseAggregationField.DATE) groupByFields.add(tbl.DATE)
+                // The fields age, sex, hospitalized and died are ignored for now
             }
             val selectFields: MutableList<Field<*>> = groupByFields.toMutableList()
             selectFields.add(DSL.sum(tbl.NEW_CASES).`as`("new_cases"))
@@ -147,10 +145,10 @@ class DatabaseService {
                     if (fields.contains(CaseAggregationField.COUNTRY)) it.get(tbl.COUNTRY) else null,
                     if (fields.contains(CaseAggregationField.DIVISION)) it.get(tbl.DIVISION) else null,
                     if (fields.contains(CaseAggregationField.DATE)) it.get(tbl.DATE) else null,
-                    if (fields.contains(CaseAggregationField.AGE)) it.get(tbl.AGE) else null,
-                    if (fields.contains(CaseAggregationField.SEX)) it.get(tbl.SEX) else null,
-                    if (fields.contains(CaseAggregationField.HOSPITALIZED)) it.get(tbl.HOSPITALIZED) else null,
-                    if (fields.contains(CaseAggregationField.DIED)) it.get(tbl.DIED) else null,
+                    null,
+                    null,
+                    null,
+                    null,
                     it.get("new_cases", Int::class.java),
                     it.get("new_deaths", Int::class.java)
                 )
