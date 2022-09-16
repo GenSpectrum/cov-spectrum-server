@@ -1,0 +1,29 @@
+name: Run ingest-pangoLineageAliases
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    paths:
+      - 'ext_models/ingest-pangoLineageAliases/**'
+  schedule:
+    - cron: '30 6 * * *'
+
+env:
+  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-server
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run program
+        run: |
+          docker run \
+            -e DB_HOST=${{ secrets.INGEST_PANGO_ALIAS_DB_HOST }} \
+            -e DB_PORT=${{ secrets.INGEST_PANGO_ALIAS_DB_PORT }} \
+            -e DB_NAME=${{ secrets.INGEST_PANGO_ALIAS_DB_NAME }} \
+            -e DB_USER=${{ secrets.INGEST_PANGO_ALIAS_DB_USER }} \
+            -e DB_PASSWORD=${{ secrets.INGEST_PANGO_ALIAS_DB_PASSWORD }} \
+            -e NOTIFICATION_KEY=${{ secrets.INGEST_PANGO_ALIAS_NOTIFICATION }} \
+            ghcr.io/cevo-public/cov-spectrum-ingest-pangolineagealiases:br-move-database
