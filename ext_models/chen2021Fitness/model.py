@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 from scipy.stats import norm
 import statsmodels.api as sm
-from statsmodels.discrete.discrete_model import BinaryResultsWrapper
+from statsmodels.genmod.generalized_linear_model import GLMResultsWrapper
 
 from base_classes import GrowthNumbers, ValueWithCi, ValueWithCi2, PlotAbsoluteNumbers
 
@@ -15,19 +15,14 @@ def fit(
         n,
         generation_time,
         reproduction_number
-) -> Tuple[GrowthNumbers, BinaryResultsWrapper]:
+) -> Tuple[GrowthNumbers, GLMResultsWrapper]:
     # adapt the data to the required format
-    x = np.array([])
-    y = np.array([])
-    for i in range(0, len(t)):
-        y = np.concatenate(
-            (np.concatenate((y, np.array([True] * k[i]))), np.array([False] * (n[i] - k[i]))))
-        x = np.concatenate((x, np.array([t[i]] * n[i])))
-    # add a column of 1's to be multiplied by the intercept
-    X = sm.add_constant(x)
-
+    x = t
+    x = sm.add_constant(x)
+    y = np.column_stack((k, n-k))
+    
     # estimate the model
-    model = sm.Logit(y, X).fit(disp=0)
+    model = sm.GLM(y, x, family=sm.families.Binomial(link=sm.families.links.logit())).fit(disp=0)
 
     # The following cov matrix returned by the method is the same as invFI
     cov = model.cov_params()
@@ -68,7 +63,7 @@ def fit(
 
 
 def predict(
-        model: BinaryResultsWrapper,
+        model: GLMResultsWrapper,
         t: np.ndarray,
         alpha: float
 ) -> ValueWithCi2:
