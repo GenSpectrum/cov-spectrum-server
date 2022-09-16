@@ -1,13 +1,14 @@
-name: Docker
+name: Docker (chen2021Fitness)
 
 on:
+  workflow_dispatch:
   push:
     branches:
-  schedule:
-    - cron: '0 7 */2 * *'
+    paths:
+      - 'ext_models/chen2021Fitness/**'
 
 env:
-  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-server
+  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-chen2021fitness
 
 jobs:
   docker:
@@ -18,7 +19,9 @@ jobs:
         run: |
           echo "BRANCH=$(eval 'echo $GITHUB_REF | sed s/refs\\/heads\\/// | sed s/\\//__/ ')" >> $GITHUB_ENV
       - name: Build image
-        run: docker build -t new_image .
+        run: |
+          cd ext_models/chen2021Fitness
+          docker build -t new_image .
       - name: Login to Github Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Add tags and push

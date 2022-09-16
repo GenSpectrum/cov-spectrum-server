@@ -1,11 +1,14 @@
-name: Docker (chen2021Fitness)
+name: Docker (huismanScire2021Re)
 
 on:
+  workflow_dispatch:
   push:
     branches:
+    paths:
+      - 'ext_models/huismanScire2021Re/**'
 
 env:
-  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-chen2021fitness
+  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-huisman_scire2021re
 
 jobs:
   docker:
@@ -17,7 +20,7 @@ jobs:
           echo "BRANCH=$(eval 'echo $GITHUB_REF | sed s/refs\\/heads\\/// | sed s/\\//__/ ')" >> $GITHUB_ENV
       - name: Build image
         run: |
-          cd ext_models/chen2021Fitness
+          cd ext_models/huismanScire2021Re
           docker build -t new_image .
       - name: Login to Github Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
