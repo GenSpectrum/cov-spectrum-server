@@ -13,8 +13,8 @@ class CollectionController(
     private val databaseService: DatabaseService
 ) {
     @GetMapping("")
-    fun getCollections(): List<SpectrumCollection> {
-        return databaseService.getCollections()
+    fun getCollections(@RequestParam(defaultValue = "true") fetchVariants: Boolean): List<SpectrumCollection> {
+        return databaseService.getCollections(fetchVariants)
     }
 
     @PostMapping("")
@@ -22,6 +22,12 @@ class CollectionController(
         check(collection.id == null) // TODO Send better error message
         val (id, adminKey) = databaseService.insertCollection(collection)
         return AddCollectionResponse(id, adminKey)
+    }
+
+    @GetMapping("/{id}")
+    fun getCollection(@PathVariable id: Int): ResponseEntity<SpectrumCollection> {
+        val collection = databaseService.getCollection(id) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
+        return ResponseEntity.ok().body(collection)
     }
 
     @PutMapping("/{id}")

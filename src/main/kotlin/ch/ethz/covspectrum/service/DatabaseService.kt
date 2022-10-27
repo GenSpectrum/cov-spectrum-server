@@ -276,7 +276,7 @@ class DatabaseService {
     }
 
 
-    fun getCollections(): List<SpectrumCollection> {
+    fun getCollections(fetchVariants: Boolean): List<SpectrumCollection> {
         val sql1 = """
             select id, title, description, maintainers, email
             from collection;
@@ -301,10 +301,63 @@ class DatabaseService {
                     }
                 }
             }
-            conn.createStatement().use { statement ->
-                statement.executeQuery(sql2).use { rs ->
+            if (fetchVariants) {
+                conn.createStatement().use { statement ->
+                    statement.executeQuery(sql2).use { rs ->
+                        while (rs.next()) {
+                            collections[rs.getInt("collection_id")]!!.variants.add(
+                                SpectrumCollectionVariant(
+                                    rs.getString("query"),
+                                    rs.getString("name"),
+                                    rs.getString("description"),
+                                    rs.getBoolean("highlighted")
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        return collections.values.toList();
+    }
+
+
+    fun getCollection(id: Int): SpectrumCollection? {
+        val sql1 = """
+            select id, title, description, maintainers, email
+            from collection
+            where id = ?;
+        """.trimIndent()
+        val sql2 = """
+            select collection_id, query, name, description, highlighted
+            from collection_variant
+            where collection_id = ?;
+        """.trimIndent()
+        var collection: SpectrumCollection? = null
+        getConnection().use { conn ->
+            conn.prepareStatement(sql1).use { statement ->
+                statement.setInt(1, id)
+                statement.executeQuery().use { rs ->
+                    if (rs.next()) {
+                        collection = SpectrumCollection(
+                            rs.getInt("id"),
+                            rs.getString("title"),
+                            rs.getString("description"),
+                            rs.getString("maintainers"),
+                            rs.getString("email"),
+                            mutableListOf()
+                        )
+                    }
+                }
+            }
+            if (collection == null) {
+                return null;
+            }
+            conn.prepareStatement(sql2).use { statement ->
+                statement.setInt(1, id)
+                statement.executeQuery().use { rs ->
                     while (rs.next()) {
-                        collections[rs.getInt("collection_id")]!!.variants.add(
+                        collection!!.variants.add(
                             SpectrumCollectionVariant(
                                 rs.getString("query"),
                                 rs.getString("name"),
@@ -316,7 +369,7 @@ class DatabaseService {
                 }
             }
         }
-        return collections.values.toList();
+        return collection
     }
 
 
