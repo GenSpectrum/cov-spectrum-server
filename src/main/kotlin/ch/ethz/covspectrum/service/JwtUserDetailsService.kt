@@ -14,7 +14,7 @@ class JwtUserDetailsService(
     override fun loadUserByUsername(username: String?): UserDetails {
         val sql = """
             select username, password_hash
-            from spectrum_account
+            from account
             where username = lower(?);
         """.trimIndent()
         databaseService.getConnection().use { conn ->

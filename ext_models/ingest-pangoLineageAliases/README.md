@@ -1,0 +1,1 @@
+The script downloads the [Pango lineage aliases](https://raw.githubusercontent.com/cov-lineages/pango-designation/master/pango_designation/alias_key.json) and updates the `pango_lineage_alias` table. It sends a notification if there were changes.

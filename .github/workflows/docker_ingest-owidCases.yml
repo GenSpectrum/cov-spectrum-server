@@ -1,13 +1,14 @@
-name: Docker
+name: Docker (ingest-owidCases)
 
 on:
+  workflow_dispatch:
   push:
     branches:
-  schedule:
-    - cron: '0 7 */2 * *'
+    paths:
+      - 'ext_models/ingest-owidCases/**'
 
 env:
-  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-server
+  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-ingest-owidcases
 
 jobs:
   docker:
@@ -18,15 +19,15 @@ jobs:
         run: |
           echo "BRANCH=$(eval 'echo $GITHUB_REF | sed s/refs\\/heads\\/// | sed s/\\//__/ ')" >> $GITHUB_ENV
       - name: Build image
-        run: docker build -t new_image .
+        run: |
+          cd ext_models/ingest-owidCases
+          docker build -t new_image .
       - name: Login to Github Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Add tags and push
         run: |
           docker tag new_image ${{ env.IMAGE_NAME }}:br-${{ env.BRANCH }}
           docker push ${{ env.IMAGE_NAME }}:br-${{ env.BRANCH }}
-          docker tag new_image ${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.IMAGE_NAME }}:latest
       - name: Add "develop" tag and push
         if: env.BRANCH == 'develop'
         run: |

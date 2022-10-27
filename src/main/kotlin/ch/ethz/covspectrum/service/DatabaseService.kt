@@ -13,19 +13,34 @@ import ch.ethz.covspectrum.util.PangoLineageAlias
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import org.jooq.Condition
 import org.jooq.Field
-import org.jooq.covspectrum.tables.SpectrumCases
+import org.jooq.TableField
+import org.jooq.covspectrum.tables.Cases
+import org.jooq.covspectrum.tables.records.CasesRecord
 import org.jooq.impl.DSL
 import org.springframework.stereotype.Service
 import java.sql.Connection
 import java.sql.Timestamp
 
 
+fun getDbJdbcUrl(): String {
+    return "jdbc:postgresql://" + System.getenv("COV_SPECTRUM_DB_HOST") + ":" +
+        System.getenv("COV_SPECTRUM_DB_PORT") + "/" + System.getenv("COV_SPECTRUM_DB_NAME")
+}
+
+fun getDbUser(): String {
+    return System.getenv("COV_SPECTRUM_DB_USERNAME")
+}
+
+fun getDbPassword(): String {
+    return System.getenv("COV_SPECTRUM_DB_PASSWORD")
+}
+
+
 private val pool: ComboPooledDataSource = ComboPooledDataSource().apply {
     driverClass = "org.postgresql.Driver"
-    jdbcUrl = "jdbc:postgresql://" + System.getenv("COV_SPECTRUM_DB_HOST") + ":" +
-        System.getenv("COV_SPECTRUM_DB_PORT") + "/" + System.getenv("COV_SPECTRUM_DB_NAME")
-    user = System.getenv("COV_SPECTRUM_DB_USERNAME")
-    password = System.getenv("COV_SPECTRUM_DB_PASSWORD")
+    jdbcUrl = getDbJdbcUrl()
+    user = getDbUser()
+    password = getDbPassword()
 }
 
 
@@ -44,7 +59,7 @@ class DatabaseService {
             select
               alias,
               full_name
-            from pangolin_lineage_alias;
+            from pango_lineage_alias;
         """.trimIndent()
         getConnection().use { conn ->
             conn.createStatement().use { statement ->
@@ -68,7 +83,7 @@ class DatabaseService {
               cov_spectrum_country,
               cov_spectrum_region,
               gisaid_country
-            from spectrum_country_mapping
+            from country_mapping
             where
               cov_spectrum_country is not null
               and cov_spectrum_region is not null
@@ -97,20 +112,16 @@ class DatabaseService {
     fun getCases(req: CaseAggregationRequest): CaseAggregationResponse {
         getConnection().use { conn ->
             val ctx = JooqHelper.getDSLCtx(conn)
-            val tbl = SpectrumCases.SPECTRUM_CASES
+            val tbl = Cases.CASES
 
             val fields = req.fields ?: emptyList()
-            val groupByFields = fields.map {
-                when (it) {
-                    CaseAggregationField.REGION -> tbl.REGION
-                    CaseAggregationField.COUNTRY -> tbl.COUNTRY
-                    CaseAggregationField.DIVISION -> tbl.DIVISION
-                    CaseAggregationField.DATE -> tbl.DATE
-                    CaseAggregationField.AGE -> tbl.AGE
-                    CaseAggregationField.SEX -> tbl.SEX
-                    CaseAggregationField.HOSPITALIZED -> tbl.HOSPITALIZED
-                    CaseAggregationField.DIED -> tbl.DIED
-                }
+            val groupByFields = mutableListOf<TableField<CasesRecord, *>>()
+            for (field in fields) {
+                if (field == CaseAggregationField.REGION) groupByFields.add(tbl.REGION)
+                if (field == CaseAggregationField.COUNTRY) groupByFields.add(tbl.COUNTRY)
+                if (field == CaseAggregationField.DIVISION) groupByFields.add(tbl.DIVISION)
+                if (field == CaseAggregationField.DATE) groupByFields.add(tbl.DATE)
+                // The fields age, sex, hospitalized and died are ignored for now
             }
             val selectFields: MutableList<Field<*>> = groupByFields.toMutableList()
             selectFields.add(DSL.sum(tbl.NEW_CASES).`as`("new_cases"))
@@ -134,10 +145,10 @@ class DatabaseService {
                     if (fields.contains(CaseAggregationField.COUNTRY)) it.get(tbl.COUNTRY) else null,
                     if (fields.contains(CaseAggregationField.DIVISION)) it.get(tbl.DIVISION) else null,
                     if (fields.contains(CaseAggregationField.DATE)) it.get(tbl.DATE) else null,
-                    if (fields.contains(CaseAggregationField.AGE)) it.get(tbl.AGE) else null,
-                    if (fields.contains(CaseAggregationField.SEX)) it.get(tbl.SEX) else null,
-                    if (fields.contains(CaseAggregationField.HOSPITALIZED)) it.get(tbl.HOSPITALIZED) else null,
-                    if (fields.contains(CaseAggregationField.DIED)) it.get(tbl.DIED) else null,
+                    null,
+                    null,
+                    null,
+                    null,
                     it.get("new_cases", Int::class.java),
                     it.get("new_deaths", Int::class.java)
                 )
@@ -150,8 +161,8 @@ class DatabaseService {
     fun getReferenceGenome(): String {
         val sql = """
             select seq
-            from backup_220530_consensus_sequence
-            where sample_name = 'REFERENCE_GENOME';
+            from reference_genome
+            where name = 'REFERENCE_GENOME';
         """.trimIndent()
         getConnection().use { conn ->
             conn.createStatement().use { statement ->
@@ -205,7 +216,7 @@ class DatabaseService {
                     'data', ww.data
                   ))
                 ) as data
-            from spectrum_waste_water_result ww;
+            from wastewater_result ww;
         """.trimIndent()
         getConnection().use { conn ->
             conn.createStatement().use { statement ->
@@ -221,7 +232,7 @@ class DatabaseService {
     fun getHuismanScire2021ReResult(key: String): Pair<Boolean, String?>? {
         val sql = """
             select r.success, r.result
-            from spectrum_huisman_scire_2021_re r
+            from model_huisman_scire_2021_re r
             where r.key = ?;
         """.trimIndent()
         getConnection().use { conn ->
@@ -249,7 +260,7 @@ class DatabaseService {
         result: String?
     ) {
         val sql = """
-            insert into spectrum_huisman_scire_2021_re (key, calculation_date, calculation_duration_seconds, request, success, result)
+            insert into model_huisman_scire_2021_re (key, calculation_date, calculation_duration_seconds, request, success, result)
             values (?, now(), ?, ?, ?, ?);
         """.trimIndent()
         getConnection().use { conn ->
@@ -268,11 +279,11 @@ class DatabaseService {
     fun getCollections(): List<SpectrumCollection> {
         val sql1 = """
             select id, title, description, maintainers, email
-            from spectrum_collection;
+            from collection;
         """.trimIndent()
         val sql2 = """
             select collection_id, query, name, description, highlighted
-            from spectrum_collection_variant;
+            from collection_variant;
         """.trimIndent()
         val collections = HashMap<Int, SpectrumCollection>();
         getConnection().use { conn ->
@@ -312,7 +323,7 @@ class DatabaseService {
     fun validateCollectionAdminKey(id: Int, adminKey: String): Boolean? {
         val sql = """
             select admin_key
-            from spectrum_collection
+            from collection
             where id = ?;
         """.trimIndent()
         getConnection().use { conn ->
@@ -331,7 +342,7 @@ class DatabaseService {
 
     fun insertCollection(collection: SpectrumCollection): Pair<Int, String> {
         val sql1 = """
-            insert into spectrum_collection (
+            insert into collection (
               creation_date,
               last_update_date,
               title,
@@ -344,7 +355,7 @@ class DatabaseService {
             returning id;
         """.trimIndent()
         val sql2 = """
-            insert into spectrum_collection_variant (collection_id, query, name, description, highlighted)
+            insert into collection_variant (collection_id, query, name, description, highlighted)
             values (?, ?, ?, ?, ?);
         """.trimIndent()
         // Not the safest random generator but should be good enough for our use case
@@ -387,12 +398,12 @@ class DatabaseService {
         val id = collection.id
         check(id != null)
         val sql0 = """
-            delete from spectrum_collection
+            delete from collection
             where id = ?
             returning creation_date;
         """.trimIndent()
         val sql1 = """
-            insert into spectrum_collection (
+            insert into collection (
               id,
               creation_date,
               last_update_date,
@@ -405,7 +416,7 @@ class DatabaseService {
             values (?, ?, now(), ?, ?, ?, ?, ?);
         """.trimIndent()
         val sql2 = """
-            insert into spectrum_collection_variant (collection_id, query, name, description, highlighted)
+            insert into collection_variant (collection_id, query, name, description, highlighted)
             values (?, ?, ?, ?, ?);
         """.trimIndent()
         var creationDate: Timestamp
@@ -445,7 +456,7 @@ class DatabaseService {
 
     fun deleteCollection(id: Int) {
         val sql0 = """
-            delete from spectrum_collection
+            delete from collection
             where id = ?;
         """.trimIndent()
         getConnection().use { conn ->

@@ -1,11 +1,14 @@
-name: Docker (chen2021Fitness)
+name: Docker (ingest-pangoLineageAliases)
 
 on:
+  workflow_dispatch:
   push:
     branches:
+    paths:
+      - 'ext_models/ingest-pangoLineageAliases/**'
 
 env:
-  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-chen2021fitness
+  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-ingest-pangolineagealiases
 
 jobs:
   docker:
@@ -17,7 +20,7 @@ jobs:
           echo "BRANCH=$(eval 'echo $GITHUB_REF | sed s/refs\\/heads\\/// | sed s/\\//__/ ')" >> $GITHUB_ENV
       - name: Build image
         run: |
-          cd ext_models/chen2021Fitness
+          cd ext_models/ingest-pangoLineageAliases
           docker build -t new_image .
       - name: Login to Github Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -25,8 +28,6 @@ jobs:
         run: |
           docker tag new_image ${{ env.IMAGE_NAME }}:br-${{ env.BRANCH }}
           docker push ${{ env.IMAGE_NAME }}:br-${{ env.BRANCH }}
-          docker tag new_image ${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.IMAGE_NAME }}:latest
       - name: Add "develop" tag and push
         if: env.BRANCH == 'develop'
         run: |

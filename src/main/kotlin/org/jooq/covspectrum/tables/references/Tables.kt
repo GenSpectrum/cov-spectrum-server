@@ -4,11 +4,11 @@
 package org.jooq.covspectrum.tables.references
 
 
-import org.jooq.covspectrum.tables.SpectrumCases
+import org.jooq.covspectrum.tables.Cases
 
 
 
 /**
- * The table <code>public.spectrum_cases</code>.
+ * The table <code>public.cases</code>.
  */
-val SPECTRUM_CASES = SpectrumCases.SPECTRUM_CASES
+val CASES: Cases = Cases.CASES
