@@ -73,6 +73,24 @@ Request params:
 
 `newCases` gives the number of cases with the same attributes, and `newDeaths` gives the number of deaths. Only the fields defined in the request parameter `fields` and `newCases` and `newDeaths` will be returned.
 
+### Collections
+
+Creates, modifies or reads CoV-Spectrum collections.
+
+**Requests:**
+
+```
+GET /resource/collection - Get a list of existing collections
+POST /resource/collection - Creates a collection
+
+GET /resource/collection/{id} - Get all information about a collection
+PUT /resource/collection/{id}?adminKey={key} - Modifies a collection
+DELETE /resource/collection/{id}?adminKey={key} - Deletes a collection
+
+POST /resource/collection/{id}/validate-admin-key - Checks whether an admin key is correct
+```
+
+
 ### Countries
 
 Returns the list of countries that CoV-Spectrum knows. It maps the country names that CoV-Spectrum uses to the name that GISAID uses.
