@@ -8,7 +8,7 @@ on:
       - 'ext_models/ingest-pangoLineageAliases/**'
 
 env:
-  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-ingest-pangolineagealiases
+  IMAGE_NAME: ghcr.io/genspectrum/cov-spectrum-ingest-pangolineagealiases
 
 jobs:
   docker:

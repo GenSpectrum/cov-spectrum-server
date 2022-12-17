@@ -8,7 +8,7 @@ on:
       - 'ext_models/huismanScire2021Re/**'
 
 env:
-  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-huisman_scire2021re
+  IMAGE_NAME: ghcr.io/genspectrum/cov-spectrum-huisman_scire2021re
 
 jobs:
   docker:

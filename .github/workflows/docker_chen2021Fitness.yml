@@ -8,7 +8,7 @@ on:
       - 'ext_models/chen2021Fitness/**'
 
 env:
-  IMAGE_NAME: ghcr.io/cevo-public/cov-spectrum-chen2021fitness
+  IMAGE_NAME: ghcr.io/genspectrum/cov-spectrum-chen2021fitness
 
 jobs:
   docker:
