@@ -3,6 +3,7 @@ package ch.ethz.covspectrum.controller
 import ch.ethz.covspectrum.entity.req.CaseAggregationRequest
 import ch.ethz.covspectrum.entity.res.CaseAggregationResponse
 import ch.ethz.covspectrum.entity.res.CountryMappingResponseEntry
+import ch.ethz.covspectrum.entity.res.PangoLineageRecombinant
 import ch.ethz.covspectrum.service.DatabaseService
 import ch.ethz.covspectrum.util.PangoLineageAlias
 import org.springframework.http.CacheControl
@@ -33,7 +34,12 @@ class VariousController(
 
     @GetMapping("/resource/pango-lineage-alias")
     fun getPangoLineageAliases(): List<PangoLineageAlias> {
-        return databaseService.getPangolinLineageAliases()
+        return databaseService.getPangoLineageAliases()
+    }
+
+    @GetMapping("/resource/pango-lineage-recombinant")
+    fun getPangoLineageRecombinants(): List<PangoLineageRecombinant> {
+        return databaseService.getPangoLineageRecombinants()
     }
 
     @GetMapping(value = ["/resource/wastewater"], produces = [MediaType.APPLICATION_JSON_VALUE])

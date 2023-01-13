@@ -4,10 +4,7 @@ import ch.ethz.covspectrum.entity.SpectrumCollection
 import ch.ethz.covspectrum.entity.SpectrumCollectionVariant
 import ch.ethz.covspectrum.entity.req.CaseAggregationField
 import ch.ethz.covspectrum.entity.req.CaseAggregationRequest
-import ch.ethz.covspectrum.entity.res.CaseAggregationResponse
-import ch.ethz.covspectrum.entity.res.CaseAggregationResponseEntry
-import ch.ethz.covspectrum.entity.res.CountryMappingResponseEntry
-import ch.ethz.covspectrum.entity.res.Gene
+import ch.ethz.covspectrum.entity.res.*
 import ch.ethz.covspectrum.util.JooqHelper
 import ch.ethz.covspectrum.util.PangoLineageAlias
 import com.mchange.v2.c3p0.ComboPooledDataSource
@@ -54,7 +51,7 @@ class DatabaseService {
     }
 
 
-    fun getPangolinLineageAliases(): List<PangoLineageAlias> {
+    fun getPangoLineageAliases(): List<PangoLineageAlias> {
         val sql = """
             select
               alias,
@@ -71,6 +68,30 @@ class DatabaseService {
                         )
                     }
                     return aliases
+                }
+            }
+        }
+    }
+
+
+    fun getPangoLineageRecombinants(): List<PangoLineageRecombinant> {
+        val sql = """
+            select
+              name,
+              string_agg(parent, ',' order by parent_position) as parents
+            from pango_lineage_recombinant
+            group by name;
+        """.trimIndent()
+        getConnection().use { conn ->
+            conn.createStatement().use { statement ->
+                statement.executeQuery(sql).use { rs ->
+                    val recombinants: MutableList<PangoLineageRecombinant> = mutableListOf()
+                    while (rs.next()) {
+                        recombinants.add(
+                            PangoLineageRecombinant(rs.getString("name"), rs.getString("parents").split(","))
+                        )
+                    }
+                    return recombinants
                 }
             }
         }
