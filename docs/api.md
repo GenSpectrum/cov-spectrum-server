@@ -134,6 +134,27 @@ GET /resource/pango-lineage-alias
 ]
 ```
 
+### Pango lineage recombinants
+
+Returns the list of Pango lineage recombinants. Most recombinants have two parents but some have more. The parents are ordered by the position of the section that they donated. E.g., `[BA.1, BA.2]` means that there is one breakpoint and that the first part of the recombinant's genome is from BA.1 and the second part is from BA.2. It is also possible to have multiple breakpoints. In case of XBC, we have `["BA.2*", "B.1.617.2*", "BA.2*", "B.1.617.2*"]`, that means, three breakpoints.
+
+**Request:**
+
+```
+GET /resource/pango-lineage-recombinant
+```
+
+**Response:**
+
+```
+[
+  {
+    name: string,
+    parents: [string]
+  }
+]
+```
+
 ### Reference genome
 
 Returns information about the reference genome.
