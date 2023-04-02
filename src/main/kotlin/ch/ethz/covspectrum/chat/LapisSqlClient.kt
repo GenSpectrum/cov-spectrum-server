@@ -348,6 +348,8 @@ class LapisSqlClient(
             else -> {
                 if (queryOrderByField.contains("lineage", true)) {
                     "nextcladePangoLineage"
+                } else if (queryOrderByField.contains("num") || queryOrderByField.contains("count")) {
+                    "count"
                 } else {
                     throw UnsupportedSqlException(sql)
                 }
