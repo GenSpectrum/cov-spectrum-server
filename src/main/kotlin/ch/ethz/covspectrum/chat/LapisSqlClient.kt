@@ -185,10 +185,13 @@ class LapisSqlClient(
             }
             val orderByElement = orderByElements[0]
             val expr = orderByElement.expression
-            if (expr !is Column) {
+            if (expr is Column) {
+                lapisSqlQuery.orderByField = expr.columnName
+            } else if (expr is Function && expr.toString() == "count(*)") {
+                lapisSqlQuery.orderByField = "count"
+            } else {
                 throw UnsupportedSqlException(sql)
             }
-            lapisSqlQuery.orderByField = expr.columnName
             lapisSqlQuery.orderByAsc = orderByElement.isAsc
         }
 
