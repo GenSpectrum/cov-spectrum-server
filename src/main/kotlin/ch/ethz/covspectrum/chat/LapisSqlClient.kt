@@ -28,7 +28,8 @@ import java.time.format.DateTimeParseException
  * such as sorting.
  */
 class LapisSqlClient(
-    private val host: String
+    private val host: String,
+    private val accessKey: String?
 ) {
     fun execute(sql: String): List<Map<String, String>> {
         val query = parseSql(sql)
@@ -238,6 +239,11 @@ class LapisSqlClient(
                     }
                 }
             }
+            // TODO
+            // A small hack that's needed because LAPIS only allows aggregated queries
+            if (field != "count" && !query.groupByFields.contains(field)) {
+                query.groupByFields.add(field)
+            }
         }
 
         // filterConditions
@@ -373,6 +379,9 @@ class LapisSqlClient(
 
         /* Fetch data */
         var uriComponentsBuilder = UriComponentsBuilder.fromHttpUrl("${host}/sample/aggregated")
+        if (accessKey != null) {
+            uriComponentsBuilder = uriComponentsBuilder.queryParam("accessKey", accessKey)
+        }
         for (filterCondition in query.filterConditions) {
             uriComponentsBuilder = uriComponentsBuilder.queryParam(filterCondition.field, filterCondition.value)
         }
@@ -382,7 +391,10 @@ class LapisSqlClient(
         val url = uriComponentsBuilder.encode().toUriString()
         val response = RestTemplate().getForEntity(url, LapisResponse::class.java)
         if (response.statusCode != HttpStatus.OK) {
-            val urlWithoutHost = url.substring(host.length)
+            var urlWithoutHost = url.substring(host.length)
+            if (accessKey != null) {
+                urlWithoutHost = urlWithoutHost.replace(accessKey, "hidden")
+            }
             throw LapisRequestFailedException(urlWithoutHost, response.statusCodeValue)
         }
         var data = response.body!!.data
@@ -406,9 +418,16 @@ class LapisSqlClient(
 }
 
 fun main() {
-    val lapis = LapisSqlClient("https://lapis.cov-spectrum.org/open/v1")
+    val lapis = LapisSqlClient("https://lapis.cov-spectrum.org/open/v1", null)
 
     val sqls = listOf(
+        """
+            select date
+            from lapis
+            where country = 'Switzerland' and lineage = 'B.1.1.7'
+            order by date asc
+            limit 1;
+        """.trimIndent(),
         """
             select date, count(*) as count
             from lapis
