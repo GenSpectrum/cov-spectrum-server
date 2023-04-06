@@ -264,7 +264,7 @@ class LapisSqlClient(
                     FilterCondition(
                         "nextcladePangoLineage",
                         filterCondition.comparisonOperator,
-                        filterCondition.value
+                        filterCondition.value + "*" // Always include the sub lineages
                     )
                 )
             } else if (field == "date") {
