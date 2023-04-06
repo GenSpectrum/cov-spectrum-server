@@ -388,10 +388,10 @@ class LapisSqlClient(
         if (query.groupByFields.isNotEmpty()) {
             uriComponentsBuilder = uriComponentsBuilder.queryParam("fields", query.groupByFields.joinToString(","))
         }
-        val url = uriComponentsBuilder.encode().toUriString()
+        val url = uriComponentsBuilder.build().toUri()
         val response = RestTemplate().getForEntity(url, LapisResponse::class.java)
         if (response.statusCode != HttpStatus.OK) {
-            var urlWithoutHost = url.substring(host.length)
+            var urlWithoutHost = url.toString().substring(host.length)
             if (accessKey != null) {
                 urlWithoutHost = urlWithoutHost.replace(accessKey, "hidden")
             }
