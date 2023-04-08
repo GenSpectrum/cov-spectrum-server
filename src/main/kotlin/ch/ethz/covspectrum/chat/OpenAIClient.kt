@@ -21,33 +21,35 @@ class OpenAIClient(
                 OpenAIChatRequest.Message(
                     "user",
                     """
-                        I want to query a database table called LAPIS to retrieve information about SARS-CoV-2 sequences, variants, and mutations. The LAPIS table contains columns for the following metadata: date, country, region (the continent, e.g., Europe) and lineage. It contains a column for each nucleotide and amino acid (AA) position. For example: nuc_123, aa_S_501. It contains data year 2020 until today (2023-04-06).
+                        I want to query a database table called "metadata" to retrieve information about SARS-CoV-2 sequences, variants, and mutations. The "metadata" table contains columns for the following metadata: date, country, region (the continent, e.g., Europe) and lineage. It contains a column for each nucleotide and amino acid (AA) position. For example: nuc_123, aa_S_501. It contains data year 2020 until today (2023-04-06).
 
                         A mutation that contains a colon is an amino acid mutation (e.g., ORF1a:356F, N:Y10P). A mutation that does not contain a colon is a nucleotide mutation (e.g., 2393T, G182C).
 
-                        The database understands basic SQL queries. It knows select, from, where, group by, order by, and limit. It does not understand any nested queries. It only has the fields that I specified, nothing else. LAPIS only supports the operators =, >=, <=, >, < and between. It does not support anything else. It only supports "and" in the where clause. It does not support anything else, not "or" not "not", and nothign else. LAPIS does not support aliases. Do not use aliases to rename fields. LAPIS may only return aggregated data, not individual entries. Do not invent anything. Do not improvise. I would like you to translate questions to a SQL query.
+                        The database understands basic SQL queries. It knows select, from, where, group by, order by, limit, and offset. It does not understand any nested queries. Do not improvise. I would like you to translate questions to a SQL query.
 
-                        If you think that a question cannot be answered with the LAPIS query language, tell me that you cannot answer it. Answer in the specified format. If you can provide an answer, start with "Execute:" followed by the SQL query. Do not add anything else. If you cannot provide an answer, start with "I cannot answer. Reason:" followed by the reason.
+                        If you think that a question cannot be answered with the query language, tell me that you cannot answer it. Answer in the specified format. If you can provide an answer, start with "Execute:" followed by the SQL query. Do not add anything else. If you cannot provide an answer, start with "I cannot answer. Reason:" followed by the reason.
+
+                        Remember: Do not use subqueries. Do not use sub-expressions. Do not use the keyword "in". Do not use the keyword "exists"
 
                         Examples 1:
                         User: What's the number of sequences in Switzerland?
-                        AI: Execute: `select count(*) from lapis where country = 'Switzerland';`
+                        AI: Execute: `select count(*) from metadata where country = 'Switzerland';`
 
                         Examples 2:
                         User: How many lineages do we have in March 2020
-                        AI: Execute: `select count(*) from lapis where date between '2020-03-01' and '2020-03-31' group by lineage;`
+                        AI: Execute: `select count(*) from metadata where date between '2020-03-01' and '2020-03-31' group by lineage;`
 
                         Example 3:
                         User: How many lineages have the mutations S:A27S, S:N969K, and ORF9b:P10F?
-                        AI: Execute: `select count(*) from lapis where aa_S_27 = 'S' and aa_S_969 = 'K' and aa_ORF9b_10 = 'F' group by lineage;`
+                        AI: Execute: `select count(*) from metadata where aa_S_27 = 'S' and aa_S_969 = 'K' and aa_ORF9b_10 = 'F' group by lineage;`
 
                         Example 4:
-                        User: How many sequences were found in Germany or France?
-                        AI: I cannot answer. Reason: The LAPIS query language does not support the "or" operator.
+                        User: What is the most prevalent lineage with the 2842T and G1282A mutations?
+                        AI: Execute: `select lineage, count(*) from metadata where nuc_2842 = 'T' and nuc_1282 = 'A' group by country order by count(*) desc limit 1;`
 
                         Example 5:
-                        User: What is the most prevalent lineage with the 2842T and G1282A mutations?
-                        AI: Execute: `select lineage, count(*) from lapis where nuc_2842 = 'T' and nuc_1282 = 'A' group by country order by count(*) desc limit 1;`
+                        User: In which country was BA.1 first found more than 5 times on a day?
+                        AI: Execute: `select country from metadata where lineage = 'BA.1' group by country, date having count(*) > 5 order by date limit 1;`
 
                         Do you understand?
                     """.trimIndent()
@@ -75,7 +77,7 @@ class OpenAIClient(
 
     fun extractSql(messageContent: String): String? {
         val tmp = messageContent.replace("\n", " ")
-        val pattern = Pattern.compile("^.*(`\\s*)(.*select.*from lapis.*;)(\\s*`).*\$")
+        val pattern = Pattern.compile("^.*(`\\s*)(.*select.*from .*;)(\\s*`).*\$")
         val matcher = pattern.matcher(tmp)
         if (matcher.find() && matcher.groupCount() == 3) {
             return matcher.group(2)
@@ -83,26 +85,4 @@ class OpenAIClient(
         return null
     }
 
-}
-
-fun main() {
-    val client = OpenAIClient(
-        System.getenv("OPENAI_SECRET")
-    )
-    val response = client.chat(listOf(
-        OpenAIChatRequest.Message(
-            "user",
-            "What's the most common 10 lineages in the 3rd quarter of 2022 in Switzerland?"
-        )
-    ))
-    val responseMessageContent = response.choices[0].message.content
-
-    val sql = client.extractSql(responseMessageContent)
-    if (sql != null) {
-        val lapis = LapisSqlClient("https://lapis.cov-spectrum.org/open/v1", null)
-        val data = lapis.execute(sql)
-        println(data)
-        return
-    }
-    println("Sorry, we are currently not able to answer this question.")
 }
