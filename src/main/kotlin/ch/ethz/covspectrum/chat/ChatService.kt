@@ -94,7 +94,12 @@ class ChatService(
         return conversation
     }
 
-    fun addChatMessagePair(conversationId: String, userPrompt: String, responseJson: String, openAITotalTokens: Int) {
+    fun addChatMessagePair(
+        conversationId: String,
+        userPrompt: String,
+        responseJson: String,
+        openAITotalTokens: Int
+    ): Int {
         val sql = """
             insert into chat_message_pair (
               conversation,
@@ -103,7 +108,8 @@ class ChatService(
               response_json,
               openai_total_tokens
             )
-            values (?, now(), ?, ?::json, ?);
+            values (?, now(), ?, ?::json, ?)
+            returning id;
         """.trimIndent()
         databaseService.getConnection().use { conn ->
             conn.prepareStatement(sql).use { statement ->
@@ -111,6 +117,39 @@ class ChatService(
                 statement.setString(2, userPrompt)
                 statement.setString(3, responseJson)
                 statement.setInt(4, openAITotalTokens)
+                statement.executeQuery().use { rs ->
+                    rs.next()
+                    return rs.getInt("id")
+                }
+            }
+        }
+    }
+
+    fun rateChatMessage(messageId: Int, up: Boolean) {
+        val sql = """
+            update chat_message_pair
+            set user_rating = ?
+            where id = ?;
+        """.trimIndent()
+        databaseService.getConnection().use { conn ->
+            conn.prepareStatement(sql).use { statement ->
+                statement.setString(1, if (up) "up" else "down")
+                statement.setInt(2, messageId)
+                statement.execute()
+            }
+        }
+    }
+
+    fun commentMessage(messageId: Int, comment: String) {
+        val sql = """
+            update chat_message_pair
+            set user_comment = ?
+            where id = ?;
+        """.trimIndent()
+        databaseService.getConnection().use { conn ->
+            conn.prepareStatement(sql).use { statement ->
+                statement.setString(1, comment)
+                statement.setInt(2, messageId)
                 statement.execute()
             }
         }

@@ -21,7 +21,9 @@ create table chat_message_pair (
     response_timestamp timestamp not null,
     user_prompt text not null,
     response_json json not null,
-    openai_total_tokens integer not null
+    openai_total_tokens integer not null,
+    user_rating text,
+    user_comment text
 );
 
 create table chat_openai_log (

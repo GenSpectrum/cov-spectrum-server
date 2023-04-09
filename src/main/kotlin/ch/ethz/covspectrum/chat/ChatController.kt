@@ -34,10 +34,14 @@ class ChatController(
     }
 
     @PostMapping("/conversation/{id}/sendMessage")
-    fun sendMessage(@PathVariable id: String, accessKey: String, @RequestBody content: String): ResponseEntity<ChatSystemMessage> {
+    fun sendMessage(
+        @PathVariable id: String,
+        accessKey: String,
+        @RequestBody content: String
+    ): ResponseEntity<ChatSystemMessage> {
         // Only allow current conversations (i.e., stored in the in-memory storage to be updated)
         val chatConversation = currentConversationsService.getConversation(id)
-        chatConversation ?: return ResponseEntity(HttpStatus.NOT_FOUND)
+        chatConversation ?: return ResponseEntity(HttpStatus.GONE)
 
         // User authentication
         val userId = chatService.getUserId(accessKey)
@@ -63,23 +67,13 @@ class ChatController(
                 if (errorReason != null) {
                     message += " $errorReason"
                 }
-                ChatSystemMessage(message,null,null)
+                ChatSystemMessage(null, message, null, null)
             } else {
                 val data = lapisClient.execute(sql)
-                ChatSystemMessage(
-                    "Here are the results:",
-                    data,
-                    ChatSystemMessage.Internal(
-                        sql
-                    )
-                )
+                ChatSystemMessage(null, "Here are the results:", data, ChatSystemMessage.Internal(sql))
             }
         } catch (e: Exception) {
-            ChatSystemMessage(
-                "Sorry, I am not able to answer the question.",
-                null,
-                null
-            )
+            ChatSystemMessage(null, "Sorry, I am not able to answer the question.", null, null)
         }
 
         // Format response as JSON
@@ -91,11 +85,83 @@ class ChatController(
 
         // Write to persistent database if the message should be logged
         if (chatConversation.toBeLogged) {
-            chatService.addChatMessagePair(id, content, responseJson, openAITotalTokens ?: 0)
+            val messageId = chatService.addChatMessagePair(id, content, responseJson, openAITotalTokens ?: 0)
+            responseMessage.id = messageId
             // TODO Write OpenAI interaction to chat_openai_log
         }
 
         return ResponseEntity(responseMessage, HttpStatus.OK)
+    }
+
+    @PostMapping("/conversation/{conversationId}/message/{messageId}/rateUp")
+    fun rateUpMessage(
+        @PathVariable conversationId: String,
+        @PathVariable messageId: Int,
+        accessKey: String
+    ): ResponseEntity<Void> {
+        return rateMessage(conversationId, messageId, accessKey, true)
+    }
+
+    @PostMapping("/conversation/{conversationId}/message/{messageId}/rateDown")
+    fun rateDownMessage(
+        @PathVariable conversationId: String,
+        @PathVariable messageId: Int,
+        accessKey: String
+    ): ResponseEntity<Void> {
+        return rateMessage(conversationId, messageId, accessKey, false)
+    }
+
+    fun rateMessage(conversationId: String, messageId: Int, accessKey: String, up: Boolean): ResponseEntity<Void> {
+        val userId = chatService.getUserId(accessKey)
+        userId ?: return ResponseEntity(HttpStatus.UNAUTHORIZED)
+
+        // Only allow current conversations (i.e., stored in the in-memory storage to be updated)
+        val chatConversation = currentConversationsService.getConversation(conversationId)
+        chatConversation ?: return ResponseEntity(HttpStatus.GONE)
+
+        // The message must be part of the specified conversation
+        val message = chatConversation.messages.find { it is ChatSystemMessage && it.id == messageId }
+        message ?: return ResponseEntity(HttpStatus.NOT_FOUND)
+
+        // Only possible if the conversation is logged
+        if (!chatConversation.toBeLogged) {
+            return ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+
+        chatService.rateChatMessage(messageId, up)
+        return ResponseEntity(HttpStatus.OK)
+    }
+
+    @PostMapping("/conversation/{conversationId}/message/{messageId}/comment")
+    fun commentMessage(
+        @PathVariable conversationId: String,
+        @PathVariable messageId: Int,
+        accessKey: String,
+        @RequestBody comment: String
+    ): ResponseEntity<Void> {
+        val userId = chatService.getUserId(accessKey)
+        userId ?: return ResponseEntity(HttpStatus.UNAUTHORIZED)
+
+        // Only allow current conversations (i.e., stored in the in-memory storage to be updated)
+        val chatConversation = currentConversationsService.getConversation(conversationId)
+        chatConversation ?: return ResponseEntity(HttpStatus.GONE)
+
+        // The message must be part of the specified conversation
+        val message = chatConversation.messages.find { it is ChatSystemMessage && it.id == messageId }
+        message ?: return ResponseEntity(HttpStatus.NOT_FOUND)
+
+        // Only possible if the conversation is logged
+        if (!chatConversation.toBeLogged) {
+            return ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+
+        // If comment is empty/contains only white spaces, just ignore it
+        if (comment.trim().isEmpty()) {
+            return ResponseEntity(HttpStatus.OK)
+        }
+
+        chatService.commentMessage(messageId, comment)
+        return ResponseEntity(HttpStatus.OK)
     }
 
 }
