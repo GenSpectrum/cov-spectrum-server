@@ -58,11 +58,12 @@ class ChatController(
             val responseMessageContent = response.choices[0].message.content
             val sql = openAIClient.extractSql(responseMessageContent)
             if (sql == null) {
-                ChatSystemMessage(
-                    "Sorry, I am not able to answer the question.",
-                    null,
-                    null
-                )
+                val errorReason = openAIClient.extractErrorReason(responseMessageContent)
+                var message = "Sorry, I am not able to answer the question."
+                if (errorReason != null) {
+                    message += " $errorReason"
+                }
+                ChatSystemMessage(message,null,null)
             } else {
                 val data = lapisClient.execute(sql)
                 ChatSystemMessage(

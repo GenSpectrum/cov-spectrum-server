@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.web.client.RestTemplate
+import java.time.LocalDate
 import java.util.regex.Pattern
 
 class OpenAIClient(
@@ -21,7 +22,7 @@ class OpenAIClient(
                 OpenAIChatRequest.Message(
                     "user",
                     """
-                        I want to query a database table called "metadata" to retrieve information about SARS-CoV-2 sequences, variants, and mutations. The "metadata" table contains columns for the following metadata: date, country, region (the continent, e.g., Europe) and lineage. It contains a column for each nucleotide and amino acid (AA) position. For example: nuc_123, aa_S_501. It contains data year 2020 until today (2023-04-06).
+                        I want to query a database table called "metadata" to retrieve information about SARS-CoV-2 sequences, variants, and mutations. The "metadata" table contains columns for the following metadata: date, country, region (the continent, e.g., Europe) and lineage. It contains a column for each nucleotide and amino acid (AA) position. For example: nuc_123, aa_S_501. It contains data year 2020 until today (${LocalDate.now()}).
 
                         A mutation that contains a colon is an amino acid mutation (e.g., ORF1a:356F, N:Y10P). A mutation that does not contain a colon is a nucleotide mutation (e.g., 2393T, G182C).
 
@@ -81,6 +82,14 @@ class OpenAIClient(
         val matcher = pattern.matcher(tmp)
         if (matcher.find() && matcher.groupCount() == 3) {
             return matcher.group(2)
+        }
+        return null
+    }
+
+    fun extractErrorReason(messageContent: String): String? {
+        val tmp = messageContent.replace("\n", " ")
+        if (tmp.startsWith("I cannot answer. Reason:")) {
+            return messageContent.replace("I cannot answer. Reason:", "").trim();
         }
         return null
     }
