@@ -2,9 +2,12 @@ package ch.ethz.covspectrum.chat
 
 import ch.ethz.covspectrum.service.DatabaseService
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import org.springframework.stereotype.Service
+import java.sql.Timestamp
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.math.floor
+import kotlin.random.Random
 
 @Service
 class ChatService(
@@ -48,8 +51,7 @@ class ChatService(
                         // $0.002 / 1K tokens for gpt-3.5-turbo
                         // https://openai.com/pricing
                         val quotaUsed = floor(0.2 * totalUsedTokens / 1000).toInt()
-                        val conversations = rs.getString("conversations")?.split(",")?.map { it.toInt() }
-                            ?: emptyList()
+                        val conversations = rs.getString("conversations")?.split(",") ?: emptyList()
                         return UserInfo(id, quota, quotaUsed, conversations)
                     }
                     return null
@@ -59,68 +61,40 @@ class ChatService(
     }
 
     /**
-     * Creates a conversation and returns the conversation id
+     * Creates a conversation
      */
-    fun createConversation(userId: Int): Int {
-        val sql = """
-            insert into chat_conversation (owner)
-            values (?)
-            returning id;
-        """.trimIndent()
-        databaseService.getConnection().use { conn ->
-            conn.prepareStatement(sql).use { statement ->
-                statement.setInt(1, userId)
-                statement.executeQuery().use { rs ->
-                    rs.next()
-                    return rs.getInt("id")
+    fun createConversation(userId: Int, toBeLogged: Boolean): ChatConversation {
+        // Generate conversation ID
+        val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+        val charPool : List<Char> = ('a'..'z') + ('A'..'Z')
+        val randomString = (1..7)
+            .map { Random.nextInt(0, charPool.size).let { charPool[it] } }
+            .joinToString("")
+        val conversationId = "$timestamp-$randomString"
+
+        // Create conversation object
+        val conversation = ChatConversation(conversationId, userId, LocalDateTime.now(), toBeLogged, mutableListOf())
+
+        // Store in database if permitted
+        if (toBeLogged) {
+            val sql = """
+                insert into chat_conversation (id, owner, creation_timestamp)
+                values (?, ?, ?);
+            """.trimIndent()
+            databaseService.getConnection().use { conn ->
+                conn.prepareStatement(sql).use { statement ->
+                    statement.setString(1, conversation.id)
+                    statement.setInt(2, conversation.owner)
+                    statement.setTimestamp(3, Timestamp.valueOf(conversation.creationTimestamp))
+                    statement.execute()
                 }
             }
         }
+
+        return conversation
     }
 
-    fun getConversation(conversationId: Int): ChatConversation? {
-        val sql1 = """
-            select owner
-            from chat_conversation
-            where id = ?;
-        """.trimIndent()
-        val sql2 = """
-            select
-              user_prompt,
-              response_json
-            from chat_message_pair
-            where conversation = ?
-            order by response_timestamp;
-        """.trimIndent()
-        databaseService.getConnection().use { conn ->
-            val owner = conn.prepareStatement(sql1).use { statement ->
-                statement.setInt(1, conversationId)
-                statement.executeQuery().use { rs ->
-                    if (!rs.next()) {
-                        return null
-                    }
-                    rs.getInt("owner")
-                }
-            }
-            val messages = conn.prepareStatement(sql2).use { statement ->
-                statement.setInt(1, conversationId)
-                statement.executeQuery().use { rs ->
-                    val messages = mutableListOf<ChatMessage>()
-                    while (rs.next()) {
-                        val userPrompt = rs.getString("user_prompt")
-                        val responseJson = rs.getString("response_json")
-                        messages.add(ChatUserMessage(userPrompt))
-                        val systemMessage: ChatSystemMessage = objectMapper.readValue(responseJson)
-                        messages.add(systemMessage)
-                    }
-                    messages
-                }
-            }
-            return ChatConversation(conversationId, owner, messages)
-        }
-    }
-
-    fun addChatMessagePair(conversationId: Int, userPrompt: String, responseJson: String, openAITotalTokens: Int) {
+    fun addChatMessagePair(conversationId: String, userPrompt: String, responseJson: String, openAITotalTokens: Int) {
         val sql = """
             insert into chat_message_pair (
               conversation,
@@ -133,7 +107,7 @@ class ChatService(
         """.trimIndent()
         databaseService.getConnection().use { conn ->
             conn.prepareStatement(sql).use { statement ->
-                statement.setInt(1, conversationId)
+                statement.setString(1, conversationId)
                 statement.setString(2, userPrompt)
                 statement.setString(3, responseJson)
                 statement.setInt(4, openAITotalTokens)

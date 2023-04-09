@@ -8,14 +8,15 @@ create table chat_user (
 create index on chat_user (access_key);
 
 create table chat_conversation (
-    id serial primary key,
+    id text primary key,
     owner integer not null
-        references chat_user (id)
+        references chat_user (id),
+    creation_timestamp timestamp not null
 );
 
 create table chat_message_pair (
     id serial primary key,
-    conversation integer not null
+    conversation text not null
         references chat_conversation (id),
     response_timestamp timestamp not null,
     user_prompt text not null,

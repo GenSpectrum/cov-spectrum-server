@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/chat")
 class ChatController(
     private val chatService: ChatService,
+    private val currentConversationsService: CurrentConversationsService,
     private val objectMapper: ObjectMapper
 ) {
 
@@ -17,45 +18,37 @@ class ChatController(
     private val lapisClient =
         LapisSqlClient("https://lapis.cov-spectrum.org/gisaid/v1", System.getenv("COV_SPECTRUM_LAPIS_SECRET"))
 
-    @GetMapping("/myInfo")
-    fun getMyConversations(accessKey: String): ResponseEntity<UserInfo> {
-        val userInfo = chatService.getUserInfo(accessKey)
-        userInfo ?: return ResponseEntity(HttpStatus.UNAUTHORIZED)
-        return ResponseEntity(userInfo, HttpStatus.OK)
+    @GetMapping("/authenticate")
+    fun checkAuthentication(accessKey: String): ChatAuthenticationResponse {
+        val userId = chatService.getUserId(accessKey)
+        return ChatAuthenticationResponse(userId != null)
     }
 
     @PostMapping("/createConversation")
-    fun createConversation(accessKey: String): ResponseEntity<Int> {
+    fun createConversation(accessKey: String, toBeLogged: Boolean): ResponseEntity<String> {
         val userId = chatService.getUserId(accessKey)
         userId ?: return ResponseEntity(HttpStatus.UNAUTHORIZED)
-        val conversationId = chatService.createConversation(userId)
-        return ResponseEntity(conversationId, HttpStatus.OK)
-    }
-
-    @GetMapping("/conversation/{id}")
-    fun getConversation(@PathVariable id: Int, accessKey: String): ResponseEntity<ChatConversation> {
-        val userId = chatService.getUserId(accessKey)
-        userId ?: return ResponseEntity(HttpStatus.UNAUTHORIZED)
-        val chatConversation = chatService.getConversation(id)
-        chatConversation ?: return ResponseEntity(HttpStatus.NOT_FOUND)
-        if (userId != chatConversation.owner) {
-            return ResponseEntity(HttpStatus.UNAUTHORIZED)
-        }
-        return ResponseEntity(chatConversation, HttpStatus.OK)
+        val conversation = chatService.createConversation(userId, toBeLogged)
+        currentConversationsService.addConversation(conversation)
+        return ResponseEntity(conversation.id, HttpStatus.OK)
     }
 
     @PostMapping("/conversation/{id}/sendMessage")
-    fun sendMessage(@PathVariable id: Int, accessKey: String, @RequestBody content: String): ResponseEntity<ChatSystemMessage> {
+    fun sendMessage(@PathVariable id: String, accessKey: String, @RequestBody content: String): ResponseEntity<ChatSystemMessage> {
+        // Only allow current conversations (i.e., stored in the in-memory storage to be updated)
+        val chatConversation = currentConversationsService.getConversation(id)
+        chatConversation ?: return ResponseEntity(HttpStatus.NOT_FOUND)
+
+        // User authentication
         val userId = chatService.getUserId(accessKey)
         userId ?: return ResponseEntity(HttpStatus.UNAUTHORIZED)
-        val chatConversation = chatService.getConversation(id)
-        chatConversation ?: return ResponseEntity(HttpStatus.NOT_FOUND)
         if (userId != chatConversation.owner) {
             return ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
 
+        // Generate response message
         var openAITotalTokens: Int? = null
-        val message = try {
+        val responseMessage = try {
             val response = openAIClient.chat(
                 listOf(
                     OpenAIChatRequest.Message("user", content)
@@ -88,11 +81,20 @@ class ChatController(
             )
         }
 
-        val responseJson = objectMapper.writeValueAsString(message)!!
-        chatService.addChatMessagePair(id, content, responseJson, openAITotalTokens ?: 0)
-        // TODO Write OpenAI interaction to chat_openai_log
+        // Format response as JSON
+        val responseJson = objectMapper.writeValueAsString(responseMessage)!!
 
-        return ResponseEntity(message, HttpStatus.OK)
+        // Store request and response in the in-memory storage
+        currentConversationsService.addMessageToConversation(id, ChatUserMessage(content))
+        currentConversationsService.addMessageToConversation(id, responseMessage)
+
+        // Write to persistent database if the message should be logged
+        if (chatConversation.toBeLogged) {
+            chatService.addChatMessagePair(id, content, responseJson, openAITotalTokens ?: 0)
+            // TODO Write OpenAI interaction to chat_openai_log
+        }
+
+        return ResponseEntity(responseMessage, HttpStatus.OK)
     }
 
 }
