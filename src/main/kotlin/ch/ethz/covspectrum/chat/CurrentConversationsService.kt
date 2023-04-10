@@ -2,7 +2,6 @@ package ch.ethz.covspectrum.chat
 
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
@@ -44,7 +43,7 @@ class CurrentConversationsService() {
                 numberDeleted++
             }
         }
-        println("${LocalDate.now()}\tCurrentConversationsService: deleting $numberDeleted old conversations")
+        println("${LocalDateTime.now()}\tCurrentConversationsService: deleting $numberDeleted old conversations")
     }
 
 }

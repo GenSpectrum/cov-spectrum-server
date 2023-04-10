@@ -60,17 +60,22 @@ class ChatController(
             )
             openAITotalTokens = response.usage.total_tokens
             val responseMessageContent = response.choices[0].message.content
-            val sql = openAIClient.extractSql(responseMessageContent)
-            if (sql == null) {
-                val errorReason = openAIClient.extractErrorReason(responseMessageContent)
+            val responseParsed = openAIClient.parseResponseText(responseMessageContent)
+
+            if (responseParsed?.sql == null || responseParsed.error != null) {
                 var message = "Sorry, I am not able to answer the question."
-                if (errorReason != null) {
-                    message += " $errorReason"
+                if (responseParsed?.error != null) {
+                    message += " ${responseParsed.error}"
                 }
                 ChatSystemMessage(null, message, null, null)
             } else {
-                val data = lapisClient.execute(sql)
-                ChatSystemMessage(null, "Here are the results:", data, ChatSystemMessage.Internal(sql))
+                val internal = ChatSystemMessage.Internal(responseParsed.sql)
+                try {
+                    val data = lapisClient.execute(responseParsed.sql)
+                    ChatSystemMessage(null, "Here are the results:", data, internal)
+                } catch (e: Exception) {
+                    ChatSystemMessage(null, "Sorry, I am not able to answer the question.", null, internal)
+                }
             }
         } catch (e: Exception) {
             ChatSystemMessage(null, "Sorry, I am not able to answer the question.", null, null)
