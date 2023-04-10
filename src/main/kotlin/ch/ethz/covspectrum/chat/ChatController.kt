@@ -53,32 +53,44 @@ class ChatController(
         // Generate response message
         var openAITotalTokens: Int? = null
         val responseMessage = try {
-            val response = openAIClient.chat(
+            val response = openAIClient.chatForSql(
                 listOf(
                     OpenAIChatRequest.Message("user", content)
                 )
             )
             openAITotalTokens = response.usage.total_tokens
             val responseMessageContent = response.choices[0].message.content
-            val responseParsed = openAIClient.parseResponseText(responseMessageContent)
+            val responseParsed = openAIClient.parseSqlResponseText(responseMessageContent)
 
             if (responseParsed?.sql == null || responseParsed.error != null) {
                 var message = "Sorry, I am not able to answer the question."
                 if (responseParsed?.error != null) {
                     message += " ${responseParsed.error}"
                 }
-                ChatSystemMessage(null, message, null, null)
+                ChatSystemMessage(null, message, null, null, null)
             } else {
                 val internal = ChatSystemMessage.Internal(responseParsed.sql)
                 try {
                     val data = lapisClient.execute(responseParsed.sql)
-                    ChatSystemMessage(null, "Here are the results:", data, internal)
+
+                    // Now that ChatGPT explain the query.
+                    val responseMessageContent2 = try {
+                        val response2 = openAIClient.chatForExplanation(responseParsed.sql)
+                        openAITotalTokens += response2.usage.total_tokens
+                        response2.choices[0].message.content
+                    } catch (e: Exception) {
+                        // Too bad, explanation did not work
+                        // TODO Log it so that we can investigate
+                        null
+                    }
+
+                    ChatSystemMessage(null, "Here are the results:", data, responseMessageContent2, internal)
                 } catch (e: Exception) {
-                    ChatSystemMessage(null, "Sorry, I am not able to answer the question.", null, internal)
+                    ChatSystemMessage(null, "Sorry, I am not able to answer the question.", null, null, internal)
                 }
             }
         } catch (e: Exception) {
-            ChatSystemMessage(null, "Sorry, I am not able to answer the question.", null, null)
+            ChatSystemMessage(null, "Sorry, I am not able to answer the question.", null, null, null)
         }
 
         // Format response as JSON
