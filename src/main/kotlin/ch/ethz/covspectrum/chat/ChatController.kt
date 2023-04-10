@@ -39,6 +39,10 @@ class ChatController(
         accessKey: String,
         @RequestBody content: String
     ): ResponseEntity<ChatSystemMessage> {
+        if (content.length > 400) {
+            return ResponseEntity(HttpStatus.PAYLOAD_TOO_LARGE)
+        }
+
         // Only allow current conversations (i.e., stored in the in-memory storage to be updated)
         val chatConversation = currentConversationsService.getConversation(id)
         chatConversation ?: return ResponseEntity(HttpStatus.GONE)
