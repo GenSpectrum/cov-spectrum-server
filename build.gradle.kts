@@ -30,6 +30,8 @@ dependencies {
     implementation("com.mchange:c3p0:0.9.5.5")
     implementation("org.jooq:jooq:3.15.3")
     implementation("com.maxmind.geoip2:geoip2:2.15.0")
+    implementation("com.github.jsqlparser:jsqlparser:4.6")
+    implementation("com.googlecode.json-simple:json-simple:1.1.1")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }

@@ -3,14 +3,9 @@ package ch.ethz.covspectrum.entity.model.chen2021fitness
 import java.time.LocalDate
 
 data class LapisResponse (
-    var data: List<PayloadEntry>,
+    var data: List<Map<String, String>>,
     var errors: List<Any>,
     var info: LapisInfo
-)
-
-data class PayloadEntry(
-    var date: LocalDate?,
-    var count: Int
 )
 
 data class LapisInfo(
