@@ -1,10 +1,10 @@
 package ch.ethz.covspectrum.chat
 
 import ch.ethz.covspectrum.service.DatabaseService
+import ch.ethz.covspectrum.util.nowUTCDateTime
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
 import java.sql.Timestamp
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.floor
 import kotlin.random.Random
@@ -65,7 +65,7 @@ class ChatService(
      */
     fun createConversation(userId: Int, toBeLogged: Boolean): ChatConversation {
         // Generate conversation ID
-        val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+        val timestamp = nowUTCDateTime().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
         val charPool : List<Char> = ('a'..'z') + ('A'..'Z')
         val randomString = (1..7)
             .map { Random.nextInt(0, charPool.size).let { charPool[it] } }
@@ -73,7 +73,7 @@ class ChatService(
         val conversationId = "$timestamp-$randomString"
 
         // Create conversation object
-        val conversation = ChatConversation(conversationId, userId, LocalDateTime.now(), toBeLogged, mutableListOf())
+        val conversation = ChatConversation(conversationId, userId, nowUTCDateTime(), toBeLogged, mutableListOf())
 
         // Store in database if permitted
         if (toBeLogged) {
@@ -108,15 +108,16 @@ class ChatService(
               response_json,
               openai_total_tokens
             )
-            values (?, now(), ?, ?::json, ?)
+            values (?, ?, ?, ?::json, ?)
             returning id;
         """.trimIndent()
         databaseService.getConnection().use { conn ->
             conn.prepareStatement(sql).use { statement ->
                 statement.setString(1, conversationId)
-                statement.setString(2, userPrompt)
-                statement.setString(3, responseJson)
-                statement.setInt(4, openAITotalTokens)
+                statement.setTimestamp(2, Timestamp.valueOf(nowUTCDateTime()))
+                statement.setString(3, userPrompt)
+                statement.setString(4, responseJson)
+                statement.setInt(5, openAITotalTokens)
                 statement.executeQuery().use { rs ->
                     rs.next()
                     return rs.getInt("id")

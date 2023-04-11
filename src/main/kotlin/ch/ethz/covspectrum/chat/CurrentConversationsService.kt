@@ -1,5 +1,6 @@
 package ch.ethz.covspectrum.chat
 
+import ch.ethz.covspectrum.util.nowUTCDateTime
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -17,7 +18,7 @@ class CurrentConversationsService() {
             throw Exception("The conversation with ID $conversationId already exists.")
         }
         conversations[conversationId] = conversation
-        conversationLastUpdated[conversationId] = LocalDateTime.now()
+        conversationLastUpdated[conversationId] = nowUTCDateTime()
     }
 
     fun getConversation(id: String): ChatConversation? {
@@ -37,13 +38,13 @@ class CurrentConversationsService() {
     fun deleteOldConversations() {
         var numberDeleted = 0
         for ((id, updateTime) in conversationLastUpdated.entries) {
-            if (updateTime.isBefore(LocalDateTime.now().minusDays(1))) {
+            if (updateTime.isBefore(nowUTCDateTime().minusDays(1))) {
                 conversations.remove(id)
                 conversationLastUpdated.remove(id)
                 numberDeleted++
             }
         }
-        println("${LocalDateTime.now()}\tCurrentConversationsService: deleting $numberDeleted old conversations")
+        println("${nowUTCDateTime()}\tCurrentConversationsService: deleting $numberDeleted old conversations")
     }
 
 }
