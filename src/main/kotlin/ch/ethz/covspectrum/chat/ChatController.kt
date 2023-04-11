@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*
 class ChatController(
     private val chatService: ChatService,
     private val currentConversationsService: CurrentConversationsService,
+    private val usageCounterService: UsageCounterService,
     private val objectMapper: ObjectMapper
 ) {
 
@@ -55,14 +56,14 @@ class ChatController(
         }
 
         // Generate response message
-        var openAITotalTokens: Int? = null
+        var openAITotalTokens = 0
         val responseMessage = try {
             val response = openAIClient.chatForSql(
                 listOf(
                     OpenAIChatRequest.Message("user", content)
                 )
             )
-            openAITotalTokens = response.usage.total_tokens
+            openAITotalTokens += response.usage.total_tokens
             val responseMessageContent = response.choices[0].message.content
             val responseParsed = openAIClient.parseSqlResponseText(responseMessageContent)
 
@@ -104,9 +105,12 @@ class ChatController(
         currentConversationsService.addMessageToConversation(id, ChatUserMessage(content))
         currentConversationsService.addMessageToConversation(id, responseMessage)
 
+        // Store the number of used tokens
+        usageCounterService.submit(openAITotalTokens)
+
         // Write to persistent database if the message should be logged
         if (chatConversation.toBeLogged) {
-            val messageId = chatService.addChatMessagePair(id, content, responseJson, openAITotalTokens ?: 0)
+            val messageId = chatService.addChatMessagePair(id, content, responseJson, openAITotalTokens)
             responseMessage.id = messageId
             // TODO Write OpenAI interaction to chat_openai_log
         }
