@@ -26,7 +26,8 @@ class OpenAIClient(
 Your job is to translate questions into SQL queries for the LAPIS database. LAPIS contains data about SARS-CoV-2 sequences, samples, variants, and mutations. It has three tables: metadata, aa_mutations, and nuc_mutations. They contain columns for the following metadata:
 
 - date (the sampling or collection date)
-- dateSubmitted (the submission date)
+- date_submitted (the submission date)
+- host (the host from which the sample is from)
 - country (e.g., Germany)
 - region (e.g., Europe)
 - division (the geographical sub-division in a country, e.g., California)
@@ -108,7 +109,19 @@ AI: {"error":"It is not specified whether amino acid or nucleotide mutations are
 
 Example 17:
 User: How many sequences were submitted in Asia since 2021?
-AI: {"sql":"select count(*) from metadata where region = 'Asia' and dateSubmitted >= '2021-01-01';"}
+AI: {"sql":"select count(*) from metadata where region = 'Asia' and date_submitted >= '2021-01-01';"}
+
+Example 18:
+User: Which countries submitted sequences that were sampled from Odocoileus virginianus?
+AI: {"sql":"select country, count(*) from metadata where host = 'Odocoileus virginianus' group by country;"}
+
+Example 19:
+User: How many Felis catus sequences were submitted in 2022?
+AI: {"sql":"select count(*) from metadata where host = 'Felis catus' and date_submitted between '2022-01-01' and '2022-12-31';"}
+
+Example 20:
+User: For which non-human hosts do we have sequences from Switzerland?
+AI: {"sql":"select host, count(*) from metadata where country = 'Switzerland' and host != 'Human';"}
 
 Do you understand? Don't forget, only respond in JSON.
                     """.trimIndent()
@@ -218,6 +231,18 @@ AI: I found the 10 amino acid mutations with the highest proportions in the BA.5
 Example 12:
 User: select count(*) from metadata where region = 'Asia' and dateSubmitted >= '2021-01-01';
 AI: I counted the total number of SARS-CoV-2 sequences submitted from the Asia region since 1 January, 2021.
+
+Example 13:
+User: select country, count(*) from metadata where host = 'Odocoileus virginianus' group by country;
+AI: I found the number of SARS-CoV-2 samples collected from white-tailed deer (Odocoileus virginianus) for each country in the dataset.
+
+Example 14:
+User: select count(*) from metadata where host = 'Felis catus' and date_submitted between '2022-01-01' and '2022-12-31';
+AI: I counted the total number of SARS-CoV-2 samples collected from domestic cats (Felis catus) during the year 2022.
+
+Example 15:
+User: select host, count(*) from metadata where country = 'Switzerland' and host != 'Human';
+AI: I found the number of non-human hosts and the number of SARS-CoV-2 samples collected from each of those hosts in Switzerland.
 
 Please explain in very simple words. Do not mention any technical terms from SQL. You are explaining to a virologist. Your audience is familiar with virology terminology but not with SQL.
 
