@@ -72,16 +72,16 @@ User: Which nucleotide mutations were found more than 300 times in DACH countrie
 AI: {"sql":"select mutation, count(*) from nuc_mutations where (country = 'Germany' or country = 'Switzerland' or country = 'Austria') and date between '2023-01-01' and '2023-12-31' group by mutation having count(*) > 300;"}
 
 Example 9:
-User: Give me all amino acid mutations that were found in XBB.1.5 sequences!
-AI: {"sql":"select mutation, count(*), proportion() from aa_mutations where lineage = 'XBB.1.5' group by mutation;"}
+User: Give me all amino acid mutations that were found in XBB.1.5 sequences from the US!
+AI: {"sql":"select mutation, count(*), proportion() from aa_mutations where lineage = 'XBB.1.5' and country = 'USA' group by mutation;"}
 
 Example 9:
 User: Give me all mutations that were found in XBB.1.5 sequences!
-AI: {"error":"It is not specified whether amino acid or nucleotide mutations are requested."}
+AI: {"sql":"select mutation, count(*), proportion() from aa_mutations where lineage = 'XBB.1.5' and country = 'USA' group by mutation;"}
 
 Example 10:
 User: Which mutations were found more than 300 times in DACH countries (Germany, Switzerland, and Austria) in 2023?
-AI: {"error":"It is not specified whether amino acid or nucleotide mutations are requested."}
+AI: {"sql":"select mutation, count(*) from aa_mutations where (country = 'Germany' or country = 'Switzerland' or country = 'Austria') and date between '2023-01-01' and '2023-12-31' group by mutation having count(*) > 300;"}
 
 Example 11:
 User: In which lineages do the mutations ORF1a:S135R, G22577C and 23854A co-occur?
@@ -104,8 +104,8 @@ User: Which are the most 10 amino acid mutations with the highest proportions in
 AI: {"sql":"select mutation, proportion from aa_mutations where lineage = 'BA.5' group by mutation order by proportion() desc limit 10;"}
 
 Example 16:
-User: Which are the most common 10 mutations in BA.5 sequences?
-AI: {"error":"It is not specified whether amino acid or nucleotide mutations are requested."}
+User: Which are the most common 10 mutations in BA.5 sequences from the UK?
+AI: {"sql":"select mutation, proportion from aa_mutations where lineage = 'BA.5' and country = 'United Kingdom' group by mutation order by proportion() desc limit 10;"}
 
 Example 17:
 User: How many sequences were submitted in Asia since 2021?
@@ -120,8 +120,16 @@ User: How many Felis catus sequences were submitted in 2022?
 AI: {"sql":"select count(*) from metadata where host = 'Felis catus' and date_submitted between '2022-01-01' and '2022-12-31';"}
 
 Example 20:
-User: For which non-human hosts do we have sequences from Switzerland?
-AI: {"sql":"select host, count(*) from metadata where country = 'Switzerland' and host != 'Human';"}
+User: For which non-human hosts do we have sequences from the United States?
+AI: {"sql":"select host, count(*) from metadata where country = 'USA' and host != 'Human';"}
+
+Example 21:
+User: Which lineages from 2020 have the mutations S:501Y and either S:69- or S:70-?
+AI: {"sql":"select lineage, count(*) from metadata where date between '2020-01-01' and '2020-12-31' and aa_S_501 = 'Y' and (aa_S_69 = '-' or aa_S_70 = '-') group by lineage;"}
+
+Example 22:
+User: Which variants have S:484K?
+AI: {sql: "select lineage, count(*) from metadata where aa_S_484 = 'K' group by lineage;"}
 
 Do you understand? Don't forget, only respond in JSON.
                     """.trimIndent()
@@ -173,6 +181,7 @@ Imagine that you just executed a SQL query in the LAPIS database. I will give yo
 
 - date (the sampling or collection date)
 - dateSubmitted (the submission date)
+- host (the host from which the sample is from)
 - country (e.g., Germany)
 - region (e.g., Europe)
 - division (the geographical sub-division in a country, e.g., California)
@@ -243,6 +252,10 @@ AI: I counted the total number of SARS-CoV-2 samples collected from domestic cat
 Example 15:
 User: select host, count(*) from metadata where country = 'Switzerland' and host != 'Human';
 AI: I found the number of non-human hosts and the number of SARS-CoV-2 samples collected from each of those hosts in Switzerland.
+
+Example 16:
+User: select lineage, count(*) from metadata where date between '2020-01-01' and '2020-12-31' and aa_S_501 = 'Y' and (aa_S_69 = '-' or aa_S_70 = '-') group by lineage;
+AI: I found the different virus lineages with a specific protein change (S:501Y) and either one of the two other protein changes (S:69- or S:70-) from samples collected during 2020. I also counted how many samples of each lineage have these changes.
 
 Please explain in very simple words. Do not mention any technical terms from SQL. You are explaining to a virologist. Your audience is familiar with virology terminology but not with SQL.
 
