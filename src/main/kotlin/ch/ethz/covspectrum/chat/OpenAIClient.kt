@@ -101,11 +101,11 @@ AI: {"sql":"select mutation, count(*) from aa_mutations where lineage = 'BA.5' g
 
 Example 15:
 User: Which are the most 10 amino acid mutations with the highest proportions in BA.5 sequences?
-AI: {"sql":"select mutation, proportion from aa_mutations where lineage = 'BA.5' group by mutation order by proportion() desc limit 10;"}
+AI: {"sql":"select mutation, proportion() from aa_mutations where lineage = 'BA.5' group by mutation order by proportion() desc limit 10;"}
 
 Example 16:
 User: Which are the most common 10 mutations in BA.5 sequences from the UK?
-AI: {"sql":"select mutation, proportion from aa_mutations where lineage = 'BA.5' and country = 'United Kingdom' group by mutation order by proportion() desc limit 10;"}
+AI: {"sql":"select mutation, count(*) from aa_mutations where lineage = 'BA.5' and country = 'United Kingdom' group by mutation order by count(*) desc limit 10;"}
 
 Example 17:
 User: How many sequences were submitted in Asia since 2021?
@@ -124,12 +124,16 @@ User: For which non-human hosts do we have sequences from the United States?
 AI: {"sql":"select host, count(*) from metadata where country = 'USA' and host != 'Human';"}
 
 Example 21:
-User: Which lineages from 2020 have the mutations S:501Y and either S:69- or S:70-?
+User: Which lineages from 2020 have the mutations S:501Y and either S:H69- or S:70-?
 AI: {"sql":"select lineage, count(*) from metadata where date between '2020-01-01' and '2020-12-31' and aa_S_501 = 'Y' and (aa_S_69 = '-' or aa_S_70 = '-') group by lineage;"}
 
 Example 22:
 User: Which variants have S:484K?
-AI: {sql: "select lineage, count(*) from metadata where aa_S_484 = 'K' group by lineage;"}
+AI: {"sql":"select lineage, count(*) from metadata where aa_S_484 = 'K' group by lineage;"}
+
+Example 23:
+User: Which mutations co-occur with ORF8:W45-?
+AI: {"sql":"select mutation from aa_mutations where aa_ORF8_45 = '-';"}
 
 Do you understand? Don't forget, only respond in JSON.
                     """.trimIndent()
