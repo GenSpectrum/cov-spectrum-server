@@ -155,4 +155,25 @@ class ChatService(
             }
         }
     }
+
+    fun logOpenAICommunication(messageId: Int, response: OpenAIChatResponse, request: OpenAIChatRequest, type: String) {
+        val sql = """
+            insert into chat_openai_log (
+              related_message_pair,
+              openai_request,
+              openai_response,
+              type
+            )
+            values (?, ?::json, ?::json, ?);
+        """.trimIndent()
+        databaseService.getConnection().use { conn ->
+            conn.prepareStatement(sql).use { statement ->
+                statement.setInt(1, messageId)
+                statement.setString(2, objectMapper.writeValueAsString(request))
+                statement.setString(3, objectMapper.writeValueAsString(response))
+                statement.setString(4, type)
+                statement.execute()
+            }
+        }
+    }
 }

@@ -12,7 +12,7 @@ class OpenAIClient(
     private val openAISecret: String
 ) {
 
-    fun chatForSql(previousMessages: List<OpenAIChatRequest.Message>): OpenAIChatResponse {
+    fun chatForSql(previousMessages: List<OpenAIChatRequest.Message>): Pair<OpenAIChatResponse, OpenAIChatRequest> {
         val request = OpenAIChatRequest(
             "gpt-3.5-turbo",
             mutableListOf(
@@ -156,7 +156,7 @@ Yes, I understand. I will translate questions to SQL based on the tables that yo
         val modelHttpReq = HttpEntity(request, headers)
         val response = RestTemplate().postForObject(endpoint, modelHttpReq, OpenAIChatResponse::class.java)
 
-        return response!!
+        return Pair(response!!, request)
     }
 
     fun parseSqlResponseText(messageContent: String): OpenAIParsedResponse? {
@@ -170,7 +170,7 @@ Yes, I understand. I will translate questions to SQL based on the tables that yo
         return ObjectMapper().readValue(hopefullyJson)
     }
 
-    fun chatForExplanation(sqlQuery: String): OpenAIChatResponse {
+    fun chatForExplanation(sqlQuery: String): Pair<OpenAIChatResponse, OpenAIChatRequest> {
         val request = OpenAIChatRequest(
             "gpt-3.5-turbo",
             mutableListOf(
@@ -284,7 +284,7 @@ Yes, I understand. I will explain the SQL query results in simple words without 
         val modelHttpReq = HttpEntity(request, headers)
         val response = RestTemplate().postForObject(endpoint, modelHttpReq, OpenAIChatResponse::class.java)
 
-        return response!!
+        return Pair(response!!, request)
     }
 
 }

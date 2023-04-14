@@ -56,15 +56,15 @@ class ChatController(
         }
 
         // Generate response message
-        var openAITotalTokens = 0
+        val openAILog = mutableListOf<Triple<OpenAIChatResponse, OpenAIChatRequest, String>>()
         val responseMessage = try {
-            val response = openAIClient.chatForSql(
+            val responseRequestPair = openAIClient.chatForSql(
                 listOf(
                     OpenAIChatRequest.Message("user", content)
                 )
             )
-            openAITotalTokens += response.usage.total_tokens
-            val responseMessageContent = response.choices[0].message.content
+            openAILog.add(Triple(responseRequestPair.first, responseRequestPair.second, "generate-sql"))
+            val responseMessageContent = responseRequestPair.first.choices[0].message.content
             val responseParsed = openAIClient.parseSqlResponseText(responseMessageContent)
 
             if (responseParsed?.sql == null || responseParsed.error != null) {
@@ -80,9 +80,9 @@ class ChatController(
 
                     // Now that ChatGPT explain the query.
                     val responseMessageContent2 = try {
-                        val response2 = openAIClient.chatForExplanation(responseParsed.sql)
-                        openAITotalTokens += response2.usage.total_tokens
-                        response2.choices[0].message.content
+                        val responseRequestPair2 = openAIClient.chatForExplanation(responseParsed.sql)
+                        openAILog.add(Triple(responseRequestPair2.first, responseRequestPair2.second, "explain-sql"))
+                        responseRequestPair2.first.choices[0].message.content
                     } catch (e: Exception) {
                         // Too bad, explanation did not work
                         // TODO Log it so that we can investigate
@@ -106,13 +106,16 @@ class ChatController(
         currentConversationsService.addMessageToConversation(id, responseMessage)
 
         // Store the number of used tokens
+        val openAITotalTokens = openAILog.sumOf { it.first.usage.total_tokens }
         usageCounterService.submit(openAITotalTokens)
 
         // Write to persistent database if the message should be logged
         if (chatConversation.toBeLogged) {
             val messageId = chatService.addChatMessagePair(id, content, responseJson, openAITotalTokens)
             responseMessage.id = messageId
-            // TODO Write OpenAI interaction to chat_openai_log
+            for ((response, request, type) in openAILog) {
+                chatService.logOpenAICommunication(messageId, response, request, type)
+            }
         }
 
         return ResponseEntity(responseMessage, HttpStatus.OK)
