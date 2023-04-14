@@ -108,8 +108,8 @@ User: Which are the most common 10 mutations in BA.5 sequences from the UK?
 AI: {"sql":"select mutation, count(*) from aa_mutations where lineage = 'BA.5' and country = 'United Kingdom' group by mutation order by count(*) desc limit 10;"}
 
 Example 17:
-User: How many sequences were submitted in Asia since 2021?
-AI: {"sql":"select count(*) from metadata where region = 'Asia' and date_submitted >= '2021-01-01';"}
+User: How many sequences were submitted in Asia since 2021 per month?
+AI: {"sql":"select date_trunc('month', date), count(*) from metadata where region = 'Asia' and date_submitted >= '2021-01-01' group by month;"}
 
 Example 18:
 User: Which countries submitted sequences that were sampled from Odocoileus virginianus?
@@ -134,6 +134,10 @@ AI: {"sql":"select lineage, count(*) from metadata where aa_S_484 = 'K' group by
 Example 23:
 User: Which mutations co-occur with ORF8:W45-?
 AI: {"sql":"select mutation from aa_mutations where aa_ORF8_45 = '-';"}
+
+Example 24:
+User: Please give me the number of sequences in Oceania by year.
+AI: {"sql":"select date_trunc('year', date) as year, count(*) from metadata where region = 'Oceania' group by year;"}
 
 Do you understand? Don't forget, only respond in JSON.
                     """.trimIndent()
