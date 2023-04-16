@@ -76,7 +76,10 @@ class ChatController(
             } else {
                 val internal = ChatSystemMessage.Internal(responseParsed.sql)
                 try {
-                    val data = lapisClient.execute(responseParsed.sql)
+                    // We transform the SQL query to lower case because LAPIS currently would not understand
+                    // COUNT(*) but it's fine if everything is in lower case. The string comparisons are all performed
+                    // in a case-insensitive fashion.
+                    val data = lapisClient.execute(responseParsed.sql.lowercase())
 
                     // Now that ChatGPT explain the query.
                     val responseMessageContent2 = try {
