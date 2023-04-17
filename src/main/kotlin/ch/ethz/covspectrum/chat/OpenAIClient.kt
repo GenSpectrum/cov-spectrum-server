@@ -158,6 +158,10 @@ Example 28:
 User: How often does ORF1a:3606F occur globally?
 AI: {"sql":"select count(*) from metadata where aa_ORF1a_3606 = 'F';"}
 
+Example 29:
+User: When was the first XBB.1.16 submitted?
+AI: {"sql":"select date_submitted from metadata where lineage = 'XBB.1.16' order by date_submitted limit 1;"}
+
 Do you understand? Don't forget, only respond in JSON.
                     """.trimIndent()
                 ),
