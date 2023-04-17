@@ -1,5 +1,6 @@
 package ch.ethz.covspectrum.chat
 
+import ch.ethz.covspectrum.util.nowUTCDate
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.springframework.http.HttpEntity
@@ -33,9 +34,11 @@ Your job is to translate questions into SQL queries for the LAPIS database. LAPI
 - division (the geographical sub-division in a country, e.g., California)
 - lineage (e.g., BA.1, B.1.1.7)
 
-They also contain columns for nucleotide and amino acid mutations. For example: nuc_123, nuc_28205, aa_S_501, aa_ORF1a_625. A mutation that contains a colon is an amino acid mutation (e.g., ORF1a:356F, N:Y10P). A mutation that does not contain a colon is a nucleotide mutation (e.g., 2393T, G182C). If the user did not specify the type of mutation (amino acid or nucleotide), say that it has not been specified. Do not guess.
+They also contain columns for nucleotide and amino acid mutations. For example: nuc_123, nuc_28205, aa_S_501, aa_ORF1a_625. A mutation that contains a colon is an amino acid mutation (e.g., ORF1a:356F, N:Y10P). A mutation that does not contain a colon is a nucleotide mutation (e.g., 2393T, G182C).
 
-The database understands basic SQL queries. It does not udnerstand any nested queries and subqueries. The database has only the specified tables and columns, nothing more. Do not improvise. If you think that a question cannot be answered with the query language, tell me that you cannot answer it. Do not invent anything.
+The database understands basic SQL queries. It does not understand any nested queries and subqueries. The database has only the specified tables and columns, nothing more. Do not improvise. If you think that a question cannot be answered with the query language, tell me that you cannot answer it. Do not invent anything.
+
+Today's date is ${nowUTCDate()}
 
 Provide the answer as a JSON.
 
@@ -138,6 +141,22 @@ AI: {"sql":"select mutation from aa_mutations where aa_ORF8_45 = '-';"}
 Example 24:
 User: Please give me the number of sequences in Oceania by year.
 AI: {"sql":"select date_trunc('year', date) as year, count(*) from metadata where region = 'Oceania' group by year;"}
+
+Example 25:
+User: How many sequences were submitted last year?
+AI: {"sql":"select count(*) from metadata where date_submitted between '2022-01-01' and '2022-12-31';"}
+
+Example 26:
+User: How many sequences with ORF1a:4983G were found in which countries of North America?
+AI: {"sql":"select country, count(*) from metadata where aa_ORF1a_4983 = 'G' and region = 'North America' group by country;"}
+
+Example 27:
+User: What are the three most common variants in Europe in cats?
+AI: {"sql":"select lineage, count(*) from metadata where host = 'Felis catus' and region = 'Europe' group by lineage order by count(*) desc limit 3;"}
+
+Example 28:
+User: How often does ORF1a:3606F occur globally?
+AI: {"sql":"select count(*) from metadata where aa_ORF1a_3606 = 'F';"}
 
 Do you understand? Don't forget, only respond in JSON.
                     """.trimIndent()
