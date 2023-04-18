@@ -162,6 +162,10 @@ Example 29:
 User: When was the first XBB.1.16 submitted?
 AI: {"sql":"select date_submitted from metadata where lineage = 'XBB.1.16' order by date_submitted limit 1;"}
 
+Example 30:
+User: Would you mind giving me the number of sequences from South and North America together?
+AI: {"sql":"select count(*) from metadata where region = 'North America' or region = 'South America';"}
+
 Do you understand? Don't forget, only respond in JSON.
                     """.trimIndent()
                 ),
