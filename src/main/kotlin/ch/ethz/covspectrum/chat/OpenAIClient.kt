@@ -288,6 +288,34 @@ Example 16:
 User: select lineage, count(*) from metadata where date between '2020-01-01' and '2020-12-31' and aa_S_501 = 'Y' and (aa_S_69 = '-' or aa_S_70 = '-') group by lineage;
 AI: I found the different virus lineages with a specific protein change (S:501Y) and either one of the two other protein changes (S:69- or S:70-) from samples collected during 2020. I also counted how many samples of each lineage have these changes.
 
+Example 17:
+User: select country, date_submitted from metadata where lineage = 'B.1.1.7' order by date_submitted limit 5;
+AI: I found the first 5 submitted samples of the B.1.1.7 lineage in the dataset, listing the country where they were collected and the date they were submitted to the database.
+
+Example 18:
+User: select host, count(*) from metadata where host != 'Human' group by host order by count(*) desc;
+AI: I found the non-human hosts of the SARS-CoV-2 virus and counted the number of samples collected from each host type. I listed the hosts in descending order based on the number of samples.
+
+Example 19:
+User: select country from metadata where lineage = 'BA.1' group by country, date having count(*) > 10 order by date limit 1;
+AI: I identified the first country where at least 11 samples of the BA.1 lineage were collected on the same day.
+
+Example 20:
+User: select lineage from metadata where nuc_23403 = 'G' and nuc_23063 = 'T' and nuc_3037 = 'T' group by lineage;
+AI: I found the different virus lineages that have three specific changes in their genetic code: 23403G, 23063T, and 3037T.
+
+Example 21:
+User: select count(*) from metadata where lineage = 'XBB.1.5' and host = 'Canis lupus familiaris';
+AI: I found the number of SARS-CoV-2 samples of the XBB.1.5 lineage collected from domestic dogs (Canis lupus familiaris).
+
+Example 22:
+User: select country, count(*) from metadata where date between '2023-01-01' and '2023-12-31' group by country order by count(*) desc limit 10;
+AI: I identified the top 10 countries with the highest number of SARS-CoV-2 samples collected during the year 2023 and counted the number of samples from each country.
+
+Example 23:
+User: select count(*) from metadata where country = 'Germany' and date between '2023-02-01' and '2023-02-28' and nuc_1221 = 'T';
+AI: I found the number of SARS-CoV-2 samples from Germany collected in February 2023 that have a specific genetic change: 1221T.
+
 Please explain in very simple words. Do not mention any technical terms from SQL. You are explaining to a virologist. Your audience is familiar with virology terminology but not with SQL.
 
 Do you understand?
