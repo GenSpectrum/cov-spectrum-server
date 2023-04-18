@@ -197,7 +197,7 @@ Yes, I understand. I will translate questions to SQL based on the tables that yo
         if (firstOpen == -1 || lastClose == -1) {
             return null
         }
-        val hopefullyJson = tmp.substring(firstOpen, lastClose)
+        val hopefullyJson = tmp.substring(firstOpen, lastClose + 1)
         return try {
             ObjectMapper().readValue(hopefullyJson)
         } catch (e: Exception) {
