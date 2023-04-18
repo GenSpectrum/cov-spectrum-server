@@ -7,7 +7,6 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.web.client.RestTemplate
-import java.util.regex.Pattern
 
 class OpenAIClient(
     private val openAISecret: String
@@ -192,13 +191,18 @@ Yes, I understand. I will translate questions to SQL based on the tables that yo
 
     fun parseSqlResponseText(messageContent: String): OpenAIParsedResponse? {
         val tmp = messageContent.replace("\n", " ")
-        val pattern = Pattern.compile("^.*(\\{.*}).*\$")
-        val matcher = pattern.matcher(tmp)
-        if (!matcher.find() || matcher.groupCount() != 1) {
+        // This is a very heuristic way to extract a JSON from the string.
+        val firstOpen = tmp.indexOf('{')
+        val lastClose = tmp.lastIndexOf('}')
+        if (firstOpen == -1 || lastClose == -1) {
             return null
         }
-        val hopefullyJson = matcher.group(1)
-        return ObjectMapper().readValue(hopefullyJson)
+        val hopefullyJson = tmp.substring(firstOpen, lastClose)
+        return try {
+            ObjectMapper().readValue(hopefullyJson)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun chatForExplanation(sqlQuery: String): Pair<OpenAIChatResponse, OpenAIChatRequest> {
