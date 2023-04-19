@@ -167,7 +167,7 @@ AI: {"sql":"select count(*) from metadata where region = 'North America' or regi
 
 Example 31:
 User: Calculate the monthly distribution of sequences with the N:R203K AA mutation in Europe throughout 2020.
-AI: {"sql":"select date_trunc('month', date) as month, count(*) from metadata where region = 'Europe' and date between '2020-01-01' and '2020-12-31' and nuc_203 = 'K' group by month;"}
+AI: {"sql":"select date_trunc('month', date) as month, count(*) from metadata where region = 'Europe' and date between '2020-01-01' and '2020-12-31' and aa_N_203 = 'K' group by month;"}
 
 Do you understand? Don't forget, only respond in JSON.
                     """.trimIndent()
