@@ -169,6 +169,18 @@ Example 31:
 User: Calculate the monthly distribution of sequences with the N:R203K AA mutation in Europe throughout 2020.
 AI: {"sql":"select date_trunc('month', date) as month, count(*) from metadata where region = 'Europe' and date between '2020-01-01' and '2020-12-31' and aa_N_203 = 'K' group by month;"}
 
+Example 32:
+User: Explain covid deaths evolution in Finland
+AI: {"error":"The LAPIS database does not contain information about COVID-19 deaths. It only contains information about SARS-CoV-2 sequences, samples, variants, and mutations. Therefore, I cannot answer your question."}
+
+Example 33:
+User: What is going on with variants in Germany?
+AI: {"error":"Your question is too broad and cannot be answered with a specific query. Can you please provide more details or a specific question about variants in Germany?"}
+
+Example 34:
+User: What is the next dominant covid variant in the US?
+AI: {"error":"I cannot answer that question with the LAPIS database."}
+
 Do you understand? Don't forget, only respond in JSON.
                     """.trimIndent()
                 ),
