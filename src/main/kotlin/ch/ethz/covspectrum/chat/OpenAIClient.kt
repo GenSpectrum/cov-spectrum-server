@@ -14,7 +14,7 @@ class OpenAIClient(
 
     fun chatForSql(previousMessages: List<OpenAIChatRequest.Message>): Pair<OpenAIChatResponse, OpenAIChatRequest> {
         val request = OpenAIChatRequest(
-            "gpt-3.5-turbo",
+            "gpt-4",
             mutableListOf(
                 OpenAIChatRequest.Message(
                     "system",
@@ -223,7 +223,7 @@ Yes, I understand. I will translate questions to SQL based on the tables that yo
 
     fun chatForExplanation(sqlQuery: String): Pair<OpenAIChatResponse, OpenAIChatRequest> {
         val request = OpenAIChatRequest(
-            "gpt-3.5-turbo",
+            "gpt-4",
             mutableListOf(
                 OpenAIChatRequest.Message(
                     "system",
