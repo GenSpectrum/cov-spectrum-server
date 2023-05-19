@@ -16,8 +16,9 @@ class ChatController(
 ) {
 
     private val openAIClient = OpenAIClient(System.getenv("COV_SPECTRUM_OPENAI_SECRET"))
-    private val lapisClient =
+    private val gisaidLapisClient =
         LapisSqlClient("https://lapis.cov-spectrum.org/gisaid/v1", System.getenv("COV_SPECTRUM_LAPIS_SECRET"))
+    private val openLapisClient = LapisSqlClient("https://lapis.cov-spectrum.org/open/v1", null)
 
     @GetMapping("/authenticate")
     fun checkAuthentication(accessKey: String): ChatAuthenticationResponse {
@@ -26,10 +27,13 @@ class ChatController(
     }
 
     @PostMapping("/createConversation")
-    fun createConversation(accessKey: String, toBeLogged: Boolean): ResponseEntity<String> {
+    fun createConversation(accessKey: String, toBeLogged: Boolean, dataSource: String): ResponseEntity<String> {
+        if (dataSource != "gisaid" && dataSource != "open") {
+            return ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
         val userId = chatService.getUserId(accessKey)
         userId ?: return ResponseEntity(HttpStatus.UNAUTHORIZED)
-        val conversation = chatService.createConversation(userId, toBeLogged)
+        val conversation = chatService.createConversation(userId, toBeLogged, dataSource)
         currentConversationsService.addConversation(conversation)
         return ResponseEntity(conversation.id, HttpStatus.OK)
     }
@@ -47,6 +51,7 @@ class ChatController(
         // Only allow current conversations (i.e., stored in the in-memory storage to be updated)
         val chatConversation = currentConversationsService.getConversation(id)
         chatConversation ?: return ResponseEntity(HttpStatus.GONE)
+        val lapisClient = if (chatConversation.dataSource == "gisaid") gisaidLapisClient else openLapisClient
 
         // User authentication
         val userId = chatService.getUserId(accessKey)

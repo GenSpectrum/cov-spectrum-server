@@ -7,5 +7,6 @@ class ChatConversation (
     val owner: Int,
     val creationTimestamp: LocalDateTime,
     val toBeLogged: Boolean,
+    val dataSource: String,
     val messages: MutableList<ChatMessage>
 )

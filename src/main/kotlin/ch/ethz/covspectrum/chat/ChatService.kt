@@ -63,17 +63,18 @@ class ChatService(
     /**
      * Creates a conversation
      */
-    fun createConversation(userId: Int, toBeLogged: Boolean): ChatConversation {
+    fun createConversation(userId: Int, toBeLogged: Boolean, dataSource: String): ChatConversation {
         // Generate conversation ID
         val timestamp = nowUTCDateTime().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
-        val charPool : List<Char> = ('a'..'z') + ('A'..'Z')
+        val charPool: List<Char> = ('a'..'z') + ('A'..'Z')
         val randomString = (1..7)
             .map { Random.nextInt(0, charPool.size).let { charPool[it] } }
             .joinToString("")
         val conversationId = "$timestamp-$randomString"
 
         // Create conversation object
-        val conversation = ChatConversation(conversationId, userId, nowUTCDateTime(), toBeLogged, mutableListOf())
+        val conversation =
+            ChatConversation(conversationId, userId, nowUTCDateTime(), toBeLogged, dataSource, mutableListOf())
 
         // Store in database if permitted
         if (toBeLogged) {
@@ -86,7 +87,7 @@ class ChatService(
                     statement.setString(1, conversation.id)
                     statement.setInt(2, conversation.owner)
                     statement.setTimestamp(3, Timestamp.valueOf(conversation.creationTimestamp))
-                    statement.setString(4, "gisaid")
+                    statement.setString(4, dataSource)
                     statement.execute()
                 }
             }
