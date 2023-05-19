@@ -78,14 +78,15 @@ class ChatService(
         // Store in database if permitted
         if (toBeLogged) {
             val sql = """
-                insert into chat_conversation (id, owner, creation_timestamp)
-                values (?, ?, ?);
+                insert into chat_conversation (id, owner, creation_timestamp, data_source)
+                values (?, ?, ?, ?);
             """.trimIndent()
             databaseService.getConnection().use { conn ->
                 conn.prepareStatement(sql).use { statement ->
                     statement.setString(1, conversation.id)
                     statement.setInt(2, conversation.owner)
                     statement.setTimestamp(3, Timestamp.valueOf(conversation.creationTimestamp))
+                    statement.setString(4, "gisaid")
                     statement.execute()
                 }
             }
