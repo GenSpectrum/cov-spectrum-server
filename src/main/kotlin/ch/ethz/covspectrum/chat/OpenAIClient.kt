@@ -77,10 +77,6 @@ Example 9:
 User: Give me all amino acid mutations that were found in XBB.1.5 sequences from the US!
 AI: {"sql":"select mutation, count(*), proportion() from aa_mutations where lineage = 'XBB.1.5' and country = 'USA' group by mutation;"}
 
-Example 9:
-User: Give me all mutations that were found in XBB.1.5 sequences!
-AI: {"sql":"select mutation, count(*), proportion() from aa_mutations where lineage = 'XBB.1.5' and country = 'USA' group by mutation;"}
-
 Example 10:
 User: Which mutations were found more than 300 times in DACH countries (Germany, Switzerland, and Austria) in 2023?
 AI: {"sql":"select mutation, count(*) from aa_mutations where (country = 'Germany' or country = 'Switzerland' or country = 'Austria') and date between '2023-01-01' and '2023-12-31' group by mutation having count(*) > 300;"}
