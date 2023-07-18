@@ -250,6 +250,22 @@ class DatabaseService {
     }
 
 
+    fun getWastewaterVILOCAPlot(): String {
+        val sql = """
+            select plot_svg
+            from wastewater_viloca wv;
+        """.trimIndent()
+        getConnection().use { conn ->
+            conn.createStatement().use { statement ->
+                statement.executeQuery(sql).use { rs ->
+                    rs.next()
+                    return rs.getString("plot_svg")
+                }
+            }
+        }
+    }
+
+
     fun getHuismanScire2021ReResult(key: String): Pair<Boolean, String?>? {
         val sql = """
             select r.success, r.result

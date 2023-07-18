@@ -46,4 +46,9 @@ class VariousController(
     fun getWastewaterResults(region: String?, country: String?, division: String?): String {
         return databaseService.getWastewaterResults(region, country, division)
     }
+
+    @GetMapping(value = ["/resource/wastewater-viloca"], produces = ["image/svg+xml"])
+    fun getWastewaterVILOCAPlot(): String {
+        return databaseService.getWastewaterVILOCAPlot()
+    }
 }
