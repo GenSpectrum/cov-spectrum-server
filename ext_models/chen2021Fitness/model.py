@@ -19,8 +19,8 @@ def fit(
     # adapt the data to the required format
     x = t
     x = sm.add_constant(x)
-    y = np.column_stack((k, n-k))
-    
+    y = np.column_stack((k, n - k))
+
     # estimate the model
     model = sm.GLM(y, x, family=sm.families.Binomial(link=sm.families.links.logit())).fit(disp=0)
 
@@ -32,6 +32,10 @@ def fit(
 
     # take the MLE of the parameters as the functions of the MLE of beta0, beta
     beta0, beta1 = model.params
+
+    if beta1 == 0:
+        raise ValueError("Cannot compute fit: beta1 is zero. Did you supply enough data points?")
+
     t0, a, fd, fc = -beta0 / beta1, \
                     beta1, \
                     np.exp(beta1 * generation_time) - 1, \
