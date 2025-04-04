@@ -14,7 +14,8 @@ def fit(
         k,
         n,
         generation_time,
-        reproduction_number
+        reproduction_number,
+        quasi=False
 ) -> Tuple[GrowthNumbers, GLMResultsWrapper]:
     # adapt the data to the required format
     x = t
@@ -26,6 +27,20 @@ def fit(
 
     # The following cov matrix returned by the method is the same as invFI
     cov = model.cov_params()
+
+    if quasi:  
+        # Follow a quasilikelihood approach to adjusting for overdispersion according to
+        # McCullagh and Nelder, Generalized Linear Models (second edition, chapters 4.5, 9)
+        # Calculate the Pearson chi-square statistic 
+        pearson_chi2 = sum((model.resid_pearson)**2)
+
+        # Calculate the dispersion factor 
+        n_obs = model.nobs  # number of observations
+        df_residuals = model.df_resid  # residual degrees of freedom
+        dispersion_factor = pearson_chi2 / df_residuals
+
+        # Adjust the covariance matrix for overdispersion, but not for underdispersion (conservative)
+        cov = cov * max(dispersion_factor, 1.0)
 
     # We transform these two parameters for our parameterization of interest
     # and use a delta method to get the correct variance
@@ -69,11 +84,27 @@ def fit(
 def predict(
         model: GLMResultsWrapper,
         t: np.ndarray,
-        alpha: float
+        alpha: float,
+        quasi=False
 ) -> ValueWithCi2:
     X = sm.add_constant(t)
     proba = model.predict(X)
     cov = model.cov_params()
+
+    if quasi:  
+        # Follow a quasilikelihood approach to adjusting for overdispersion according to
+        # McCullagh and Nelder, Generalized Linear Models (second edition, chapters 4.5, 9)
+        
+        # Calculate the Pearson chi-square statistic 
+        pearson_chi2 = sum((model.resid_pearson)**2)
+
+        # Calculate the dispersion factor 
+        n_obs = model.nobs  # number of observations
+        df_residuals = model.df_resid  # residual degrees of freedom
+        dispersion_factor = pearson_chi2 / df_residuals
+
+        # Adjust the covariance matrix for overdispersion, but not for underdispersion (conservative)
+        cov = cov * max(dispersion_factor, 1.0)
 
     # we need to estimate confidence interval for predicted probabilities using the delta method as well
 
